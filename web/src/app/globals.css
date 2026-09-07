@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+/*
+ * 智策理财 · design 基线 Token 全量落地(基线-设计 §5.1.1/§5.1.2/§5.2/§5.3/§5.4/§5.5)
+ * 唯一值来源 = design 基线;本文件逐 Token 抄入,禁止发明数值(design-a.md §3)。
+ * Tailwind v4:--color-X 自动生成 bg-X/text-X/border-X 等工具类;
+ * --text-* 生成字号工具类;--spacing-* / --radius-* / --shadow-* 同理。
+ * 暗色:仅跟随系统(OUT-008 不做手动切换),按基线 §5.1.2 逐 Token 重定义。
+ * shadcn 默认 slate 色板全部映射到苑问色板(主色松墨绿 #4A6B57),禁留默认色。
+ */
+
+:root {
+  /* ===== 基线 §5.1.1 亮色色板 ===== */
+  --color-primary: #4a6b57;
+  --color-primary-deep: #3a5546;
+  --color-primary-light: #6b8b77;
+  --color-primary-bg: #edf2ee;
+  --color-success: #3e8e6e;
+  --color-warning: #c8963e;
+  --color-danger: #c0553f;
+  --color-up: #c7453c; /* 涨红(中国习惯) */
+  --color-down: #2e8b57; /* 跌绿(中国习惯) */
+  --color-text-title: #1f1f1f;
+  --color-text-body: #3d3d3d;
+  --color-text-aux: #8a8580;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #b5b0aa;
+  --color-divider: #e5e1db;
+  --color-bg-page: #faf9f7;
+  --color-bg-card: #ffffff;
+  --color-bg-subtle: #f2f0ec;
+  --color-bg-overlay: rgba(31, 31, 31, 0.45);
+
+  /* ===== 基线 §5.2 字阶(六档,禁止档外字号) ===== */
+  --text-page-title: 1.5rem; /* 24px */
+  --text-page-title--font-weight: 600;
+  --text-page-title--line-height: 1.35;
+  --text-section-title: 1.125rem; /* 18px */
+  --text-section-title--font-weight: 600;
+  --text-section-title--line-height: 1.4;
+  --text-body: 0.9375rem; /* 15px */
+  --text-body--font-weight: 400;
+  --text-body--line-height: 1.65;
+  --text-aux: 0.8125rem; /* 13px */
+  --text-aux--font-weight: 400;
+  --text-aux--line-height: 1.5;
+  --text-label: 0.75rem; /* 12px */
+  --text-label--font-weight: 500;
+  --text-label--line-height: 1.4;
+  --text-data: 0.9375rem; /* 15px */
+  --text-data--font-weight: 500;
+  --text-data--line-height: 1.4;
+
+  /* ===== 基线 §5.2 字体栈(不引入外部字体文件) ===== */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI",
+    Roboto, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+
+  /* ===== 基线 §5.3 间距(4px 基准六档) ===== */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 0.75rem; /* 12px */
+  --spacing-lg: 1rem; /* 16px */
+  --spacing-xl: 1.25rem; /* 20px */
+  --spacing-xxl: 2rem; /* 32px */
+
+  /* ===== 基线 §5.4 圆角 ===== */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.625rem; /* 10px */
+  --radius-lg: 0.875rem; /* 14px */
+  --radius-full: 9999px;
+
+  /* ===== 基线 §5.5 阴影(仅三级,且轻) ===== */
+  --shadow-card: 0 1px 3px rgba(31, 31, 31, 0.06);
+  --shadow-float: 0 4px 14px rgba(31, 31, 31, 0.1);
+  --shadow-modal: 0 12px 40px rgba(31, 31, 31, 0.16);
+}
+
+/* ===== 基线 §5.1.2 暗色映射(仅系统偏好,无手动切换) ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #6b8b77;
+    --color-primary-deep: #4a6b57;
+    --color-primary-light: #8aa894;
+    --color-primary-bg: #243029;
+    --color-success: #4fa98a;
+    --color-warning: #d9a952;
+    --color-danger: #d4694f;
+    --color-up: #d9564c;
+    --color-down: #3ea46b;
+    --color-text-title: #f0efed;
+    --color-text-body: #c9c7c3;
+    --color-text-aux: #8a8884;
+    --color-text-inverse: #14161a;
+    --color-text-disabled: #5e5c59;
+    --color-divider: #2e3135;
+    --color-bg-page: #14161a;
+    --color-bg-card: #1e2024;
+    --color-bg-subtle: #24272b;
+    /* 基线 §5.5 规则 3:暗色降低阴影存在感,用 divider 边框表达层级 */
+    --shadow-card: 0 0 0 1px #2e3135;
+    --shadow-float: 0 0 0 1px #2e3135;
+    --shadow-modal: 0 0 0 1px #2e3135;
+  }
+}
+
+/* ===== shadcn CSS 变量 → 苑问色板映射(design-a.md §3,禁留 slate 默认色) ===== */
+:root {
+  --background: var(--color-bg-page);
+  --foreground: var(--color-text-body);
+  --card: var(--color-bg-card);
+  --card-foreground: var(--color-text-body);
+  --popover: var(--color-bg-card);
+  --popover-foreground: var(--color-text-body);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-text-inverse);
+  --secondary: var(--color-bg-subtle);
+  --secondary-foreground: var(--color-text-body);
+  --muted: var(--color-bg-subtle);
+  --muted-foreground: var(--color-text-aux);
+  --accent: var(--color-primary-bg);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-danger);
+  --border: var(--color-divider);
+  --input: var(--color-divider);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: var(--color-text-body);
+    --card-foreground: var(--color-text-body);
+    --popover-foreground: var(--color-text-body);
+    --primary-foreground: #14161a;
+    --secondary-foreground: var(--color-text-body);
+    --muted-foreground: var(--color-text-aux);
+    --accent-foreground: #edf2ee;
+  }
+}
+
+/* ===== Tailwind v4 @theme:生成语义工具类 ===== */
+@theme inline {
+  /* 颜色(全部来自苑问色板,无 shadcn 默认 slate) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* 圆角 */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  /* 阴影 */
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+  --shadow-modal: var(--shadow-modal);
+}
+
+/* ===== 基线全局规则 ===== */
+body {
+  background: var(--color-bg-page);
+  color: var(--color-text-body);
+  font-family: var(--font-sans);
+}
+
+/* 基线 §5.2 规则 2:数值/金额/日期必须等宽数字(工具类 text-data 搭配使用) */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 基线 §8 规则 5:尊重系统减弱动效设置——所有动画时长归零(AC-9)。
+ * !important 为 reduced-motion 全局降级的标准写法(需覆盖工具类优先级),此处属有意使用。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion 全局降级需要覆盖工具类 */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上 */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: 同上 */
+    transition-duration: 0.01ms !important;
+  }
+}
