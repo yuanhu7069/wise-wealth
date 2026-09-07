@@ -1,0 +1,12 @@
+# 环境与凭证（基线红线：禁止提交 .env）
+.env*
+!.env.example
+
+# 构建产物
+target/
+node_modules/
+.next/
+
+# 日志与临时文件
+*.log
+.DS_Store
