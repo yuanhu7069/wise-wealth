@@ -19,9 +19,15 @@ struct ApiDoc;
 pub fn openapi_json() -> utoipa::openapi::OpenApi {
     let mut doc = ApiDoc::openapi();
     if let Some(health) = doc.paths.paths.get("/health").cloned() {
+        // 镜像路径的 operationId 必须与原路径不同——否则 openapi-typescript 会在
+        // operations 接口里生成重名成员(TS2300)。
+        let mut mirror = health;
+        if let Some(op) = mirror.get.as_mut() {
+            op.operation_id = Some("health_handler_alias".to_string());
+        }
         doc.paths
             .paths
-            .insert("/api/v1/health".to_string(), health);
+            .insert("/api/v1/health".to_string(), mirror);
     }
     doc
 }
