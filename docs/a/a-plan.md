@@ -1,7 +1,7 @@
 # 执行计划：智策理财 · A 期工程骨架（a-plan.md）
 
 > 对应需求：REQ-20260907-01（prd-a.md）／架构：arch-a.md／设计：design-a.md
-> 生成日期：2026-09-07　状态：待执行
+> 生成日期：2026-09-07　状态：**开发完成，待苑问验收**（T1–T6 已执行，测试报告见 docs/a/test-report-a.md；浏览器侧三项 AC-7/9 + P01 五态目检待走查）
 > 执行者：AI（Claude Code）　验收人：苑问
 > 执行原则：按任务串行推进，每个任务以「完成门」结束，门不过不进下一任务；对照基线 arch §16 / design §13 红线清单自查
 
@@ -86,3 +86,16 @@ T1 → T2 → T3 → T4 → T5 → T6（串行；T4 依赖 T2 的 openapi 与 T3
 | AC-7 暗色 | T3 | DevTools 走查 |
 | AC-8 健康信封 | T2/T6 | 单测 + 停库实测 |
 | AC-9 动效降级 | T3 | reduced-motion 走查 |
+
+## 5. 执行结果（2026-09-07 回填）
+
+| 任务 | 状态 | 完成门证据 |
+|------|------|-----------|
+| T1 仓库初始化 | ✅ 完成 | 提交 1944d8a；`.env` 未跟踪（git check-ignore 验证） |
+| T2 后端骨架 | ✅ 完成 | 提交 2cb4664；clippy 零告警、单测 10 passed、双挂 health 实测、停库 db=error 恒 200、RULE-002 逐条列键 exit 1 |
+| T3 前端骨架 | ✅ 完成 | 提交 ba6592d；biome/tsc 通过、Token 门禁零命中、P01 五态代码落地 |
+| T4 类型生成链路 | ✅ 完成 | 提交 fdf98d1；gen-types.sh 成功；AC-5 现场验证（改 db 字段→TS2367→还原）通过 |
+| T5 启动与质量脚本 | ✅ 完成 | 提交 75fae99；AC-1 计时 ×3（2s/3s/0s）≤60s；check.sh 五段门全绿 |
+| T6 验收与收尾 | ✅ 开发侧完成 | test-report-a.md 产出；cargo audit/npm audit 双 0 漏洞；§16.6 unwrap/expect 清理（提交见 git log）；停库→恢复演练通过；**浏览器侧走查清单交苑问** |
+
+遗留事项（不阻塞验收，B 期处理）：RISK-A-1 无 TLS；TS7/openapi-typescript 并存工作态；触控热区 40px→44px 统一调整；shadcn CLI 网络受限改手写等价组件。详见 test-report-a.md §6。
