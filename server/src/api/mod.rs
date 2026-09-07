@@ -24,7 +24,18 @@ pub fn routes(state: AppState) -> Router {
 
 async fn openapi_json_handler() -> axum::response::Response {
     let doc = crate::openapi::openapi_json();
-    let json = serde_json::to_value(&doc).expect("OpenAPI 序列化");
+    // RULE-xxx 标注:handler 路径禁止 unwrap/expect(基线 §16.6)。
+    // OpenAPI 文档为进程内纯内存数据,序列化失败仅可能来自程序缺陷,无运行期触发条件;
+    // 失败时按 RULE-003 返回 INTERNAL_ERROR 信封,不 panic。
+    let json = match serde_json::to_value(&doc) {
+        Ok(v) => v,
+        Err(_) => serde_json::json!({
+            "success": false,
+            "data": null,
+            "errorCode": "INTERNAL_ERROR",
+            "message": "OpenAPI 文档序列化失败"
+        }),
+    };
     (
         axum::http::StatusCode::OK,
         [(axum::http::header::CONTENT_TYPE, "application/json")],

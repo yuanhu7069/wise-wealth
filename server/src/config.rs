@@ -149,10 +149,34 @@ impl Config {
             return Err(ConfigError { problems });
         }
 
+        // APP_ENV/APP_PORT 缺失时已归入 problems 并提前返回;此处 match 归一化
+        // (基线 §16.6:handler/启动路径禁止 unwrap,构造路径用穷尽 match 替代 expect)。
+        let app_env = match app_env {
+            Some(env) => env,
+            None => {
+                problems.push("APP_ENV(缺失)".to_string());
+                return Err(ConfigError { problems });
+            }
+        };
+        let app_port = match app_port {
+            Some(port) => port,
+            None => {
+                problems.push("APP_PORT(缺失)".to_string());
+                return Err(ConfigError { problems });
+            }
+        };
+        let database_url = match database_url {
+            Some(url) => url,
+            None => {
+                problems.push("DATABASE_URL(APP_ENV 对应库名未配置)".to_string());
+                return Err(ConfigError { problems });
+            }
+        };
+
         Ok(Self {
-            app_env: app_env.expect("problems 非空时已提前返回"),
-            app_port: app_port.expect("problems 非空时已提前返回"),
-            database_url: database_url.expect("problems 非空时已提前返回"),
+            app_env,
+            app_port,
+            database_url,
             api_base_url_configured: api_base_configured,
             rust_log,
         })

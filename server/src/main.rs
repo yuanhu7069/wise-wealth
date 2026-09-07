@@ -68,7 +68,10 @@ async fn main() {
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .expect("server error");
+        .unwrap_or_else(|e| {
+            tracing::error!("服务运行异常退出: {e}");
+            std::process::exit(1);
+        });
 }
 
 async fn run_migrations(pool: &sqlx::PgPool) {
@@ -81,16 +84,23 @@ async fn run_migrations(pool: &sqlx::PgPool) {
 
 async fn shutdown_signal() {
     let ctrl_c = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("安装 Ctrl+C handler 失败");
+        // 信号 handler 安装失败属进程初始化缺陷,记日志后退出(exit 非 panic,基线 §16.6)
+        if tokio::signal::ctrl_c().await.is_err() {
+            tracing::error!("安装 Ctrl+C handler 失败");
+            std::process::exit(1);
+        }
     };
     #[cfg(unix)]
     let terminate = async {
-        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("安装 SIGTERM handler 失败")
-            .recv()
-            .await;
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut sig) => {
+                sig.recv().await;
+            }
+            Err(e) => {
+                tracing::error!("安装 SIGTERM handler 失败: {e}");
+                std::process::exit(1);
+            }
+        }
     };
     #[cfg(not(unix))]
     let terminate = std::future::pending::<()>();
