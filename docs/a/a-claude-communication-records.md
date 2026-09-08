@@ -146,6 +146,8 @@
 
 **A 期已验收闭环（2026-09-08）**：T1–T6 全过，9/9 AC 确认（其中 AC-7/AC-9 为 playwright 真浏览器断言），苑问目检通过；prd-a.md 状态「已完成」。提交链：`35271cb`（字阶/间距注册修复 + base- 前缀）→ `b8658c1`（Token 样例区 + 免责声明区，遗留项 5 闭环）→ `5db1215`（测试报告升级）→ `ab2ea3f`（验收闭环回填）。
 
+**远端仓库（2026-09-08 建立并首推）**：`github.com/yuanhu7069/wise-wealth`，remote 用 SSH 地址 `git@github.com:yuanhu7069/wise-wealth.git`（本机 https 无凭证助手；`ssh -T` 认证为 yuanhu7069）。首推 `main → origin/main`（`e91c251`，A 期全量 13+ 提交）。推送前安全核验：三处 `.env` 均被忽略，全历史无真实凭证（`postgres://` 命中均为 `.env.example`/prd-a.md 占位符）。
+
 **B 期开工前待办（不阻塞，均已在 a-plan.md §5 尾注登记）**：
 
 - RISK-A-1：外部 PG 实例启用 TLS 或改走 SSH 隧道（引入真实数据前**必须**），届时回填 arch-a.md §6
