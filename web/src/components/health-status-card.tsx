@@ -62,8 +62,8 @@ export function HealthStatusCard({ fetchHealth }: Props) {
     // 骨架形状接近真实内容(基线 §7.2:禁止一整块灰矩形)
     return (
       <Card aria-busy="true" aria-label="正在加载服务状态">
-        <CardContent className="flex flex-col gap-md p-xl">
-          <div className="flex items-center gap-md">
+        <CardContent className="flex flex-col gap-base-md p-base-xl">
+          <div className="flex items-center gap-base-md">
             <Skeleton className="size-6 rounded-sm" />
             <Skeleton className="h-6 w-64" />
           </div>
@@ -80,10 +80,10 @@ export function HealthStatusCard({ fetchHealth }: Props) {
     const Icon = isDbError ? Database : ServerOff;
     return (
       <Card className="border-destructive/40">
-        <CardContent className="flex flex-col gap-lg p-xl">
-          <div className="flex items-start gap-md">
+        <CardContent className="flex flex-col gap-base-lg p-base-xl">
+          <div className="flex items-start gap-base-md">
             <Icon className="mt-1 size-5 shrink-0 text-destructive" aria-hidden="true" />
-            <div className="flex flex-col gap-xs">
+            <div className="flex flex-col gap-base-xs">
               <p className="text-body font-medium text-text-title">{copy.title}</p>
               <p className="text-body text-text-body">{copy.description}</p>
               <p className="text-label text-text-aux">错误码:{state.errorCode}</p>
@@ -102,17 +102,17 @@ export function HealthStatusCard({ fetchHealth }: Props) {
   // 成功态(含空态三要素:Compass 图标 + 人话说明 + 明确引导——design 基线 §7.3)
   return (
     <Card>
-      <CardContent className="flex flex-col gap-lg p-xl">
-        <div className="flex items-center gap-md">
+      <CardContent className="flex flex-col gap-base-lg p-base-xl">
+        <div className="flex items-center gap-base-md">
           <CircleCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
           <p className="text-body text-text-body">
             服务在线 · 数据库已连接 ·{" "}
             <span className="text-data tabular-nums text-text-title">v{state.version}</span>
           </p>
         </div>
-        <div className="flex items-start gap-md rounded-md bg-primary-bg p-lg">
+        <div className="flex items-start gap-base-md rounded-md bg-primary-bg p-base-lg">
           <Compass className="mt-0.5 size-5 shrink-0 text-text-aux" aria-hidden="true" />
-          <div className="flex flex-col gap-xs">
+          <div className="flex flex-col gap-base-xs">
             <p className="text-body text-text-body">
               服务在线,暂无业务模块——A 期是工程骨架期,各页面共用这套状态卡片与 Token 体系。
             </p>

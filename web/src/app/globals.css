@@ -187,6 +187,37 @@
   --color-text-inverse: var(--color-text-inverse);
   --color-text-disabled: var(--color-text-disabled);
 
+  /* 基线 §5.2 字阶六档(:root 存字号/字重/行高三元组;主值 inline 引用,元组变量同步注册,
+   * Tailwind v4 将 --text-X--font-weight/--text-X--line-height 合并进对应字号工具类) */
+  --text-page-title: var(--text-page-title);
+  --text-page-title--font-weight: var(--text-page-title--font-weight);
+  --text-page-title--line-height: var(--text-page-title--line-height);
+  --text-section-title: var(--text-section-title);
+  --text-section-title--font-weight: var(--text-section-title--font-weight);
+  --text-section-title--line-height: var(--text-section-title--line-height);
+  --text-body: var(--text-body);
+  --text-body--font-weight: var(--text-body--font-weight);
+  --text-body--line-height: var(--text-body--line-height);
+  --text-aux: var(--text-aux);
+  --text-aux--font-weight: var(--text-aux--font-weight);
+  --text-aux--line-height: var(--text-aux--line-height);
+  --text-label: var(--text-label);
+  --text-label--font-weight: var(--text-label--font-weight);
+  --text-label--line-height: var(--text-label--line-height);
+  --text-data: var(--text-data);
+  --text-data--font-weight: var(--text-data--font-weight);
+  --text-data--line-height: var(--text-data--line-height);
+
+  /* 基线 §5.3 间距六档(注册名加 base- 前缀:裸 xs/sm/…/xxl 档名会撞 Tailwind 内置刻度——
+   * 注册 --spacing-xl 后 v4 把 max-w-xl 从容器刻度 36rem 劫持成 20px。base- 前缀错开,
+   * 工具类形态 gap-base-lg / p-base-xl / w-base-md 等) */
+  --spacing-base-xs: var(--spacing-xs);
+  --spacing-base-sm: var(--spacing-sm);
+  --spacing-base-md: var(--spacing-md);
+  --spacing-base-lg: var(--spacing-lg);
+  --spacing-base-xl: var(--spacing-xl);
+  --spacing-base-xxl: var(--spacing-xxl);
+
   /* 圆角 */
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);

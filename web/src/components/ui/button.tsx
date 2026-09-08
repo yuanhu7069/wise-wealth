@@ -18,9 +18,9 @@ const buttonVariants = cva(
         destructive: "bg-destructive text-primary-foreground hover:bg-destructive/90",
       },
       size: {
-        default: "h-10 px-lg",
-        sm: "h-8 px-md",
-        lg: "h-11 px-xl",
+        default: "h-10 px-base-lg",
+        sm: "h-8 px-base-md",
+        lg: "h-11 px-base-xl",
         icon: "size-10",
       },
     },

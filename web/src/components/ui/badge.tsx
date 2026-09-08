@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** shadcn Badge:主色浅底 + 主色文字(design-a.md §7),Pill 圆角。 */
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-xs overflow-hidden rounded-full border border-transparent px-sm py-px text-label whitespace-nowrap",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-base-xs overflow-hidden rounded-full border border-transparent px-base-sm py-px text-label whitespace-nowrap",
   {
     variants: {
       variant: {

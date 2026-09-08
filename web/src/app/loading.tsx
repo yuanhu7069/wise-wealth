@@ -5,16 +5,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <main
-      className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-lg px-lg py-xxl"
+      className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-base-lg px-base-lg py-base-xxl"
       aria-busy="true"
     >
-      <header className="flex flex-col gap-xs">
+      <header className="flex flex-col gap-base-xs">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-48" />
       </header>
       <Card aria-label="正在加载服务状态">
-        <CardContent className="flex flex-col gap-md p-xl">
-          <div className="flex items-center gap-md">
+        <CardContent className="flex flex-col gap-base-md p-base-xl">
+          <div className="flex items-center gap-base-md">
             <Skeleton className="size-6 rounded-sm" />
             <Skeleton className="h-6 w-64 max-w-full" />
           </div>

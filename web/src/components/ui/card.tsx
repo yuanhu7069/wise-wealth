@@ -17,7 +17,7 @@ function CardHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="card-header"
-      className={cn("flex flex-col gap-sm p-xl", className)}
+      className={cn("flex flex-col gap-base-sm p-base-xl", className)}
       {...props}
     />
   );
@@ -44,14 +44,14 @@ function CardDescription({ className, ...props }: ComponentProps<"p">) {
 }
 
 function CardContent({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="card-content" className={cn("p-xl pt-0", className)} {...props} />;
+  return <div data-slot="card-content" className={cn("p-base-xl pt-0", className)} {...props} />;
 }
 
 function CardFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="card-footer"
-      className={cn("flex items-center p-xl pt-0", className)}
+      className={cn("flex items-center p-base-xl pt-0", className)}
       {...props}
     />
   );
