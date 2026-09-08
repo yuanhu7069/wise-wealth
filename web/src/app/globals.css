@@ -105,6 +105,11 @@
   }
 }
 
+:root {
+  /* 跟随系统:让 UA 默认 UI(滚动条/表单控件)与页面同色 */
+  color-scheme: light dark;
+}
+
 /* ===== shadcn CSS 变量 → 苑问色板映射(design-a.md §3,禁留 slate 默认色) ===== */
 :root {
   --background: var(--color-bg-page);
@@ -161,6 +166,26 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* 基线 §5.1 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-up: var(--color-up);
+  --color-down: var(--color-down);
+  --color-primary-bg: var(--color-primary-bg);
+  --color-primary-deep: var(--color-primary-deep);
+  --color-primary-light: var(--color-primary-light);
+  --color-divider: var(--color-divider);
+  --color-bg-page: var(--color-bg-page);
+  --color-bg-card: var(--color-bg-card);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-bg-overlay: var(--color-bg-overlay);
+  --color-text-title: var(--color-text-title);
+  --color-text-body: var(--color-text-body);
+  --color-text-aux: var(--color-text-aux);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-disabled: var(--color-text-disabled);
 
   /* 圆角 */
   --radius-sm: var(--radius-sm);
