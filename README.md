@@ -57,6 +57,16 @@ cd web && ./scripts/gen-types.sh   # openapi.json → src/lib/api-types.ts
 
 `src/lib/api-types.ts` 为生成物,**禁止手改**;后端字段变更后重新生成,前端引用处会在 `tsc --noEmit` 编译期暴露。
 
+## 构建(RULE-004 交付形态)
+
+```bash
+cd web && npm run build      # next build(Turbopack),产物 .next/
+cd web && npm run start      # 生产模式启动(需先 build)
+cd server && SQLX_OFFLINE=true cargo build --release   # 后端 release 二进制
+```
+
+A 期为工程骨架期,构建仅验证可通过、无运行部署目标;B 期起按 PRD 交付形态补部署说明。
+
 ## 数据库备份(ADR-A-002)
 
 A 期迁移链仅 `0001_init_baseline`(占位)。真实备份策略(每日全量 + WAL)随 B 期引入;
