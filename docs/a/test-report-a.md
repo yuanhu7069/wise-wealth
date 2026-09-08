@@ -2,9 +2,9 @@
 
 > 项目:智策理财 A 期工程骨架 · 生成:2026-09-07 · 依据:arch-a.md §10/§11、基线 arch §16 审查清单、a-plan.md §4 验收标准回链
 >
-> 结论:**A 期开发侧验收全部通过(9/9 AC 中 6 项自动化/实测通过,3 项浏览器侧留待苑问走查)**。详见各表标注。
+> 结论:**A 期验收全部通过(9/9 AC,2026-09-08 苑问验收确认)**。详见各表标注。
 >
-> **2026-09-08 更新**:浏览器侧校验由 Claude 完成(gstack browse 无头 Chromium 起步,升级为 playwright-core 直连 ms-playwright chromium-1208)——AC-7/AC-9 及 §5 全部 8 项已校验,**全部以真浏览器计算样式断言直接通过**(含暗色 colorScheme 双上下文、reduced-motion 双上下文);AC-8 的 T6 记录方式已更正(见 §1);**新发现 §5 注 6:design-a.md 规定的 Token 样例区与免责声明区未实现,已登记为遗留项 5**。
+> **2026-09-08 更新**:浏览器侧校验由 Claude 完成(gstack browse 无头 Chromium 起步,升级为 playwright-core 直连 ms-playwright chromium-1208)——AC-7/AC-9 及 §5 全部 8 项已校验,**全部以真浏览器计算样式断言直接通过**(含暗色 colorScheme 双上下文、reduced-motion 双上下文);AC-8 的 T6 记录方式已更正(见 §1);遗留项 5(Token 样例区/免责声明区)已按 design-a.md §1 补齐并复跑断言,苑问目检确认。
 
 ## 1. AC 验收回链(a-plan.md §4)
 
@@ -132,7 +132,9 @@
 2. 触控热区 40px vs 基线 44px(见 §16.5 注),B 期统一调整。
 3. RISK-A-1 无 TLS 明文连接,B 期必须解决。
 4. shadcn CLI 因网络( ui.shadcn.com 连接被重置)未能在线 init,组件为手写等价物(button/card/skeleton/badge + cn 工具),结构与官方产物一致、色板经 globals.css 映射;radix-ui 包已装,后续 add 组件可直接用。
-5. **P01 缺两个设计区块(2026-09-08 浏览器校验发现)**:design-a.md §1 规定四区块(头部/状态卡/Token 样例区/免责声明区),实测页面仅实现头部 + 状态卡——Token 样例区与免责声明区(产品 PRD §13.1 原文)未渲染。属实现与设计文档的偏差,不阻塞状态机验收,建议在 A 期收尾或 B 期开工前补齐后重跑本报告 §5。
+5. ~~**P01 缺两个设计区块**~~ **已补齐(2026-09-08)**:Token 样例区(token-samples.tsx,35 格)与免责声明区(disclaimer.tsx,PRD V1.1 §13.1 原文全量)已实现并接入 P01;playwright 断言 10 项全过(渲染/文案全量/13px 字阶/宽度上限/间距档宽/着色);期间连带修复字阶/间距工具类未生成与 `--spacing-xl` 劫持 `max-w-xl` 刻度两处 Bug(提交 35271cb、b8658c1)。
 6. **T6 停库实测记录更正(2026-09-08)**:原记录的 REVOKE CONNECT…FROM PUBLIC 对库属主无效,当时实测结论系属主豁免下的假阴性;真实 db=error 已于 2026-09-08 用冷连接方式复测通过(见 §1 AC-8)。
 
 **校验记录(2026-09-08)**:AC-7/AC-9 及 §5 全部 8 项由 Claude 完成校验,方法为 playwright-core 直连本机 chromium-1208 的真浏览器双上下文计算样式断言(暗色 colorScheme:light/dark、reducedMotion:no-preference/reduce),非模拟等效;结论 8/8 直接通过;环境已复原(库权限 CONNECT=true、后端 db=ok、前端在线、browse 守护进程已停)。
+
+**验收记录(2026-09-08)**:苑问目检走查通过(正常态绿勾、暗色整页、四区块含 Token 样例区/免责声明区),prd-a.md 状态改「已完成」,A 期验收闭环。
