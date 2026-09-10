@@ -13,3 +13,6 @@ node_modules/
 .reasonix/
 reasonix.toml
 .gstack/
+
+# graphify 生成物(可由 /graphify 重建,不入库)
+graphify-out/

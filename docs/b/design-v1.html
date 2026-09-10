@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智策理财 B 期原型（design-v1.html · Token 彩色稿）</title>
+<style>
+/* ==========================================================================
+   智策理财 B 期原型 —— Token 彩色稿
+   取值唯一来源：docs/base_line/基线-design-Web域.md §5（亮色 §5.1.1 / 暗色 §5.1.2
+   / 字阶 §5.2 / 间距 §5.3 / 圆角 §5.4 / 阴影 §5.5 / 图表色板 §6.3）
+   禁止发明规范外的数值。本文件不含任何 hex 之外的自创色。
+
+   尺寸铁律（本次走查修复的根因，已写入 design-v2.md 组件规范）：
+     容器尺寸由内容撑开 —— 一律 min-height + padding，禁止 height + line-height
+     配对装可变内容；文本容器禁止固定宽高。
+   ========================================================================== */
+
+:root {
+  /* 色板 · 亮色（基线 §5.1.1） */
+  --primary: #4A6B57;        --primary-deep: #3A5546;   --primary-light: #6B8B77;
+  --primary-bg: #EDF2EE;
+  --success: #3E8E6E;        --warning: #C8963E;        --danger: #C0553F;
+  --up: #C7453C;             --down: #2E8B57;
+  --text-title: #1F1F1F;     --text-body: #3D3D3D;      --text-aux: #8A8580;
+  --text-inverse: #FFFFFF;   --text-disabled: #B5B0AA;
+  --divider: #E5E1DB;        --bg-page: #FAF9F7;        --bg-card: #FFFFFF;
+  --bg-subtle: #F2F0EC;      --bg-overlay: rgba(31,31,31,.45);
+  /* 图表分类色（基线 §6.3 固定顺序） */
+  --c1: #4A6B57; --c2: #8AA894; --c3: #C8963E; --c4: #7B8FA1; --c5: #B08070; --c6: #6E7F8D;
+  /* 间距 / 圆角 / 阴影（基线 §5.3-5.5） */
+  --s-xs: 4px; --s-sm: 8px; --s-md: 12px; --s-lg: 16px; --s-xl: 20px; --s-xxl: 32px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-full: 9999px;
+  --sh-card: 0 1px 3px rgba(31,31,31,.06);
+  --sh-float: 0 4px 14px rgba(31,31,31,.10);
+  color-scheme: light;
+}
+:root.dark {
+  /* 色板 · 暗色（基线 §5.1.2） */
+  --primary: #6B8B77;        --primary-deep: #4A6B57;   --primary-light: #8AA894;
+  --primary-bg: #243029;
+  --success: #4FA98A;        --warning: #D9A952;        --danger: #D4694F;
+  --up: #D9564C;             --down: #3EA46B;
+  --text-title: #F0EFED;     --text-body: #C9C7C3;      --text-aux: #8A8884;
+  --text-inverse: #FFFFFF;   --text-disabled: #5E5C59;
+  --divider: #2E3135;        --bg-page: #14161A;        --bg-card: #1E2024;
+  --bg-subtle: #24272B;
+  --c1: #6B8B77; --c2: #8AA894; --c3: #D9A952; --c4: #7B8FA1; --c5: #B08070; --c6: #6E7F8D;
+  /* 暗色下阴影改边框表层级（基线 §5.5 规则 3） */
+  --sh-card: 0 0 0 1px var(--divider);
+  --sh-float: 0 0 0 1px var(--divider);
+  color-scheme: dark;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", Roboto, sans-serif;
+  font-size:15px; line-height:1.65; color:var(--text-body); background:var(--bg-page);
+  -webkit-font-smoothing:antialiased;
+  /* 纵向 flex：内容不足一屏时，页脚被推到底部而不是浮在正文中间 */
+  min-height:100vh; display:flex; flex-direction:column;
+}
+a { color:var(--primary); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.hidden { display:none !important; }
+.num { font-variant-numeric:tabular-nums; }
+
+/* ── 图标（内联 SVG sprite，无外部依赖；线性 stroke，基线 §5.6） ── */
+.ic { width:20px; height:20px; flex:none; stroke:currentColor; fill:none;
+      stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.ic-sm { width:16px; height:16px; }
+.ic-lg { width:24px; height:24px; }
+
+/* ── 顶部栏 ── */
+.topbar { display:flex; justify-content:space-between; align-items:center; gap:var(--s-lg);
+          padding:var(--s-md) var(--s-lg); background:var(--bg-card);
+          border-bottom:1px solid var(--divider); }
+.brand { display:flex; align-items:center; gap:var(--s-sm); }
+.brand .mark { color:var(--primary); }
+.brand .name { font-size:18px; font-weight:600; color:var(--text-title); letter-spacing:.01em; }
+.topbar .right { display:flex; align-items:center; gap:var(--s-xs); }
+.icon-btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--s-xs);
+            min-height:40px; min-width:40px; padding:0 var(--s-sm); border:none; border-radius:var(--r-md);
+            background:transparent; color:var(--text-body); font-size:13px; font-family:inherit;
+            cursor:pointer; }
+.icon-btn:hover { background:var(--bg-subtle); color:var(--text-title); }
+
+/* ── 页面容器 ── */
+.page { flex:1 0 auto; max-width:720px; margin:0 auto; padding:var(--s-xxl) var(--s-lg); width:100%; }
+.page.wide { max-width:1200px; }
+.page.wide > .inner { max-width:720px; margin:0 auto; }
+
+/* ── 向导顶部工具行（返回首页 + 草稿提示） ── */
+.wizard-top { display:flex; align-items:center; justify-content:space-between; gap:var(--s-md);
+              flex-wrap:wrap; margin-bottom:var(--s-lg); font-size:13px; }
+.wizard-top .back { display:inline-flex; align-items:center; gap:var(--s-xs); color:var(--text-aux); }
+.wizard-top .back:hover { color:var(--primary); text-decoration:none; }
+
+/* ── 向导底部固定操作栏 ──
+   位置由视口决定而非内容高度：六个步骤内容长短不一，操作区若跟随内容流动，
+   每点一次「下一步」按钮就会跳动一次（2026-09-10 苑问走查反馈）。
+   视觉上分两层，避免按钮与声明被看成同一块（2026-09-10 苑问二次走查）：
+     .bar-actions —— 沿用页面底色 + 一条发丝分隔线：读作「内容区的一部分」
+     .bar-legal   —— 次级底色 + 分隔线：读作独立的声明条
+   底边距为调试条高度（JS 实测写入 --debug-h），避免两条固定栏互相遮挡。 */
+.wizard-bar { position:fixed; left:0; right:0; bottom:var(--debug-h, 44px); z-index:60; }
+.wizard-bar .bar-actions { background:var(--bg-page); border-top:1px solid var(--divider);
+                           padding:var(--s-md) var(--s-lg); }
+.wizard-bar .row { max-width:720px; margin:0 auto; display:flex; gap:var(--s-md); }
+.wizard-bar .row > .btn:first-child { margin-right:auto; }
+.wizard-bar .bar-legal { background:var(--bg-subtle); border-top:1px solid var(--divider);
+                         padding:var(--s-sm) var(--s-lg); }
+.wizard-bar .legal-text { max-width:720px; margin:0 auto; font-size:12px; line-height:1.5; color:var(--text-aux); }
+.wizard-bar .lg-short { display:none; }
+
+/* ── 站点页脚（健康状态 + 一行免责声明；内容不足一屏时吸在视口底部） ── */
+.site-footer { flex:none; margin-top:auto; background:var(--bg-card);
+               border-top:1px solid var(--divider);
+               padding:var(--s-lg) var(--s-lg) var(--s-xxl); }
+.site-footer .inner { max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:var(--s-xs); }
+.site-footer .status { display:flex; align-items:center; gap:var(--s-xs); font-size:12px; color:var(--text-aux); }
+.site-footer .legal { font-size:12px; line-height:1.6; color:var(--text-aux); max-width:960px; }
+.site-footer .legal .expand { font-size:12px; color:var(--text-aux); background:none; border:none;
+                              padding:0; font-family:inherit; cursor:pointer; text-decoration:underline;
+                              text-underline-offset:2px; }
+.site-footer .legal .expand:hover { color:var(--text-body); }
+.site-footer .legal-full { font-size:12px; line-height:1.65; color:var(--text-aux); max-width:960px; }
+h1.page-title { font-size:24px; font-weight:600; line-height:1.35; color:var(--text-title); margin-bottom:var(--s-xs); }
+p.page-sub { font-size:13px; color:var(--text-aux); margin-bottom:var(--s-xxl); }
+
+/* ── 卡片 ── */
+.card { background:var(--bg-card); border-radius:var(--r-lg); box-shadow:var(--sh-card);
+        padding:var(--s-xl); margin-bottom:var(--s-lg); }
+.card.flush { padding:0; overflow:hidden; }
+.card.tint { background:var(--bg-subtle); box-shadow:none; }
+
+/* ── 按钮（内容驱动：min-height + padding，禁止 height/line-height 配对） ── */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--s-sm);
+       min-height:44px; padding:10px var(--s-xl); border-radius:var(--r-md);
+       font-size:15px; font-family:inherit; line-height:1.4; text-align:center;
+       border:1px solid transparent; cursor:pointer; white-space:nowrap; text-decoration:none; }
+.btn:hover { text-decoration:none; }
+.btn.primary { background:var(--primary); color:var(--text-inverse); }
+.btn.primary:hover { background:var(--primary-light); }
+.btn.primary:active { background:var(--primary-deep); }
+.btn.ghost { background:var(--bg-card); border-color:var(--divider); color:var(--text-body); }
+.btn.ghost:hover { border-color:var(--text-aux); color:var(--text-title); }
+.btn.text { background:transparent; color:var(--primary); padding:10px var(--s-md); }
+.btn.text:hover { background:var(--primary-bg); }
+.btn[disabled], .btn.disabled { background:var(--bg-subtle); color:var(--text-disabled);
+                                 border-color:transparent; cursor:not-allowed; }
+.btn.block { width:100%; }
+
+/* ── 表单 ── */
+.field { margin-bottom:var(--s-lg); }
+.field > label { display:block; font-size:13px; font-weight:500; color:var(--text-title); margin-bottom:var(--s-xs); }
+.field .req { color:var(--danger); }
+.field input { display:block; width:100%; min-height:44px; padding:10px var(--s-md);
+               border:1px solid var(--divider); border-radius:var(--r-sm);
+               background:var(--bg-card); color:var(--text-body); font-size:15px; font-family:inherit; }
+.field input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-bg); }
+.field input.err { border-color:var(--danger); }
+.field .err-msg { display:flex; align-items:center; gap:var(--s-xs); font-size:13px; color:var(--danger); margin-top:var(--s-xs); }
+.field .hint { font-size:13px; color:var(--text-aux); margin-top:var(--s-xs); }
+
+/* ── 提示条（仅用已定义 Token：底 bg-subtle + 语义色图标/文字） ── */
+.banner { display:flex; align-items:flex-start; gap:var(--s-sm); padding:var(--s-md);
+          border-radius:var(--r-sm); background:var(--bg-subtle); font-size:13px;
+          color:var(--text-body); margin-bottom:var(--s-lg); }
+.banner.warn .ic { color:var(--warning); }
+.banner.danger .ic { color:var(--danger); }
+.banner.ok .ic { color:var(--success); }
+
+/* ── 步进条 ── */
+.stepper { display:flex; align-items:center; gap:var(--s-sm); margin-bottom:var(--s-xl); }
+.stepper .seg { flex:1; height:4px; border-radius:var(--r-full); background:var(--divider); }
+.stepper .seg.done { background:var(--primary-light); }
+.stepper .seg.cur { background:var(--primary); }
+.stepper .count { font-size:12px; font-weight:500; color:var(--text-aux); white-space:nowrap; }
+
+/* ── 选项卡（整卡可点；选中态 = 颜色 + 勾图标，不单靠颜色，基线 §10.2） ── */
+.opt { display:flex; align-items:flex-start; gap:var(--s-md); width:100%; text-align:left;
+       min-height:44px; padding:var(--s-md) var(--s-lg); margin-bottom:var(--s-sm);
+       border:1px solid var(--divider); border-radius:var(--r-md); background:var(--bg-card);
+       font-family:inherit; font-size:15px; color:var(--text-body); cursor:pointer; }
+.opt:hover { border-color:var(--text-aux); }
+.opt .mark { width:20px; height:20px; flex:none; margin-top:2px; color:var(--text-disabled); }
+.opt .t { color:var(--text-body); }
+.opt .d { font-size:13px; color:var(--text-aux); }
+.opt.sel { border:2px solid var(--primary); background:var(--primary-bg); padding:calc(var(--s-md) - 1px) calc(var(--s-lg) - 1px); }
+.opt.sel .mark { color:var(--primary); }
+.opt.sel .t { color:var(--text-title); font-weight:500; }
+
+/* ── 推荐双卡 ── */
+.modes { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:var(--s-md); margin-bottom:var(--s-xl); }
+.mode-card { display:flex; flex-direction:column; gap:var(--s-sm); text-align:left; width:100%;
+             padding:var(--s-lg); border:1px solid var(--divider); border-radius:var(--r-lg);
+             background:var(--bg-card); font-family:inherit; cursor:pointer; }
+.mode-card:hover { border-color:var(--text-aux); }
+.mode-card.picked { border:2px solid var(--primary); background:var(--primary-bg); padding:calc(var(--s-lg) - 1px); }
+.mode-card .head { display:flex; align-items:center; gap:var(--s-xs); flex-wrap:wrap; }
+.mode-card h3 { font-size:16px; font-weight:600; color:var(--text-title); }
+.mode-card .tagline { font-size:13px; color:var(--text-aux); }
+.mode-card .reason { font-size:13px; color:var(--text-body); border-top:1px dashed var(--divider); padding-top:var(--s-sm); }
+
+/* ── 徽标 / Pill ── */
+.pill { display:inline-flex; align-items:center; gap:var(--s-xs); padding:2px 10px;
+        border-radius:var(--r-full); font-size:12px; font-weight:500; line-height:1.6;
+        background:var(--bg-subtle); color:var(--text-aux); }
+.pill.trust { background:var(--primary-bg); color:var(--primary); }
+.pill.reco { background:var(--primary); color:var(--text-inverse); }
+
+/* ── 表格（基线 §6.1：数值右对齐 + 等宽数字 + 仅横向分隔线） ── */
+table { width:100%; border-collapse:collapse; }
+thead th { text-align:left; font-size:12px; font-weight:500; color:var(--text-aux);
+           background:var(--bg-subtle); padding:var(--s-md); white-space:nowrap; }
+tbody td { padding:var(--s-md); border-top:1px solid var(--divider); vertical-align:top; }
+tbody tr:first-child td { border-top:none; }
+td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; color:var(--text-title); font-weight:500; }
+td .cell { display:flex; align-items:center; gap:var(--s-sm); }
+.dot { width:10px; height:10px; border-radius:var(--r-full); flex:none; }
+
+/* ── 比例条（图表分类色，基线 §6.3；色块 + 文字并列，色盲可读） ── */
+.bar { display:flex; height:28px; border-radius:var(--r-sm); overflow:hidden; margin:var(--s-md) 0 var(--s-sm); }
+.legend { display:flex; flex-wrap:wrap; gap:var(--s-lg); font-size:13px; color:var(--text-aux); }
+.legend .k { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:var(--s-xs); vertical-align:middle; }
+
+/* ── 段落 ── */
+section h2 { font-size:18px; font-weight:600; line-height:1.4; color:var(--text-title); margin:var(--s-xxl) 0 var(--s-md); }
+section:first-child h2 { margin-top:0; }
+.muted { color:var(--text-aux); font-size:13px; }
+.big { font-size:24px; font-weight:600; color:var(--primary); font-variant-numeric:tabular-nums; }
+.disclaimer { font-size:13px; color:var(--text-aux); line-height:1.75; max-width:720px; }
+
+/* ── 空态（三要素：图标 + 人话说明 + 引导操作，基线 §7.3） ── */
+.empty { text-align:center; padding:var(--s-xxl) var(--s-xl); }
+.empty .icon-wrap { width:56px; height:56px; display:grid; place-items:center; margin:0 auto var(--s-md);
+                    border-radius:var(--r-full); background:var(--primary-bg); color:var(--primary); }
+.empty .lead { font-size:15px; font-weight:500; color:var(--text-title); margin-bottom:var(--s-xs); }
+.empty .desc { font-size:13px; color:var(--text-aux); margin-bottom:var(--s-xl); }
+
+/* ── 骨架屏（基线 §7.2：形状拟真，非整块灰矩形） ── */
+.skel { background:var(--bg-subtle); border-radius:var(--r-sm); }
+.skel.t { height:24px; width:56%; margin-bottom:var(--s-sm); }
+.skel.s { height:16px; width:40%; margin-bottom:var(--s-xl); }
+.skel.r { height:44px; margin-bottom:var(--s-sm); }
+
+/* ── 操作区（容器换行，禁止压缩按钮导致文字折行） ── */
+.actions { display:flex; flex-wrap:wrap; gap:var(--s-md); margin-top:var(--s-xl); }
+.actions.end { justify-content:flex-end; }
+
+/* ── 调试条（基线 §4.3 要求：当前页面 ID + 目标断点） ── */
+.debug { position:fixed; left:0; right:0; bottom:0; z-index:99;
+         display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--s-sm);
+         padding:var(--s-sm) var(--s-lg); background:var(--text-title); color:var(--bg-page); font-size:12px; }
+.debug .tog { display:flex; flex-wrap:wrap; gap:var(--s-sm); }
+.debug button { padding:2px var(--s-sm); border:1px solid var(--text-aux); border-radius:var(--r-sm);
+                background:transparent; color:inherit; font-size:12px; font-family:inherit; cursor:pointer; }
+.debug button:hover { border-color:var(--bg-page); }
+
+/* ── 响应式（移动优先：<640 单列 + 主操作吸底；基线 §9.2/§9.3） ── */
+@media (max-width:640px) {
+  .page { padding:var(--s-xl) var(--s-lg); }
+  .card { padding:var(--s-lg); }
+  .modes { grid-template-columns:1fr; }
+  .debug { font-size:11px; }
+  /* 移动端声明压成单行（2026-09-10 苑问选定方案②）：11px 低于基线 §5.2 的 12px 下限，
+     属**显式偏离**——换取操作栏不被两行声明撑高（113px → 约 92px）。
+     同时启用更短的移动端文案，保证在 375px 下真正单行不折。 */
+  .wizard-bar .lg-full { display:none; }
+  .wizard-bar .lg-short { display:inline; }
+  .wizard-bar .legal-text { font-size:11px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .opt, .mode-card, .icon-btn { transition:background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out; }
+}
+
+/* ── 暗色下「主色填充」的对比度修正 ──
+   基线 §5.1.2 把暗色 primary 提亮到 #6B8B77 是为了让主色**作为文字/描边**在深底上够亮；
+   但把该值用作**填充底色**时，白字对比度只有 3.76:1，低于 §10 的 4.5:1 底线。
+   故暗色下主色填充统一改用 --primary-deep（#4A6B57，白字 5.95:1）。
+   → 已登记为对 design 基线的回填建议（design-v2.md §8）。 */
+:root.dark .btn.primary { background:var(--primary-deep); }
+:root.dark .btn.primary:hover { filter:brightness(1.12); }
+:root.dark .btn.primary:active { filter:brightness(.94); }
+:root.dark .pill.reco { background:var(--primary-deep); }
+</style>
+</head>
+<body>
+
+<!-- ── 图标 sprite（lucide 线性图标路径内联，无外部依赖） ── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+</svg>
+
+<!-- ══════════════ 顶部栏 ══════════════ -->
+<header class="topbar">
+  <a class="brand" href="#p01">
+    <svg class="ic ic-lg mark"><use href="#i-compass"/></svg>
+    <span class="name">智策理财</span>
+  </a>
+  <div class="right">
+    <button class="icon-btn" id="theme-btn" onclick="cycleTheme()" aria-label="切换主题">
+      <svg class="ic" id="theme-icon"><use href="#i-sun" id="theme-use"/></svg>
+      <span id="theme-label">跟随系统</span>
+    </button>
+    <button class="icon-btn" onclick="location.hash='#p02'">
+      <svg class="ic"><use href="#i-logout"/></svg><span>退出</span>
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════ P01 产品首页 ══════════════ -->
+<main class="page wide" id="p01">
+ <div class="inner">
+  <h1 class="page-title">智策理财</h1>
+  <p class="page-sub">双层理财决策工具 · 免费层告诉你怎么做</p>
+
+  <!-- 空态（EMPTY-001 三要素） -->
+  <div class="card empty" id="p01-empty">
+    <div class="icon-wrap"><svg class="ic ic-lg"><use href="#i-compass"/></svg></div>
+    <p class="lead">还没有方案</p>
+    <p class="desc">完成 6 步问卷（约 2 分钟），得到你的第一份可照做的方案</p>
+    <a class="btn primary" href="#p03">开始问卷</a>
+  </div>
+
+  <!-- 有方案形态（金例 A 摘要） -->
+  <div class="card hidden" id="p01-summary">
+    <div class="head" style="display:flex;align-items:center;gap:var(--s-sm);flex-wrap:wrap;margin-bottom:var(--s-md)">
+      <span class="pill trust"><svg class="ic ic-sm"><use href="#i-check-circle"/></svg>已考证</span>
+      <span class="muted">四账户理财法 · 第 1 版 · 生成于 2026-09-09</span>
+    </div>
+    <p class="muted" style="margin-bottom:2px">每月可投资</p>
+    <p class="big" style="margin-bottom:var(--s-sm)">¥800.00</p>
+    <div class="banner ok" style="margin-bottom:var(--s-lg)">
+      <svg class="ic"><use href="#i-shield"/></svg>
+      <span>应急金当前约 <strong class="num">3.0</strong> 个月，还差约 <strong class="num">24</strong> 个月达标</span>
+    </div>
+    <div class="actions" style="margin-top:0">
+      <a class="btn primary" href="#p04">查看完整方案</a>
+      <a class="btn ghost" href="#p03"><svg class="ic"><use href="#i-refresh"/></svg>重新生成</a>
+    </div>
+  </div>
+
+  <!-- 加载态 -->
+  <div class="card hidden" id="p01-loading">
+    <div class="skel t"></div><div class="skel s"></div>
+    <div class="skel r" style="width:70%"></div><div class="skel r" style="width:50%"></div>
+  </div>
+
+  <!-- 健康状态与免责声明已移至站点页脚（页面底部），不再占据主视觉区 -->
+ </div>
+</main>
+
+<!-- ══════════════ P02 登录页 ══════════════ -->
+<main class="page hidden" id="p02">
+  <div class="card" style="max-width:400px;margin:var(--s-xxl) auto 0">
+    <h1 class="page-title" style="font-size:18px">登录</h1>
+    <p class="page-sub" style="margin-bottom:var(--s-xl)">使用你的账号继续</p>
+
+    <div class="banner warn hidden" id="p02-expired">
+      <svg class="ic"><use href="#i-alert"/></svg><span>登录已过期，请重新登录</span>
+    </div>
+    <div class="banner danger hidden" id="p02-ratelimit">
+      <svg class="ic"><use href="#i-alert"/></svg><span>操作太频繁，稍后再试</span>
+    </div>
+
+    <div class="field">
+      <label for="p02-user">用户名 <span class="req">*</span></label>
+      <input id="p02-user" type="text" placeholder="请输入用户名" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="p02-pw">密码 <span class="req">*</span></label>
+      <input id="p02-pw" type="password" placeholder="请输入密码" autocomplete="current-password">
+      <p class="err-msg hidden" id="p02-err">
+        <svg class="ic ic-sm"><use href="#i-alert"/></svg>用户名或密码不正确
+      </p>
+    </div>
+    <button class="btn primary block" onclick="demoLogin()">登录</button>
+    <p class="muted" style="margin-top:var(--s-md);text-align:center">回跳目标：/（来自 from 参数，仅接受站内路径）</p>
+  </div>
+</main>
+
+<!-- ══════════════ P03 引导问卷 ══════════════ -->
+<main class="page hidden" id="p03">
+  <div class="wizard-top">
+    <a class="back" href="#p01">
+      <svg class="ic ic-sm"><use href="#i-chevron-left"/></svg>返回首页
+    </a>
+    <span class="muted">每步自动保存草稿，中断后可恢复</span>
+  </div>
+  <div class="stepper">
+    <div class="seg" id="sg1"></div><div class="seg" id="sg2"></div><div class="seg" id="sg3"></div>
+    <div class="seg" id="sg4"></div><div class="seg" id="sg5"></div><div class="seg" id="sg6"></div>
+    <span class="count" id="step-label">1 / 6</span>
+  </div>
+
+  <!-- 步 1 久期 -->
+  <section class="qstep" id="q1">
+    <h1 class="page-title">这笔钱几年后要用？</h1>
+    <p class="page-sub">唯一直接决定这笔钱能不能进权益类的变量</p>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">1 年内</span></span></button>
+    <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">1-3 年</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">3-5 年</span></span></button>
+    <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">5-10 年</span><span class="d">　金例 A 选择</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">10 年以上</span></span></button>
+  </section>
+
+  <!-- 步 2 回撤反应 -->
+  <section class="qstep hidden" id="q2">
+    <h1 class="page-title">100 万跌到 70 万，你的第一反应是？</h1>
+    <p class="page-sub">行为比自评更诚实</p>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">清仓，先落袋</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">减仓观察</span></span></button>
+    <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">不动，按计划执行</span><span class="d">　金例 A 选择</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">加仓，跌了更便宜</span></span></button>
+  </section>
+
+  <!-- 步 3 收入稳定性 -->
+  <section class="qstep hidden" id="q3">
+    <h1 class="page-title">收入稳定吗？</h1>
+    <p class="page-sub">决定应急金要留几个月</p>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">很稳</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">一般</span></span></button>
+    <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">波动大</span><span class="d">　金例 A 选择</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">自由职业</span></span></button>
+  </section>
+
+  <!-- 步 4 保障与负债 -->
+  <section class="qstep hidden" id="q4">
+    <h1 class="page-title">已有保障与负债？</h1>
+    <p class="page-sub">房贷与保险本期仅记录，不影响方案数字</p>
+    <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">社保</span><span class="d">　有</span></span></button>
+    <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">商业保险</span><span class="d">　无</span></span></button>
+    <div class="field" style="margin-top:var(--s-md)">
+      <label for="q4-loan">房贷余额（选填）</label>
+      <input id="q4-loan" type="number" inputmode="decimal" placeholder="¥ 0">
+      <p class="hint">本期仅记录，不参与计算（产品 PRD §13.3 将房贷对比排在后续期）</p>
+    </div>
+    <div class="field">
+      <label for="q4-dep">需赡养人数 <span class="req">*</span></label>
+      <input id="q4-dep" type="number" inputmode="numeric" value="1">
+      <p class="hint">会影响应急金月数（上浮一档）</p>
+    </div>
+  </section>
+
+  <!-- 步 5 财务数字 -->
+  <section class="qstep hidden" id="q5">
+    <h1 class="page-title">你的基础财务数字</h1>
+    <p class="page-sub">只采 3 个数字，不问流水</p>
+    <div class="field">
+      <label for="q5-income">月收入（税后） <span class="req">*</span></label>
+      <input id="q5-income" type="number" inputmode="decimal" value="12000">
+    </div>
+    <div class="field">
+      <label for="q5-fixed">月固定支出 <span class="req">*</span></label>
+      <input id="q5-fixed" type="number" inputmode="decimal" value="4500">
+      <p class="hint">房租 / 房贷月供 / 车贷等每月必付</p>
+    </div>
+    <div class="field">
+      <label for="q5-save">现有存款（选填）</label>
+      <input id="q5-save" type="number" inputmode="decimal" value="24000">
+      <p class="hint">缺省视为 0</p>
+    </div>
+    <div class="field">
+      <p style="font-size:13px;font-weight:500;color:var(--text-title);margin-bottom:var(--s-sm)">理财目标 <span class="req">*</span></p>
+      <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">购房</span></span></button>
+      <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">子女教育</span></span></button>
+      <button class="opt"><svg class="ic mark"><use href="#i-circle"/></svg><span><span class="t">退休</span></span></button>
+      <button class="opt sel"><svg class="ic mark"><use href="#i-check-circle"/></svg><span><span class="t">财富增值</span><span class="d">　金例 A 选择</span></span></button>
+    </div>
+    <!-- 状态演示位：字段校验（ERR-007） -->
+    <div class="field hidden" id="q5-err-demo">
+      <label for="q5-bad">月收入（税后） <span class="req">*</span></label>
+      <input id="q5-bad" class="err" type="number" value="-5">
+      <p class="err-msg"><svg class="ic ic-sm"><use href="#i-alert"/></svg>金额需大于 0</p>
+    </div>
+  </section>
+
+  <!-- 步 6 推荐二选一 -->
+  <section class="qstep hidden" id="q6">
+    <h1 class="page-title">为你推荐</h1>
+    <p class="page-sub">任选其一，都能生成完整方案</p>
+    <div class="modes">
+      <button class="mode-card picked" onclick="pickMode(this)">
+        <span class="head">
+          <span class="pill reco">推荐</span>
+          <span class="pill trust"><svg class="ic ic-sm"><use href="#i-check-circle"/></svg>已考证</span>
+        </span>
+        <h3>四账户理财法</h3>
+        <p class="tagline">工资 · 消费 · 备用 · 投资</p>
+        <p class="reason">你的存款不足 3 个月固定支出，先建立分账纪律与应急金更合适</p>
+      </button>
+      <button class="mode-card" onclick="pickMode(this)">
+        <span class="head">
+          <span class="pill trust"><svg class="ic ic-sm"><use href="#i-check-circle"/></svg>已考证</span>
+        </span>
+        <h3>50/30/20</h3>
+        <p class="tagline">必要 50 / 想要 30 / 储蓄 20</p>
+        <p class="reason">结构最简洁，适合已有储蓄习惯的你</p>
+      </button>
+    </div>
+    <div class="banner danger hidden" id="q6-err">
+      <svg class="ic"><use href="#i-alert"/></svg><span>生成失败，已答内容已保存。稍后点重试再试一次</span>
+    </div>
+  </section>
+
+  <!-- 固定操作栏：跨步骤位置恒定（不随内容高度跳动）
+       上带 = 操作按钮（沿用页面底色，与内容区一体）；下带 = 独立声明条 -->
+  <div class="wizard-bar">
+    <div class="bar-actions">
+      <div class="row">
+        <button class="btn ghost" id="btn-prev" onclick="step(-1)">
+          <svg class="ic"><use href="#i-chevron-left"/></svg>上一步
+        </button>
+        <button class="btn primary" id="btn-next" onclick="step(1)">
+          下一步<svg class="ic"><use href="#i-chevron-right"/></svg>
+        </button>
+        <button class="btn primary hidden" id="gen-btn" onclick="demoGenerate()">生成方案</button>
+      </div>
+    </div>
+    <div class="bar-legal">
+      <p class="legal-text">
+        <span class="lg-full">本产品提供的所有理财均为基于公开理财理论的参考性建议，不构成任何形式的投资建议。</span>
+        <span class="lg-short">理财建议仅供参考，不构成投资建议。</span>
+      </p>
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════ P04 方案页（金例 A 五段） ══════════════ -->
+<main class="page hidden" id="p04">
+  <h1 class="page-title">你的方案</h1>
+  <p class="page-sub">四账户理财法 · 第 1 版 · 生成于 2026-09-09</p>
+
+  <div class="hidden" id="p04-loading">
+    <div class="skel t"></div><div class="skel s"></div>
+    <div class="skel r"></div><div class="skel r"></div><div class="skel r" style="width:60%"></div>
+  </div>
+
+  <div id="p04-body">
+    <section>
+      <h2>一、分配总览</h2>
+      <div class="card flush">
+        <table>
+          <thead><tr><th>账户</th><th class="n">每月转入</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="cell"><span class="dot" style="background:var(--c1)"></span>工资账户</span></td>
+              <td class="n">¥4,500.00</td>
+              <td class="muted">大额固定支出扣划</td>
+            </tr>
+            <tr>
+              <td><span class="cell"><span class="dot" style="background:var(--c2)"></span>消费账户</span></td>
+              <td class="n">¥3,600.00</td>
+              <td class="muted">日常饮食、交通、日用品</td>
+            </tr>
+            <tr>
+              <td><span class="cell"><span class="dot" style="background:var(--c3)"></span>备用账户</span></td>
+              <td class="n">¥3,100.00</td>
+              <td class="muted">目标覆盖 12 个月必要开支（当前约 3.0 个月，约 24 个月补齐）</td>
+            </tr>
+            <tr>
+              <td><span class="cell"><span class="dot" style="background:var(--c4)"></span>投资账户</span></td>
+              <td class="n">¥800.00</td>
+              <td class="muted">长期投资</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>二、投资账户内部配置</h2>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:var(--s-sm);flex-wrap:wrap;margin-bottom:var(--s-sm)">
+          <span class="pill trust">60/40</span>
+          <span class="muted">根据你的回撤反应与资金久期自动匹配</span>
+        </div>
+        <div class="bar">
+          <div style="width:60%;background:var(--c1)"></div>
+          <div style="width:40%;background:var(--c2)"></div>
+        </div>
+        <div class="legend">
+          <span><span class="k" style="background:var(--c1)"></span>权益类 60%</span>
+          <span><span class="k" style="background:var(--c2)"></span>债券类 40%</span>
+        </div>
+        <p class="muted" style="margin-top:var(--s-md)">仅到大类资产，不涉及任何具体产品</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>三、执行规则</h2>
+      <div class="card">
+        <p style="margin-bottom:var(--s-sm)">1. 每月发薪日定投，金额按上表执行</p>
+        <p style="margin-bottom:var(--s-sm)">2. 投资账户偏离目标比例 5% 时触发再平衡</p>
+        <p>3. 优先用新增资金补低配（现金再平衡，规避赎回费与择时）</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>四、落地建议</h2>
+      <div class="card">
+        <p style="margin-bottom:var(--s-sm)">建议开 2-3 张银行卡分别对应：工资卡（收薪）、消费卡（日常）、投资 + 备用卡（转入后按上表分配）。</p>
+        <p class="muted">仅为账户组织建议，不涉及任何划转操作</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>五、风险提示</h2>
+      <p class="disclaimer" style="margin:0">免责声明：本产品提供的所有理财方案和建议均为基于公开理财理论的参考性建议，不构成任何形式的投资建议、收益承诺或金融产品营销。所有涉及未来收益的内容均为基于假设的模拟推演，历史数据不代表未来表现。市场有风险，投资需谨慎。用户应根据自身实际情况独立做出财务决策，并自行承担相应风险。本产品不涉及任何形式的资金划转、托管或代持。</p>
+    </section>
+
+    <div class="actions">
+      <button class="btn ghost" onclick="location.hash='#p03'">
+        <svg class="ic"><use href="#i-refresh"/></svg>重新生成
+      </button>
+      <a class="btn ghost" href="#p01">返回首页</a>
+    </div>
+  </div>
+</main>
+
+<!-- ══════════════ 站点页脚（健康状态 + 免责声明） ══════════════ -->
+<footer class="site-footer">
+  <div class="inner">
+    <p class="status">
+      <svg class="ic ic-sm" style="color:var(--success)"><use href="#i-check-circle"/></svg>
+      服务在线 · 数据库已连接 · v0.2.0
+    </p>
+    <!-- 一行免责声明（默认）；完整文本（产品 PRD §13.1 原文）折叠在「完整声明」后 -->
+    <p class="legal">
+      本产品提供的所有理财均为基于公开理财理论的参考性建议，不构成任何形式的投资建议。
+      <button class="expand" onclick="toggleLegal()" aria-expanded="false" id="legal-toggle">完整声明</button>
+    </p>
+    <p class="legal-full hidden" id="legal-full">免责声明：本产品提供的所有理财方案和建议均为基于公开理财理论的参考性建议，不构成任何形式的投资建议、收益承诺或金融产品营销。所有涉及未来收益的内容均为基于假设的模拟推演，历史数据不代表未来表现。市场有风险，投资需谨慎。用户应根据自身实际情况独立做出财务决策，并自行承担相应风险。本产品不涉及任何形式的资金划转、托管或代持。</p>
+  </div>
+</footer>
+
+<!-- ══════════════ 调试条 ══════════════ -->
+<div class="debug">
+  <span id="dbg-page">页面：P01 · 断点：桌面 ≥1024 · 主题：跟随系统</span>
+  <div class="tog">
+    <button onclick="toggleViewport()">切换 375px 视口</button>
+    <button onclick="demoStates()">循环状态演示</button>
+  </div>
+</div>
+
+<script>
+/* ── 主题（class 策略；跟随系统 → 亮 → 暗 三态循环） ── */
+const THEMES = ['auto','light','dark'];
+const THEME_LABEL = { auto:'跟随系统', light:'亮色', dark:'暗色' };
+let themePref = localStorage.getItem('proto-theme') || 'auto';
+function applyTheme(){
+  const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = themePref === 'dark' || (themePref === 'auto' && sysDark);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('theme-use').setAttribute('href', dark ? '#i-moon' : '#i-sun');
+  document.getElementById('theme-label').textContent = THEME_LABEL[themePref];
+  updateDebug();
+}
+function cycleTheme(){
+  themePref = THEMES[(THEMES.indexOf(themePref) + 1) % THEMES.length];
+  localStorage.setItem('proto-theme', themePref);
+  applyTheme();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (themePref === 'auto') applyTheme(); });
+
+/* ── 哈希路由 ── */
+const PAGES = ['p01','p02','p03','p04'];
+function route(){
+  const h = (location.hash || '#p01').slice(1);
+  const id = PAGES.includes(h) ? h : 'p01';
+  PAGES.forEach(p => document.getElementById(p).classList.toggle('hidden', p !== id));
+  if (id === 'p02') document.getElementById('p02-expired').classList.toggle('hidden', !sessionStorage.getItem('expired'));
+  // P03：一行声明已在固定操作栏内，站点页脚整体隐藏——否则页脚会被推到操作按钮之上，
+  //      视觉上变成「免责声明在上、下一步在下」（2026-09-10 苑问走查反馈）。
+  // P04：免责声明是方案五段之一（正文已有），仅隐藏页脚 legal 行。
+  document.querySelector('.site-footer').classList.toggle('hidden', id === 'p03');
+  document.querySelector('.site-footer .legal').classList.toggle('hidden', id === 'p04');
+  collapseLegal();
+  syncFixedBars();
+  updateDebug();
+}
+
+/* ── 页脚免责声明：默认一行，按需展开完整文本 ── */
+function toggleLegal(){
+  const full = document.getElementById('legal-full');
+  const btn = document.getElementById('legal-toggle');
+  const open = full.classList.contains('hidden');
+  full.classList.toggle('hidden', !open);
+  btn.setAttribute('aria-expanded', String(open));
+  btn.textContent = open ? '收起' : '完整声明';
+}
+function collapseLegal(){
+  const full = document.getElementById('legal-full');
+  const btn = document.getElementById('legal-toggle');
+  if (!full || full.classList.contains('hidden')) return;
+  full.classList.add('hidden');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = '完整声明';
+}
+function updateDebug(){
+  const id = (location.hash || '#p01').slice(1).toUpperCase();
+  const w = innerWidth;
+  const bp = w < 640 ? '移动 <640' : w < 1024 ? '平板 640-1023' : '桌面 ≥1024';
+  document.getElementById('dbg-page').textContent = `页面：${id} · 断点：${bp} · 主题：${THEME_LABEL[themePref]}`;
+}
+addEventListener('hashchange', route);
+addEventListener("resize", () => { syncFixedBars(); updateDebug(); });
+
+/* ── P01 双形态 ── */
+let p01HasPlan = false;
+function setP01(hasPlan){
+  p01HasPlan = hasPlan;
+  document.getElementById('p01-empty').classList.toggle('hidden', hasPlan);
+  document.getElementById('p01-summary').classList.toggle('hidden', !hasPlan);
+  document.getElementById('p01-loading').classList.add('hidden');
+}
+
+/* ── 问卷步进（1-6） ── */
+let stepNo = 1;
+function step(d){
+  const next = stepNo + d;
+  if (next < 1 || next > 6) return;
+  if (stepNo === 6 && d === 1) { location.hash = '#p04'; return; }
+  stepNo = next; renderStep();
+}
+function gotoStep(n){ stepNo = n; renderStep(); }
+function renderStep(){
+  for (let i = 1; i <= 6; i++) document.getElementById('q'+i).classList.toggle('hidden', i !== stepNo);
+  for (let i = 1; i <= 6; i++){
+    const seg = document.getElementById('sg'+i);
+    seg.className = 'seg' + (i < stepNo ? ' done' : i === stepNo ? ' cur' : '');
+  }
+  document.getElementById('step-label').textContent = stepNo + ' / 6';
+  document.getElementById('btn-prev').style.visibility = stepNo === 1 ? 'hidden' : 'visible';
+  document.getElementById('btn-next').classList.toggle('hidden', stepNo === 6);
+  document.getElementById('gen-btn').classList.toggle('hidden', stepNo !== 6);
+  document.getElementById('q6-err').classList.add('hidden');
+  updateDebug();
+}
+
+/* ── 固定栏让位：实测调试条与向导操作栏高度，为 body 预留底部空间 ──
+   否则固定栏会压住站点页脚（页脚靠 margin-top:auto 吸在视口底部）。 */
+function syncFixedBars(){
+  const dbg = document.querySelector('.debug');
+  const bar = document.querySelector('.wizard-bar');
+  const dh = dbg ? dbg.offsetHeight : 0;
+  document.documentElement.style.setProperty('--debug-h', dh + 'px');
+  const active = (location.hash || '#p01').slice(1);
+  const wh = (bar && active === 'p03') ? bar.offsetHeight : 0;
+  document.body.style.paddingBottom = (dh + wh) + 'px';
+}
+
+/* ── 选项卡选中（同组互斥；色 + 勾双通道） ── */
+document.querySelectorAll('.opt').forEach(o => o.addEventListener('click', () => {
+  const group = o.parentElement;
+  group.querySelectorAll('.opt').forEach(x => {
+    x.classList.remove('sel');
+    const u = x.querySelector('use'); if (u) u.setAttribute('href', '#i-circle');
+  });
+  o.classList.add('sel');
+  const u = o.querySelector('use'); if (u) u.setAttribute('href', '#i-check-circle');
+}));
+
+/* ── 模式卡选择 ── */
+function pickMode(card){
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('picked'));
+  card.classList.add('picked');
+}
+
+/* ── 登录演示：首次凭证错，第二次通过 ── */
+let loginTries = 0;
+function demoLogin(){
+  loginTries++;
+  if (loginTries === 1){
+    document.getElementById('p02-err').classList.remove('hidden');
+    document.getElementById('p02-pw').classList.add('err');
+  } else {
+    localStorage.setItem('logged-in', '1');
+    location.hash = '#p01'; setP01(true);
+  }
+}
+
+/* ── 生成演示：加载态 → P04 骨架 → 五段 ── */
+function demoGenerate(){
+  const b = document.getElementById('gen-btn');
+  b.classList.add('disabled'); b.textContent = '生成中…';
+  setTimeout(() => {
+    b.classList.remove('disabled'); b.textContent = '生成方案';
+    location.hash = '#p04';
+    document.getElementById('p04-body').classList.add('hidden');
+    document.getElementById('p04-loading').classList.remove('hidden');
+    setTimeout(() => {
+      document.getElementById('p04-body').classList.remove('hidden');
+      document.getElementById('p04-loading').classList.add('hidden');
+    }, 700);
+  }, 800);
+}
+
+/* ── 状态循环演示（调试条） ── */
+const STATE_NAMES = ['P01 空态','P01 摘要（金例A）','P01 加载骨架','P02 凭证错误','P02 会话过期辅助条','P03 断点恢复（跳步4）','P03 字段校验错误','P04 加载骨架'];
+let stateIdx = 0;
+function demoStates(){
+  document.getElementById('p02-err').classList.add('hidden');
+  document.getElementById('p02-pw').classList.remove('err');
+  document.getElementById('p02-expired').classList.add('hidden');
+  document.getElementById('q5-err-demo').classList.add('hidden');
+  const s = stateIdx % STATE_NAMES.length; stateIdx++;
+  switch(s){
+    case 0: location.hash='#p01'; setP01(false); break;
+    case 1: location.hash='#p01'; setP01(true); break;
+    case 2: location.hash='#p01';
+            document.getElementById('p01-empty').classList.add('hidden');
+            document.getElementById('p01-summary').classList.add('hidden');
+            document.getElementById('p01-loading').classList.remove('hidden'); break;
+    case 3: location.hash='#p02';
+            document.getElementById('p02-err').classList.remove('hidden');
+            document.getElementById('p02-pw').classList.add('err'); break;
+    case 4: location.hash='#p02'; sessionStorage.setItem('expired','1');
+            document.getElementById('p02-expired').classList.remove('hidden'); break;
+    case 5: location.hash='#p03'; gotoStep(4); break;
+    case 6: location.hash='#p03'; gotoStep(5);
+            document.getElementById('q5-err-demo').classList.remove('hidden'); break;
+    case 7: location.hash='#p04';
+            document.getElementById('p04-body').classList.add('hidden');
+            document.getElementById('p04-loading').classList.remove('hidden');
+            setTimeout(()=>{ document.getElementById('p04-body').classList.remove('hidden');
+                             document.getElementById('p04-loading').classList.add('hidden'); }, 900); break;
+  }
+}
+
+/* ── 视口切换（调试用） ── */
+function toggleViewport(){
+  document.body.style.width = document.body.style.width === '375px' ? '' : '375px';
+  document.body.style.margin = document.body.style.width ? '0 auto' : '';
+}
+
+applyTheme(); syncFixedBars(); route(); renderStep();
+</script>
+</body>
+</html>

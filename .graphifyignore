@@ -1,0 +1,11 @@
+# graphify 扫描排除清单(gitignore 语法,锚定仓库根)
+#
+# web/vendor/ 是 A 期入库的 TS7 工具链资产(Go 二进制 tsc + lib.d.ts 全集,32MB),
+# 不是本项目代码。首次全量构建时它贡献了 7725/8210 个节点(94%),
+# 把知识图淹没在 DOM API 定义里 —— 排除之。
+web/vendor/
+
+# 构建产物与依赖(与 .gitignore 同源,双保险)
+web/node_modules/
+server/target/
+web/.next/
