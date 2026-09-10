@@ -47,11 +47,13 @@ export type UnwrapResult<T> =
  */
 export async function apiGet<T>(
   path: string,
+  opts: { cookie?: string } = {},
 ): Promise<{ status: number; envelope: ApiEnvelope<T> }> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
-      cache: "no-store", // health 类探测必须实时
+      cache: "no-store", // 会话与 health 类探测必须实时
+      headers: opts.cookie ? { cookie: opts.cookie } : undefined,
       signal: AbortSignal.timeout(5000),
     });
   } catch (e) {
@@ -65,4 +67,41 @@ export async function apiGet<T>(
     throw new BackendUnreachableError(e);
   }
   return { status: res.status, envelope: json };
+}
+
+/**
+ * POST 请求后端。登录需要两件 fetch 做不到的事:
+ * ① 把后端下发的 Set-Cookie 交给调用方(由 Server Action 写到浏览器);
+ * ② 不自动重定向(后端返回 401 时要读到信封而不是被跟随跳转吃掉)。
+ */
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+): Promise<{ status: number; envelope: ApiEnvelope<T>; setCookie: string | null }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+
+  const setCookie = res.headers.get("set-cookie");
+  // 204/空体(退出登录)也要能正常返回
+  const text = await res.text();
+  let envelope: ApiEnvelope<T>;
+  try {
+    envelope = text
+      ? (JSON.parse(text) as ApiEnvelope<T>)
+      : ({ success: res.ok } as ApiEnvelope<T>);
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+  return { status: res.status, envelope, setCookie };
 }

@@ -1,0 +1,67 @@
+/**
+ * 站点页脚(RULE-020):健康状态 + **一行**免责声明,完整原文折叠在「完整声明」后。
+ *
+ * 两处取舍(已记入 prd-v1 RULE-020):
+ * - 默认只显示一行:页脚要轻,原文的常驻可见性让位于此,一步可达即可;
+ * - 用原生 `<details>` 而非客户端状态:折叠是浏览器原生能力,不必为此引入
+ *   "use client"(design 基线 §7.4 组件复用规则、§8.2 少动效)。
+ *
+ * 字号取 `--text-label` 档(design 基线 §5.2 的最小档);不再更小 —— 越档即偏离基线。
+ */
+import { ChevronDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+interface SiteFooterProps {
+  /** 后端版本号;拿不到时不显示这一项 */
+  version?: string;
+  /** 健康状态:ok 显示绿点,否则黄点 */
+  healthy?: boolean;
+  /** P04 的风险提示是方案五段之一,页脚不再重复同一段文字 */
+  hideLegal?: boolean;
+  className?: string;
+}
+
+export function SiteFooter({
+  version,
+  healthy = true,
+  hideLegal = false,
+  className,
+}: SiteFooterProps) {
+  return (
+    <footer
+      className={cn("border-t border-divider bg-bg-card px-lg pt-base-lg pb-base-xxl", className)}
+    >
+      <div className="mx-auto flex max-w-7xl flex-col gap-base-xs">
+        <p className="flex items-center gap-base-xs text-label text-text-aux">
+          <span
+            aria-hidden="true"
+            className={cn("size-2 rounded-full", healthy ? "bg-success" : "bg-warning")}
+          />
+          服务在线{version ? ` · v${version}` : ""}
+        </p>
+
+        {hideLegal ? null : (
+          <details className="group text-label text-text-aux">
+            <summary className="flex cursor-pointer list-none items-center gap-base-xs marker:content-none">
+              <span>
+                本产品提供的所有理财均为基于公开理财理论的参考性建议,不构成任何形式的投资建议。
+              </span>
+              <span className="flex shrink-0 items-center gap-base-xs underline underline-offset-2">
+                <span className="group-open:hidden">完整声明</span>
+                <span className="hidden group-open:inline">收起</span>
+                <ChevronDown
+                  className="size-3 transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </span>
+            </summary>
+            <p className="pt-base-sm leading-relaxed">
+              免责声明:本产品提供的所有理财方案和建议均为基于公开理财理论的参考性建议,不构成任何形式的投资建议、收益承诺或金融产品营销。所有涉及未来收益的内容均为基于假设的模拟推演,历史数据不代表未来表现。市场有风险,投资需谨慎。用户应根据自身实际情况独立做出财务决策,并自行承担相应风险。本产品不涉及任何形式的资金划转、托管或代持。
+            </p>
+          </details>
+        )}
+      </div>
+    </footer>
+  );
+}
