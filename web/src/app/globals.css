@@ -31,6 +31,19 @@
   --color-bg-subtle: #f2f0ec;
   --color-bg-overlay: rgba(31, 31, 31, 0.45);
 
+  /*
+   * 基线 §6.3 图表固定色板(六个分类色,「禁止随机生成颜色」)。
+   * 基线只为图表色板给出一套值、未定义暗色变体(§5.1.2 只映射语义色),
+   * 故暗色下沿用同值 —— 低饱和色在深底上仍可辨,且不发明基线外的新色值。
+   * 首个色与 --color-primary 同值属基线原样(色板第一色即品牌主色)。
+   */
+  --color-chart-1: #4a6b57;
+  --color-chart-2: #8aa894;
+  --color-chart-3: #c8963e;
+  --color-chart-4: #7b8fa1;
+  --color-chart-5: #b08070;
+  --color-chart-6: #6e7f8d;
+
   /* ===== 基线 §5.2 字阶(六档,禁止档外字号) ===== */
   --text-page-title: 1.5rem; /* 24px */
   --text-page-title--font-weight: 600;
@@ -50,6 +63,14 @@
   --text-data: 0.9375rem; /* 15px */
   --text-data--font-weight: 500;
   --text-data--line-height: 1.4;
+  /*
+   * 声明条专用档(11px)。**显式偏离基线 §5.2 的 12px 下限** —— 2026-09-10 苑问选定,
+   * 理由是让 P03 固定操作栏在 375px 下真正单行不折(RULE-020 记有该偏离)。
+   * 唯一用途是操作栏内的声明行,不得当通用小字档使用。
+   */
+  --text-micro: 0.6875rem; /* 11px */
+  --text-micro--font-weight: 400;
+  --text-micro--line-height: 1.4;
 
   /* ===== 基线 §5.2 字体栈(不引入外部字体文件) ===== */
   --font-sans:
@@ -187,6 +208,14 @@
   --color-text-inverse: var(--color-text-inverse);
   --color-text-disabled: var(--color-text-disabled);
 
+  /* 基线 §6.3 图表色板(分类色,顺序即取值顺序) */
+  --color-chart-1: var(--color-chart-1);
+  --color-chart-2: var(--color-chart-2);
+  --color-chart-3: var(--color-chart-3);
+  --color-chart-4: var(--color-chart-4);
+  --color-chart-5: var(--color-chart-5);
+  --color-chart-6: var(--color-chart-6);
+
   /* 基线 §5.2 字阶六档(:root 存字号/字重/行高三元组;主值 inline 引用,元组变量同步注册,
    * Tailwind v4 将 --text-X--font-weight/--text-X--line-height 合并进对应字号工具类) */
   --text-page-title: var(--text-page-title);
@@ -207,6 +236,10 @@
   --text-data: var(--text-data);
   --text-data--font-weight: var(--text-data--font-weight);
   --text-data--line-height: var(--text-data--line-height);
+  /* 声明条档(11px,显式偏离基线 §5.2 下限 —— 见 :root 注释与 prd-v1 RULE-020) */
+  --text-micro: var(--text-micro);
+  --text-micro--font-weight: var(--text-micro--font-weight);
+  --text-micro--line-height: var(--text-micro--line-height);
 
   /* 基线 §5.3 间距六档(注册名加 base- 前缀:裸 xs/sm/…/xxl 档名会撞 Tailwind 内置刻度——
    * 注册 --spacing-xl 后 v4 把 max-w-xl 从容器刻度 36rem 劫持成 20px。base- 前缀错开,

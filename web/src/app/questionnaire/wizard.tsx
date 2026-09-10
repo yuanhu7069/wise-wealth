@@ -7,11 +7,14 @@
  * 完成态如实告诉用户下一步会是什么,不用占位内容假装已实现。
  */
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { LEGAL_LINE, LEGAL_LINE_SHORT } from "@/lib/disclaimer-copy";
 import { cn } from "@/lib/utils";
 
+import { generatePlanAction } from "@/app/plan/actions";
 import { loadModesAction, saveStepAction } from "./actions";
 import {
   type Answers,
@@ -136,14 +139,27 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
   const [modes, setModes] = useState<ModesData | null>(null);
   const [modesError, setModesError] = useState("");
   const [chosen, setChosen] = useState<string>("");
-  const [planNotice, setPlanNotice] = useState(false);
+  // 方案生成的失败态:文案 + 是否只是会话过期(决定给「重试」还是「重新登录」)
+  const [planError, setPlanError] = useState("");
+  const [planExpired, setPlanExpired] = useState(false);
+  const router = useRouter();
 
   /**
-   * 步 6 的「生成方案」。方案生成是下一张工单(05)的内容 ——
-   * 这里如实说明,不用假数据或假跳转把流程装成已经打通。
+   * 步 6 的「生成方案」。生成成功跳 P04;失败留在本步并给出可重试的错误态 ——
+   * 已答问卷都在服务端,重试不会让用户重答(prd-v1 §8.2 异常路径)。
    */
   function generatePlan() {
-    setPlanNotice(true);
+    setPlanError("");
+    setPlanExpired(false);
+    startTransition(async () => {
+      const result = await generatePlanAction(chosen);
+      if (result.ok) {
+        router.push("/plan");
+        return;
+      }
+      setPlanExpired(Boolean(result.expired));
+      setPlanError(result.error);
+    });
   }
 
   useEffect(() => {
@@ -405,11 +421,19 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
               </p>
             </>
           ) : null}
-          {planNotice ? (
-            <p className="rounded-sm bg-bg-subtle px-base-md py-base-sm text-label text-text-body">
-              已选择「{modes?.items.find((c) => c.id === chosen)?.name}
-              」。方案生成是下一步开发的内容,届时会直接给出方案表。
-            </p>
+          {planError ? (
+            <div
+              role="alert"
+              className="flex flex-col gap-base-xs rounded-md border border-divider bg-bg-subtle px-base-lg py-base-md"
+            >
+              <p className="text-body font-medium text-danger">方案没能生成</p>
+              <p className="text-aux text-text-body">{planError}</p>
+              <p className="text-label text-text-aux">
+                {planExpired
+                  ? "重新登录后会回到这一步,已答的问卷都在。"
+                  : "你已答的问卷都在,点下方「生成方案」可原样重试。"}
+              </p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -423,26 +447,45 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         </p>
       ) : null}
 
-      {/* 固定操作栏:跨步骤位置恒定,不随内容高度跳动(design-v2 §2.1) */}
-      <div className="sticky bottom-0 flex gap-base-md border-t border-divider bg-bg-page py-base-md">
-        {step > 1 ? (
+      {/*
+        固定操作栏:跨步骤位置恒定,不随内容高度跳动(design-v2 §2.1 / v0.5)。
+        两条视觉分层的带(v0.7):上带读作「内容区的一部分」(页面底色 + 发丝分隔线),
+        下带读作「独立声明条」(次级底色)。P03 **不显示站点页脚** —— 声明就在这一行(RULE-020)。
+      */}
+      <div className="sticky bottom-0 mt-base-md border-t border-divider">
+        <div className="flex gap-base-md bg-bg-page py-base-md">
+          {step > 1 ? (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setStep(step - 1)}
+              disabled={pending}
+            >
+              ← 上一步
+            </Button>
+          ) : null}
           <Button
-            variant="secondary"
             type="button"
-            onClick={() => setStep(step - 1)}
-            disabled={pending}
+            className="ml-auto"
+            onClick={() => (step === TOTAL_STEPS ? generatePlan() : submit(step + 1))}
+            disabled={pending || (step === TOTAL_STEPS && !chosen)}
           >
-            ← 上一步
+            {pending
+              ? step === TOTAL_STEPS
+                ? "生成中…"
+                : "保存中…"
+              : step === TOTAL_STEPS
+                ? "生成方案"
+                : "下一步 →"}
           </Button>
-        ) : null}
-        <Button
-          type="button"
-          className="ml-auto"
-          onClick={() => (step === TOTAL_STEPS ? generatePlan() : submit(step + 1))}
-          disabled={pending || (step === TOTAL_STEPS && !chosen)}
-        >
-          {pending ? "保存中…" : step === TOTAL_STEPS ? "生成方案" : "下一步 →"}
-        </Button>
+        </div>
+        <div className="border-t border-divider bg-bg-subtle px-base-md py-base-xs">
+          {/* 移动端用更短文案(text-micro 档)保证 375 宽下真正单行不折 —— RULE-020 的显式偏离 */}
+          <p className="text-micro text-text-aux sm:text-label">
+            <span className="sm:hidden">{LEGAL_LINE_SHORT}</span>
+            <span className="hidden sm:inline">{LEGAL_LINE}</span>
+          </p>
+        </div>
       </div>
     </div>
   );

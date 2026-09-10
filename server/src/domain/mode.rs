@@ -164,7 +164,7 @@ pub struct L2Config {
 /// L2 里的一个资产大类。**只到大类**,不出现任何具体产品(合规红线,产品 PRD §九)。
 ///
 /// 同时实现 `Serialize`:匹配结果要随方案快照一起冻结进库,配置日后改动不影响历史方案。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct L2Class {
     /// 大类名(权益类/债券类/黄金/现金类…)
     pub name: String,

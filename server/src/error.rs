@@ -90,6 +90,10 @@ pub enum AppError {
     #[error("请求过于频繁")]
     RateLimited,
 
+    /// 资源不存在(如尚未生成过方案)。文案面向用户。
+    #[error("{0}")]
+    NotFound(String),
+
     /// 入参校验失败(DTO 层)。文案面向用户,不含技术细节。
     #[error("校验失败: {0}")]
     Validation(String),
@@ -116,6 +120,7 @@ impl IntoResponse for AppError {
             AppError::Unauthorized => (ErrorCode::UNAUTHORIZED, "登录已过期,请重新登录"),
             AppError::InvalidCredentials => (ErrorCode::UNAUTHORIZED, "用户名或密码不正确"),
             AppError::RateLimited => (ErrorCode::RATE_LIMITED, "操作太频繁了,稍后再试"),
+            AppError::NotFound(msg) => (ErrorCode::NOT_FOUND, msg.as_str()),
             AppError::Validation(msg) => (ErrorCode::VALIDATION_ERROR, msg.as_str()),
             AppError::Database(err) => {
                 // 技术细节只进日志,不进响应(红线 8)

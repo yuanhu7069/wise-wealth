@@ -37,7 +37,7 @@ pub struct BucketAmount {
 }
 
 /// 应急金状态(RULE-009 ~ RULE-013)。两种模式都有 —— 无规则桶的模式同样需要达标标注。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct EmergencyStatus {
     /// 应急目标月数
     pub months: i32,
@@ -61,7 +61,7 @@ pub struct EmergencyStatus {
 }
 
 /// 方案提示。UI 按此渲染警示条,引擎只给事实不给文案。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Notice {
     /// 收入不足以覆盖固定支出与比例桶(safety_first 链走到尽头)

@@ -1,0 +1,143 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, l1_mode, l2_mode, version, is_active,\n               to_char(created_at, 'YYYY-MM-DD') AS \"created_date!\",\n               profile_snapshot_json, l2_allocation_json, emergency_json,\n               notices_json, traces_json\n        FROM plans\n        WHERE user_id = $1 AND is_active\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "l1_mode",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "l1_mode"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "l2_mode",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "l2_mode"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "is_active",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "is_active"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_date!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "profile_snapshot_json",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "profile_snapshot_json"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "l2_allocation_json",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "l2_allocation_json"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "emergency_json",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "emergency_json"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "notices_json",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "notices_json"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "traces_json",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "traces_json"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "17d67328fbefc3342e536ba8b0c3d58dba3f2987bc546690edf12d1be5f83bef"
+}

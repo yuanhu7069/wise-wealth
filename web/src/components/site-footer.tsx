@@ -10,6 +10,7 @@
  */
 import { ChevronDown } from "lucide-react";
 
+import { DISCLAIMER_FULL, LEGAL_LINE } from "@/lib/disclaimer-copy";
 import { cn } from "@/lib/utils";
 
 interface SiteFooterProps {
@@ -44,9 +45,7 @@ export function SiteFooter({
         {hideLegal ? null : (
           <details className="group text-label text-text-aux">
             <summary className="flex cursor-pointer list-none items-center gap-base-xs marker:content-none">
-              <span>
-                本产品提供的所有理财均为基于公开理财理论的参考性建议,不构成任何形式的投资建议。
-              </span>
+              <span>{LEGAL_LINE}</span>
               <span className="flex shrink-0 items-center gap-base-xs underline underline-offset-2">
                 <span className="group-open:hidden">完整声明</span>
                 <span className="hidden group-open:inline">收起</span>
@@ -56,9 +55,7 @@ export function SiteFooter({
                 />
               </span>
             </summary>
-            <p className="pt-base-sm leading-relaxed">
-              免责声明:本产品提供的所有理财方案和建议均为基于公开理财理论的参考性建议,不构成任何形式的投资建议、收益承诺或金融产品营销。所有涉及未来收益的内容均为基于假设的模拟推演,历史数据不代表未来表现。市场有风险,投资需谨慎。用户应根据自身实际情况独立做出财务决策,并自行承担相应风险。本产品不涉及任何形式的资金划转、托管或代持。
-            </p>
+            <p className="pt-base-sm leading-relaxed">{DISCLAIMER_FULL}</p>
           </details>
         )}
       </div>

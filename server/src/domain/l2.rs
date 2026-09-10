@@ -26,7 +26,7 @@ pub fn required_l2_ids() -> impl Iterator<Item = &'static str> {
 }
 
 /// 匹配结果:既供页面渲染,也整体进方案快照(方案一旦生成,配置再改也不影响历史)。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct L2Allocation {
     /// 配置 id
     pub id: String,

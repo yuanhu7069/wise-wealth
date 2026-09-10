@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-import { SiteFooter } from "@/components/site-footer";
-import { apiGet, type HealthData } from "@/lib/api";
-
 export const metadata: Metadata = {
   title: "智策理财",
   description: "双层理财决策工具:免费层告诉你怎么做",
@@ -15,29 +12,18 @@ export const viewport: Viewport = {
 };
 
 /**
- * 页脚的健康状态在 layout 里取:它是运维指示器,与具体业务页无关。
- * 取不到(后端未启动)时降级为黄点 —— 不让一个探测失败把整页打崩(基线 §10.2)。
+ * 根布局只做骨架:html/body 与主题底色。
+ *
+ * **站点页脚不在这一层**:B 期页脚的承载位置按页不同(RULE-020)——P01/P02 显示站点页脚、
+ * P03 只在操作栏内显示一行声明、P04 显示页脚但隐藏 legal 行。layout 拿不到当前路由,
+ * 统一渲染必然把声明放到不该出现的位置(这正是 design-v2 v0.5/v0.6 记录的两次走查缺陷)。
+ * 故页脚由各页自行渲染 `SiteFooterShell`,这里只保证「内容不足一屏时页脚落底」的列式骨架。
  */
-async function footerStatus(): Promise<{ healthy: boolean; version?: string }> {
-  try {
-    const { envelope } = await apiGet<HealthData>("/api/v1/health");
-    return {
-      healthy: envelope.success && envelope.data?.db === "ok",
-      version: envelope.data?.version,
-    };
-  } catch {
-    return { healthy: false };
-  }
-}
-
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const status = await footerStatus();
-
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="flex min-h-full flex-col bg-bg-page">
-        <div className="flex-1">{children}</div>
-        <SiteFooter healthy={status.healthy} version={status.version} />
+        <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );

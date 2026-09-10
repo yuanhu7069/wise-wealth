@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO plans (\n            id, user_id, l1_mode, l2_mode, version, is_active,\n            profile_snapshot_json, l2_allocation_json, emergency_json,\n            notices_json, traces_json\n        )\n        VALUES (\n            $1, $2, $3, $4,\n            (SELECT COALESCE(MAX(version), 0) + 1 FROM plans WHERE user_id = $2),\n            TRUE, $5, $6, $7, $8, $9\n        )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bde4e4f9e90d11d1b62b3d22be85c3c323bc1b576f37b22cc2dbb47375f9f4f8"
+}

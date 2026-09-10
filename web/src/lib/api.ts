@@ -73,16 +73,23 @@ export async function apiGet<T>(
  * POST 请求后端。登录需要两件 fetch 做不到的事:
  * ① 把后端下发的 Set-Cookie 交给调用方(由 Server Action 写到浏览器);
  * ② 不自动重定向(后端返回 401 时要读到信封而不是被跟随跳转吃掉)。
+ *
+ * `cookie` 供**需要带会话调用**的 POST(方案生成)使用:令牌是 HttpOnly,
+ * 只有服务端能把它转发给后端 —— 与 apiPut 的第三个参数同一理由。
  */
 export async function apiPost<T>(
   path: string,
   body: unknown,
+  cookie?: string,
 ): Promise<{ status: number; envelope: ApiEnvelope<T>; setCookie: string | null }> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(cookie ? { cookie } : {}),
+      },
       body: JSON.stringify(body),
       cache: "no-store",
       redirect: "manual",
