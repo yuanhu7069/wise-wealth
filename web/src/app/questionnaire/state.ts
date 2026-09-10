@@ -88,3 +88,37 @@ export function toCents(yuan: string): number | null {
   if (!Number.isFinite(value)) return null;
   return Math.round(value * 100);
 }
+
+/** 模式卡(字段全部来自后端 TOML 配置,页面不硬编码模式信息) */
+export interface ModeCard {
+  id: string;
+  name: string;
+  tagline: string;
+  credibility: Credibility;
+  fit_for: string[];
+  is_recommended: boolean;
+}
+
+export type Credibility = "verified" | "disputed" | "caution";
+
+/** 可信度徽章文案(产品 PRD §4.1.2 三级) */
+export const CREDIBILITY_LABEL: Record<Credibility, string> = {
+  verified: "已考证",
+  disputed: "存疑",
+  caution: "谨慎",
+};
+
+/** L2 预览:选定模式后投资部分会怎么配 */
+export interface L2Preview {
+  name: string;
+  reason: string;
+  classes: ReadonlyArray<{ name: string; basis_points: number }>;
+}
+
+/** GET /api/v1/modes 的响应 */
+export interface ModesData {
+  items: ModeCard[];
+  recommended_id?: string | null;
+  recommendation_reason: string;
+  l2: L2Preview;
+}

@@ -4,6 +4,7 @@ pub mod middleware;
 pub mod v1 {
     pub mod auth;
     pub mod health;
+    pub mod modes;
     pub mod profiles;
 }
 
@@ -40,6 +41,7 @@ pub fn routes(state: AppState) -> Router {
             "/profiles/me/step",
             put(crate::api::v1::profiles::save_step),
         )
+        .route("/modes", get(crate::api::v1::modes::list_modes))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             crate::api::middleware::require_auth,

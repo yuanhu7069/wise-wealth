@@ -4,7 +4,7 @@ use axum::extract::State;
 use axum::{Extension, Json};
 
 use crate::api::middleware::CurrentUser;
-use crate::domain::profile::{DrawdownResponse, Goal, Horizon, IncomeStability};
+use crate::domain::profile::{DrawdownResponse, Goal, Horizon, IncomeStability, Profile};
 use crate::dto::profile::{ProfileView, StepRequest};
 use crate::error::{ApiOk, AppError};
 use crate::repos;
@@ -17,6 +17,23 @@ use crate::state::AppState;
 fn parse<T: serde::de::DeserializeOwned>(raw: &Option<String>) -> Option<T> {
     raw.as_ref()
         .and_then(|s| serde_json::from_value(serde_json::Value::String(s.clone())).ok())
+}
+
+/// 行 → **领域档案**。任一必填项缺失或无法解析即返回 None,
+/// 调用方据此判断「档案不完整」而不是拿半份档案去算方案。
+///
+/// 与 `to_view` 分开:视图要如实呈现「哪些还没填」,领域档案要的是「能不能算」。
+pub fn to_domain_profile(row: &ProfileRow) -> Option<Profile> {
+    Some(Profile {
+        horizon: parse(&row.horizon)?,
+        drawdown_response: parse(&row.drawdown_response)?,
+        income_stability: parse(&row.income_stability)?,
+        dependents: u32::try_from(row.dependents?).ok()?,
+        inflow_cents: row.inflow_cents?,
+        expense_fixed_monthly_cents: row.expense_fixed_monthly_cents?,
+        savings_cents: row.savings_cents.unwrap_or(0),
+        goal: parse(&row.goal)?,
+    })
 }
 
 /// 行 → 视图(DTO 与表结构的翻译层)

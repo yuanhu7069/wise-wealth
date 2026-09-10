@@ -6,7 +6,7 @@ import { apiGet } from "@/lib/api";
 import { requireSession, SESSION_COOKIE } from "@/lib/session";
 import { cookies } from "next/headers";
 
-import type { Answers } from "./state";
+import { type Answers, TOTAL_STEPS } from "./state";
 import { Wizard } from "./wizard";
 
 interface ProfileView {
@@ -40,7 +40,8 @@ export default async function QuestionnairePage() {
     });
     if (envelope.success && envelope.data) {
       const p = envelope.data;
-      step = p.questionnaire_completed ? 1 : Math.max(1, Math.min(p.draft_step, 5));
+      // 断点即进度:答完的人再进来直接看到推荐(步 6),要改答案就点「上一步」
+      step = Math.max(1, Math.min(p.draft_step, TOTAL_STEPS));
       answers = {
         horizon: p.horizon,
         drawdown_response: p.drawdown_response,

@@ -8,10 +8,10 @@
  */
 import { cookies } from "next/headers";
 
-import { apiPut, BackendUnreachableError } from "@/lib/api";
+import { apiGet, apiPut, BackendUnreachableError } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/session";
 
-import type { Answers, SaveResult } from "./state";
+import type { Answers, ModesData, SaveResult } from "./state";
 
 interface ProfileView {
   draft_step: number;
@@ -41,6 +41,35 @@ export async function saveStepAction(step: number, answers: Answers): Promise<Sa
     }
     // 后端给的是面向用户的校验文案(如「金额需大于 0」),直接透出
     return { ok: false, error: envelope.message ?? "保存失败,请稍后重试" };
+  } catch (e) {
+    if (e instanceof BackendUnreachableError) {
+      return { ok: false, error: "服务暂时不可用,请确认后端已启动后重试" };
+    }
+    throw e;
+  }
+}
+
+/** 步 6 的模式列表与推荐。按需拉取:可能是用户本次刚答完问卷,页面初次渲染时还没有档案。 */
+export async function loadModesAction(): Promise<
+  { ok: true; data: ModesData } | { ok: false; error: string }
+> {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) {
+    return { ok: false, error: "登录已过期,请重新登录" };
+  }
+
+  try {
+    const { status, envelope } = await apiGet<ModesData>("/api/v1/modes", {
+      cookie: `${SESSION_COOKIE}=${token}`,
+    });
+    if (status === 200 && envelope.success && envelope.data) {
+      return { ok: true, data: envelope.data };
+    }
+    if (status === 401) {
+      return { ok: false, error: "登录已过期,请重新登录" };
+    }
+    return { ok: false, error: envelope.message ?? "推荐加载失败,请稍后重试" };
   } catch (e) {
     if (e instanceof BackendUnreachableError) {
       return { ok: false, error: "服务暂时不可用,请确认后端已启动后重试" };

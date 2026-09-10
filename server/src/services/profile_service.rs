@@ -102,7 +102,7 @@ pub fn apply_step(current: &ProfileRow, req: &StepRequest) -> Result<ProfileRow,
             next.expense_fixed_monthly_cents = Some(fixed);
             next.savings_cents = Some(savings);
             next.goal = Some(wire(&goal));
-            next.questionnaire_completed = true;
+            next.questionnaire_completed = next.is_complete();
         }
         _ => return Err(StepError::InvalidStep),
     }
@@ -225,11 +225,38 @@ mod tests {
     }
 
     #[test]
-    fn 步五完成标记问卷已完成且推进到推荐步() {
-        let row = apply_step(&empty(), &step5()).unwrap();
-        assert!(row.questionnaire_completed);
-        assert_eq!(row.draft_step, 6);
-        assert_eq!(row.inflow_cents, Some(1_200_000));
+    fn 步五答全才标记完成() {
+        // 只有步 5:前面的步没答,不算完成(否则推荐端点会拿到半份档案)
+        let only5 = apply_step(&empty(), &step5()).unwrap();
+        assert!(!only5.questionnaire_completed, "跳步作答不该标记完成");
+        assert_eq!(only5.draft_step, 6, "进度仍推进到推荐步");
+
+        // 逐步答全:标记完成
+        let mut row = apply_step(&empty(), &step1()).unwrap();
+        let mut r2 = step1();
+        r2.step = 2;
+        r2.drawdown_response = Some(DrawdownResponse::Hold);
+        row = apply_step(&row, &r2).unwrap();
+        let mut r3 = step1();
+        r3.step = 3;
+        r3.income_stability = Some(IncomeStability::Volatile);
+        row = apply_step(&row, &r3).unwrap();
+        let mut r4 = step1();
+        r4.step = 4;
+        r4.dependents = Some(1);
+        row = apply_step(&row, &r4).unwrap();
+        let row = apply_step(&row, &step5()).unwrap();
+        assert!(row.questionnaire_completed, "答全五步才标记完成");
+    }
+
+    #[test]
+    fn 完整判定不看标志位只看字段() {
+        // 人为构造「标志为真但字段缺失」的行,is_complete 必须说假
+        let row = ProfileRow {
+            questionnaire_completed: true,
+            ..ProfileRow::default()
+        };
+        assert!(!row.is_complete(), "标志位不可信,要看字段");
     }
 
     #[test]

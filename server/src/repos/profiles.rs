@@ -55,6 +55,20 @@ impl Default for ProfileRow {
     }
 }
 
+impl ProfileRow {
+    /// 问卷是否真的答全了。**不看 `questionnaire_completed` 标志** ——
+    /// 那个标志只说明「用户答过步 5」,不保证步 1-4 都答了(跳步就能绕过)。
+    pub fn is_complete(&self) -> bool {
+        self.horizon.is_some()
+            && self.drawdown_response.is_some()
+            && self.income_stability.is_some()
+            && self.dependents.is_some()
+            && self.inflow_cents.is_some()
+            && self.expense_fixed_monthly_cents.is_some()
+            && self.goal.is_some()
+    }
+}
+
 /// 读取用户档案。`None` 表示还没答过任何一步。
 pub async fn get(pool: &PgPool, user_id: Uuid) -> Result<Option<ProfileRow>, sqlx::Error> {
     let row = sqlx::query!(

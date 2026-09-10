@@ -7,18 +7,19 @@
  * 完成态如实告诉用户下一步会是什么,不用占位内容假装已实现。
  */
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { saveStepAction } from "./actions";
+import { loadModesAction, saveStepAction } from "./actions";
 import {
   type Answers,
   DRAWDOWN_OPTIONS,
   GOAL_OPTIONS,
   HORIZON_OPTIONS,
-  LAST_ANSWER_STEP,
+  CREDIBILITY_LABEL,
+  type ModesData,
   STABILITY_OPTIONS,
   STEP_COPY,
   TOTAL_STEPS,
@@ -114,7 +115,8 @@ function NumberField({
 const STEP_NUMBERS = Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1);
 
 export function Wizard({ initialStep, initialAnswers }: WizardProps) {
-  const [step, setStep] = useState(Math.min(initialStep, LAST_ANSWER_STEP));
+  // 钳制到总步数(不是"最后作答步"):答完的人应当直接落在步 6 的推荐上
+  const [step, setStep] = useState(Math.min(Math.max(initialStep, 1), TOTAL_STEPS));
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   // 金额输入以「元」为单位保留字符串,提交时才转分 —— 避免把「12000.」这类中间态吃掉
   const [yuan, setYuan] = useState({
@@ -129,8 +131,33 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
     dependents: initialAnswers.dependents !== undefined ? String(initialAnswers.dependents) : "0",
   });
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
+  // 步 6:推荐按需拉取(可能是用户本次刚答完,页面初次渲染时还没有档案)
+  const [modes, setModes] = useState<ModesData | null>(null);
+  const [modesError, setModesError] = useState("");
+  const [chosen, setChosen] = useState<string>("");
+  const [planNotice, setPlanNotice] = useState(false);
+
+  /**
+   * 步 6 的「生成方案」。方案生成是下一张工单(05)的内容 ——
+   * 这里如实说明,不用假数据或假跳转把流程装成已经打通。
+   */
+  function generatePlan() {
+    setPlanNotice(true);
+  }
+
+  useEffect(() => {
+    if (step !== TOTAL_STEPS || modes) return;
+    let alive = true;
+    void loadModesAction().then((result) => {
+      if (!alive) return;
+      if (result.ok) setModes(result.data);
+      else setModesError(result.error);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [step, modes]);
 
   const patch = (p: Partial<Answers>) => setAnswers((prev) => ({ ...prev, ...p }));
 
@@ -166,28 +193,8 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         setError(result.error ?? "保存失败,请稍后重试");
         return;
       }
-      if (step === LAST_ANSWER_STEP) {
-        setDone(true);
-        return;
-      }
       setStep(next);
     });
-  }
-
-  if (done) {
-    return (
-      <div className="flex flex-col gap-base-lg">
-        <div className="rounded-lg border border-divider bg-bg-card p-base-xl">
-          <p className="text-body font-medium text-text-title">问卷已完成</p>
-          <p className="pt-base-xs text-label text-text-aux">
-            你的档案已保存。模式推荐与方案生成是下一步开发的内容,届时这里会直接给出推荐结果。
-          </p>
-        </div>
-        <Link href="/" className="text-body text-primary underline">
-          返回首页
-        </Link>
-      </div>
-    );
   }
 
   const copy = STEP_COPY[step - 1];
@@ -346,6 +353,67 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         </div>
       ) : null}
 
+      {step === TOTAL_STEPS ? (
+        <div className="flex flex-col gap-base-md">
+          {modesError ? (
+            <p role="alert" className="text-label text-danger">
+              {modesError}
+            </p>
+          ) : null}
+          {!modes && !modesError ? <p className="text-label text-text-aux">正在生成推荐…</p> : null}
+          {modes ? (
+            <>
+              <div className="grid gap-base-md md:grid-cols-2">
+                {modes.items.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={chosen === c.id}
+                    onClick={() => setChosen(c.id)}
+                    className={cn(
+                      "flex flex-col gap-base-sm rounded-lg border p-base-lg text-left",
+                      chosen === c.id
+                        ? "border-2 border-primary bg-primary-bg"
+                        : "border-divider bg-bg-card hover:border-text-aux",
+                    )}
+                  >
+                    <span className="flex flex-wrap items-center gap-base-xs">
+                      {c.is_recommended ? (
+                        <span className="rounded-full bg-primary px-base-sm text-label text-text-inverse">
+                          推荐
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-primary-bg px-base-sm text-label text-primary">
+                        {CREDIBILITY_LABEL[c.credibility]}
+                      </span>
+                    </span>
+                    <span className="text-body font-medium text-text-title">{c.name}</span>
+                    <span className="text-label text-text-aux">{c.tagline}</span>
+                    {c.is_recommended ? (
+                      <span className="border-t border-divider pt-base-sm text-label text-text-body">
+                        {modes.recommendation_reason}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+              <p className="text-label text-text-aux">
+                投资部分将按 {modes.l2.name} 配置:
+                {modes.l2.classes
+                  .map((cl) => `${cl.name} ${Math.round(cl.basis_points / 100)}%`)
+                  .join(" / ")}
+              </p>
+            </>
+          ) : null}
+          {planNotice ? (
+            <p className="rounded-sm bg-bg-subtle px-base-md py-base-sm text-label text-text-body">
+              已选择「{modes?.items.find((c) => c.id === chosen)?.name}
+              」。方案生成是下一步开发的内容,届时会直接给出方案表。
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       {error ? (
         <p
           role="alert"
@@ -370,10 +438,10 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         <Button
           type="button"
           className="ml-auto"
-          onClick={() => submit(step + 1)}
-          disabled={pending}
+          onClick={() => (step === TOTAL_STEPS ? generatePlan() : submit(step + 1))}
+          disabled={pending || (step === TOTAL_STEPS && !chosen)}
         >
-          {pending ? "保存中…" : step === LAST_ANSWER_STEP ? "完成问卷" : "下一步 →"}
+          {pending ? "保存中…" : step === TOTAL_STEPS ? "生成方案" : "下一步 →"}
         </Button>
       </div>
     </div>

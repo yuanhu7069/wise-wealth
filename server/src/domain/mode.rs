@@ -13,7 +13,7 @@ include!(concat!(env!("OUT_DIR"), "/mode_sources.rs"));
 
 /// 出处可信度(产品 PRD §4.1.2)。用枚举而非字符串:写错成 "vrefied" 应在解析期被拒,
 /// 而不是静默加载成一个没人认识的档位。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Credibility {
     /// 已考证:有明确出版物/机构来源
@@ -25,7 +25,7 @@ pub enum Credibility {
 }
 
 /// 规则桶可用的规则。枚举而非字符串白名单 —— 新规则必然要写实现,让它在编译期被强制。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RuleKind {
     /// 应急金规则(RULE-009 / RULE-011 / RULE-012)
