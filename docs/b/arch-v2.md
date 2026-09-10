@@ -141,9 +141,9 @@
 
 - 迁移三份见 §2；**执行前先备份**（基线 §7.2 第 4 条）
 - **备份策略（首个业务表落地，ADR-A-002 兑现）**：
-  - `scripts/backup.sh`：`pg_dump --format=custom` → `backups/wise_wealth_$(date +%Y%m%d_%H%M).dump` + SHA256 校验文件；保留策略：日备 7 份 + 周备 4 份（脚本自动清理）
+  - `scripts/backup.sh`：`pg_dump --format=custom` → `backups/wise_wealth_$(date +%Y%m%d_%H%M).dump` + SHA256 校验文件；保留策略：日备 7 个日历日各一份 + 周备 **5** 个 ISO 周各一份（脚本自动清理；原拟 4 份，实测只能保证回退 22 天，够不到基线的「1 个月前」，故加一周）
   - 备份位置：本地 `backups/`（.gitignore 排除）+ **异地一份**：苑问手动拷贝至云盘/另一机器（脚本完成后输出提醒）；恢复演练记录回填本节
-  - **上线前演练**：AC-15 要求在副本库（`wise_wealth_backup_test`）恢复一次并 SQL 抽验 profiles/plans 行数与金额
+  - **上线前演练**：AC-15 要求在副本库恢复一次并 SQL 抽验 profiles/plans 行数与金额。实际副本库为 `wise_wealth_db_test`（2026-09-11 建，与源库同属主；原拟名 `wise_wealth_backup_test`，随实例 `wise_wealth_db*` 命名走）。演练已脚本化为 `scripts/restore-drill.sh`：备份 → 副本库恢复（`--single-transaction`）→ 10 项抽验（行数 / 金额合计 / 内容指纹）→ 副本库起服务验证（`db=ok` + 种子账号登录 + 读出方案）。脚本内含两道闸防「恢复进源库」：地址改写必须真的换了库名，且结果不得等于源库
 - 红线自查：资金类数据（收入/存款）已入库 → **未完成 AC-15 演练前，苑问不录入不可重建的真实数据**（prd §11 红线 4）
 
 ## 8. 安全要点（B 期增量）

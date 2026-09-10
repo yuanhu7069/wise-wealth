@@ -7,7 +7,7 @@
 #   scripts/restore-drill.sh              先跑一次 backup.sh 取最新备份,再演练它
 #   scripts/restore-drill.sh <备份文件>   演练指定的备份文件(「从旧备份恢复」的场景)
 #
-# 副本库名:WW_DRILL_DB,缺省 wise_wealth_backup_test(arch-v2 §7 点名的库名)。
+# 副本库名:WW_DRILL_DB,缺省 wise_wealth_db_test(实例上已备好的空库,与源库同属主)。
 # 建库需要 CREATEDB 权限;当前角色没有权限时会打印**需要人执行的 SQL** 并以退出码 3
 # 结束 —— 这是实例管理员才能做的一步,脚本不假装能做,也不降级到「恢复进源库」
 # (那会把演练变成事故)。
@@ -15,17 +15,23 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DRILL_PORT=8099
-DRILL_DB="${WW_DRILL_DB:-wise_wealth_backup_test}"
+DRILL_DB="${WW_DRILL_DB:-wise_wealth_db_test}"
+BACKUP_DIR="${BACKUP_DIR:-backups}"
 BIN="server/target/debug/wise-wealth-server"
-TMPLOG="$(mktemp)"
+RESTORE_LOG="$(mktemp)"   # pg_restore 的 stderr
+SERVER_LOG="$(mktemp)"    # 演练用服务进程的输出
 SRV_PID=""
-trap 'rm -f "$TMPLOG"; [ -n "$SRV_PID" ] && kill "$SRV_PID" 2>/dev/null || true' EXIT
+trap 'rm -f "$RESTORE_LOG" "$SERVER_LOG"; [ -n "$SRV_PID" ] && kill "$SRV_PID" 2>/dev/null || true' EXIT
 
 say() { printf '\n===== %s =====\n' "$1"; }
 
 for tool in pg_restore psql sha256sum curl; do
   command -v "$tool" >/dev/null 2>&1 || { echo "✗ 缺少 $tool,无法演练。"; exit 1; }
 done
+if [ ! -f .env ]; then
+  echo "✗ 缺少 .env 文件(连接串从这里取,不写死在脚本里)。"
+  exit 1
+fi
 
 set -a
 # shellcheck disable=SC1091
@@ -46,8 +52,10 @@ if [ $# -ge 1 ]; then
   echo "  期间又写过库,行数与金额不一致是**预期**的 —— 那时看的是能否恢复,不是等不等)"
 else
   scripts/backup.sh
-  DUMP="$(ls -1t backups/wise_wealth_*.dump 2>/dev/null | head -1 || true)"
-  [ -n "$DUMP" ] || { echo "✗ backups/ 下没有备份文件。"; exit 1; }
+  # 取最新一份按**文件名**排序,不按 mtime:拷进来的旧备份 mtime 是新的,
+  # 按 mtime 会挑中它 —— 与 backup.sh 的保留判据必须同一个口径
+  DUMP="$(ls -1 "$BACKUP_DIR"/wise_wealth_*.dump 2>/dev/null | sort | tail -1 || true)"
+  [ -n "$DUMP" ] || { echo "✗ ${BACKUP_DIR}/ 下没有备份文件。"; exit 1; }
 fi
 echo "· 备份文件:${DUMP}"
 BACKUP_DIR="$(dirname "$DUMP")"
@@ -60,9 +68,33 @@ say "2. 校验备份完整性(SHA256)"
 SHA="$(cut -d' ' -f1 < "$SHA_FILE")"
 
 # ---------- 3. 副本库就位 ----------
+# 库名会进 CREATE DATABASE 与连接串:先做字符白名单。否则一个引号就能改变语句结构
+# (脚本里那两道「≠源库」的闸只比值,挡不住这种注入)。
+case "$DRILL_DB" in
+  ""|*[!A-Za-z0-9_]*)
+    echo "✗ 副本库名只允许字母、数字与下划线,收到:${DRILL_DB}"
+    exit 1 ;;
+esac
+
 say "3. 副本库:${DRILL_DB}"
 DRILL_URL="$(printf '%s' "$SRC_URL" | sed -E "s#/[^/?]+(\?.*)?\$#/${DRILL_DB}\1#")"
 ADMIN_URL="$(printf '%s' "$SRC_URL" | sed -E "s#/[^/?]+(\?.*)?\$#/postgres\1#")"
+# 两道闸,缺一不可,顺序也有讲究(先报准确的那条):
+# ①连接串里必须真的有库名段 —— 否则 sed 什么也没换,后面所有「副本库」其实都是源库;
+# ②改写后的地址绝不能等于源库 —— 否则 --clean 会把源库的表全删掉,演练直接变事故。
+SRC_DB="$(printf '%s' "$SRC_URL" | sed -E 's#.*/([^/?]+)(\?.*)?$#\1#')"
+if [ "$SRC_DB" = "$SRC_URL" ] || [ -z "$SRC_DB" ]; then
+  echo "✗ 连接串里没有库名段,无法改写副本库地址(连接串不打印)。请检查 .env 里的 DATABASE_URL_*。"
+  exit 1
+fi
+if [ "$DRILL_DB" = "$SRC_DB" ]; then
+  echo "✗ WW_DRILL_DB 指到了源库本身(${SRC_DB})—— 恢复会清空源库。换一个副本库名。"
+  exit 1
+fi
+if [ "$DRILL_URL" = "$SRC_URL" ]; then
+  echo "✗ 副本库地址与源库相同,拒绝继续。"
+  exit 1
+fi
 if psql "$DRILL_URL" -tAc 'select 1' >/dev/null 2>&1; then
   echo "· 已存在,恢复时用 --clean 覆盖其内容"
 else
@@ -91,13 +123,14 @@ fi
 # ---------- 4. 恢复 ----------
 say "4. 恢复到副本库(pg_restore --clean)"
 # --no-owner/--no-privileges:副本库未必有与源库相同的角色,恢复不该因「属主不存在」而失败
-if ! pg_restore --clean --if-exists --no-owner --no-privileges \
-     --dbname="$DRILL_URL" "$DUMP" 2>"$TMPLOG"; then
+# --single-transaction:恢复要么整份成功、要么整份回滚,不留一个删了一半的副本库
+if ! pg_restore --clean --if-exists --no-owner --no-privileges --single-transaction \
+     --dbname="$DRILL_URL" "$DUMP" 2>"$RESTORE_LOG"; then
   echo "✗ pg_restore 失败:"
-  cat "$TMPLOG"
+  cat "$RESTORE_LOG"
   exit 1
 fi
-[ -s "$TMPLOG" ] && { echo "· pg_restore 提示(非致命):"; cat "$TMPLOG"; }
+[ -s "$RESTORE_LOG" ] && { echo "· pg_restore 提示(非致命):"; cat "$RESTORE_LOG"; }
 echo "✓ 恢复完成"
 
 # ---------- 5. 抽验:副本库与源库逐项一致 ----------
@@ -136,9 +169,14 @@ if [ ! -x "$BIN" ]; then
   echo "· 后端二进制不存在,先编译 …"
   (cd server && SQLX_OFFLINE=true cargo build --quiet)
 fi
-# 显式传环境变量覆盖 .env(dotenvy 不覆盖已有变量);端口避开 8080,不动正在跑的服务
-APP_ENV="${APP_ENV:-dev}" APP_PORT="$DRILL_PORT" DATABASE_URL_DEV="$DRILL_URL" \
-  "./$BIN" >"$TMPLOG" 2>&1 &
+# 显式传环境变量覆盖 .env(dotenvy 不覆盖已有变量);端口避开 8080,不动正在跑的服务。
+# ⚠️ 必须按 APP_ENV 覆盖**对应的那一个**变量:prod 模式下服务读 DATABASE_URL_PROD,
+# 只覆盖 DEV 会让它连回源库 —— 那这一步就不是演练,而是拿正式库跑服务。
+if [ "${APP_ENV:-dev}" = "prod" ]; then
+  DATABASE_URL_PROD="$DRILL_URL" APP_ENV=prod APP_PORT="$DRILL_PORT" "./$BIN" >"$SERVER_LOG" 2>&1 &
+else
+  DATABASE_URL_DEV="$DRILL_URL" APP_ENV=dev APP_PORT="$DRILL_PORT" "./$BIN" >"$SERVER_LOG" 2>&1 &
+fi
 SRV_PID=$!
 ok=0
 for _ in $(seq 1 20); do
@@ -150,16 +188,39 @@ if [ "$ok" = 1 ]; then
   echo "✓ 副本库上的服务健康探测 db=ok:$body"
 else
   echo "✗ 副本库上的服务未就绪:"
-  tail -20 "$TMPLOG"
+  tail -20 "$SERVER_LOG"
   exit 1
 fi
-# 读一次真实业务数据:健康探测过了不代表表能被应用读出来
-plans_json="$(curl -s --noproxy '*' --max-time 3 "http://127.0.0.1:${DRILL_PORT}/api/v1/plans/active" || true)"
-case "$plans_json" in
-  *'"success":true'*) echo "✓ 副本库上可读出方案数据($(printf '%s' "$plans_json" | head -c 60)…)" ;;
-  *'"errorCode":"NOT_FOUND"'*) echo "· 副本库当前没有 active 方案(源库也没有,属正常)" ;;
-  *) echo "✗ 从副本库读方案失败:$plans_json"; exit 1 ;;
-esac
+# 读一次真实业务数据:健康探测过了不代表表能被应用读出来。
+# 用种子账号**真的登录一次**:副本库里的 users 行是随备份一起恢复的(argon2 哈希在内),
+# 能登录就同时证明了「恢复出来的账号还能用」—— 比只探 /health 强得多。
+# 只打印版本与模式,不打印金额(基线 §8.3:财务数值不进日志/记录)。
+if [ -n "${SEED_USERNAME:-}" ] && [ -n "${SEED_PASSWORD:-}" ]; then
+  JAR="$(mktemp)"
+  # 口令经 stdin 送,不走 argv:命令行参数会出现在 ps 输出里(与 seed-user.sh 同一条规则)
+  login_payload="$(printf '{"username":"%s","password":"%s"}' "$SEED_USERNAME" "$SEED_PASSWORD")"
+  login="$(printf '%s' "$login_payload" | curl -s --noproxy '*' --max-time 3 -c "$JAR" -X POST \
+    "http://127.0.0.1:${DRILL_PORT}/api/v1/auth/login" -H 'content-type: application/json' \
+    -d @- || true)"
+  unset login_payload
+  case "$login" in
+    *'"success":true'*) echo "✓ 副本库上可用种子账号登录(口令哈希随备份恢复)" ;;
+    *) echo "✗ 副本库上登录失败:$login"; rm -f "$JAR"; exit 1 ;;
+  esac
+  plans_json="$(curl -s --noproxy '*' --max-time 3 -b "$JAR" \
+    "http://127.0.0.1:${DRILL_PORT}/api/v1/plans/active" || true)"
+  rm -f "$JAR"
+  case "$plans_json" in
+    *'"success":true'*)
+      ver="$(printf '%s' "$plans_json" | grep -o '"version":[0-9]*' | head -1 | cut -d: -f2 || true)"
+      mode="$(printf '%s' "$plans_json" | grep -o '"l1_mode":"[a-z_0-9]*"' | head -1 | cut -d'"' -f4 || true)"
+      echo "✓ 副本库上可读出方案数据(第 ${ver} 版 / 模式 ${mode})" ;;
+    *'"errorCode":"NOT_FOUND"'*) echo "· 副本库当前没有 active 方案(源库也没有,属正常)" ;;
+    *) echo "✗ 从副本库读方案失败:$plans_json"; exit 1 ;;
+  esac
+else
+  echo "· .env 未配 SEED_USERNAME/SEED_PASSWORD,跳过「登录并读方案」这一步"
+fi
 kill "$SRV_PID" 2>/dev/null || true
 SRV_PID=""
 echo "· 服务已停止;副本库 ${DRILL_DB} 保留着,可自行 drop"

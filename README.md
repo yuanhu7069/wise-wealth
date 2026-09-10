@@ -70,9 +70,9 @@ A 期为工程骨架期,构建仅验证可通过、无运行部署目标;B 期�
 ## 数据库备份与恢复(ADR-A-002 / arch-v2 §7)
 
 > ⚠️ **恢复演练未通过前,不录入不可重建的真实数据**(prd-v1 红线 4)。
-> **当前状态(2026-09-11):备份链路已交付并实测通过;恢复演练尚未执行** ——
-> 副本库需实例管理员创建(应用角色无建库权限),见 `.scratch/b-guide-flow/issues/08-backup-and-restore.md`
-> 与 `docs/b/test-report-b.md` §1.2。**故本红线仍在生效。**
+> 本次已于 **2026-09-11 通过**(AC-15,兑现 ADR-A-002):10 项抽验一致、副本库上服务 `db=ok`、
+> 种子账号可登录并读出方案,记录见 `docs/b/test-report-b.md` §1.2。
+> **换库、改迁移脚本或改恢复链路后,红线重新生效** —— 先重跑 `scripts/restore-drill.sh` 再录真实数据。
 
 ### 备份
 
@@ -82,11 +82,17 @@ scripts/backup.sh --keep-all   # 只备份不清理(归档留档时用)
 ```
 
 - 产出:`backups/wise_wealth_YYYYMMDD_HHMM.dump`(自定义格式,恢复时可选择/校验)+ 同名 `.sha256`
-- 保留策略:**日备 7 份 + 周备 4 份**,超出自动清理(判据取文件名里的时间戳,不取 mtime ——
-  拷贝与同步会改 mtime,文件名才是备份的身份)
+- 保留策略:**最近 7 个日历日各留最新一份 + 最近 5 个 ISO 周各留最新一份**,其余自动清理。
+  回退窗口 ≥ 4 周(实测最老一份 ≥29 天),满足基线「至少能回退到 7 天前与 1 个月前」。
+  判据取**文件名里的时间戳**,不取 mtime —— 拷贝与同步会改 mtime,文件名才是备份的身份;
+  一天跑多次也只留当天最新那份(原先「周备 4 份」只能保证 21 天,故加一周)
 - `backups/` 已 gitignore:**备份文件不进版本库**
 - 备份只在本机磁盘,挡不住本机磁盘故障:**请手工拷一份到云盘或另一台机器**(异地副本)
 - 目标库按 `.env` 的 `APP_ENV` 选:dev → `DATABASE_URL_DEV`,prod → `DATABASE_URL_PROD`
+- 每份备份另附同名 `.meta`:时间、库名、git 版本(含是否有未提交改动)、已应用迁移数,
+  以及**脱敏配置快照**(APP_ENV / APP_PORT / API_BASE_URL 等非密钥项照记,密钥只记「已配置」)
+  —— 基线 §7.3 的备份内容 = 数据库 + 配置(不含密钥)+ 代码版本
+- 两个可选开关:`BACKUP_DIR`(备份目录,缺省 `backups/`)、`WW_DRILL_DB`(副本库名,缺省 `wise_wealth_db_test`)
 
 ### 恢复与演练(同一条路径)
 
@@ -107,6 +113,17 @@ pg_restore --clean --if-exists --no-owner --no-privileges --dbname="$DATABASE_UR
 
 副本库需要 CREATEDB 权限;当前角色没有该权限时,脚本会打印需要管理员执行的 SQL 并以退出码 3
 结束 —— 它不会降级成「恢复进源库」,那等于用恢复演练制造一次事故。
+
+## 升级
+
+```bash
+scripts/backup.sh && git pull && scripts/start.sh
+#  ① 先备份:迁移会改结构,回退靠的就是这一份(基线 §7.2「执行前先备份」)
+#  ② start.sh 会先跑 sqlx migrate run 再起服务
+```
+
+迁移是向前兼容的增量(`server/migrations/`,每份都带 `.down.sql`);**改过迁移或换过库之后,
+先跑一次 `scripts/restore-drill.sh` 再录真实数据** —— 恢复链路变了而没复验,等于没有备份。
 
 ## 常用命令
 
