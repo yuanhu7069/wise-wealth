@@ -105,3 +105,40 @@ export async function apiPost<T>(
   }
   return { status: res.status, envelope, setCookie };
 }
+
+/**
+ * PUT 请求后端。问卷分步保存用:需要把浏览器的会话 Cookie 转发给后端
+ * (令牌是 HttpOnly,浏览器端读不到,只有服务端能取)。
+ */
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  cookie?: string,
+): Promise<{ status: number; envelope: ApiEnvelope<T> }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+        ...(cookie ? { cookie } : {}),
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+
+  const text = await res.text();
+  let envelope: ApiEnvelope<T>;
+  try {
+    envelope = text
+      ? (JSON.parse(text) as ApiEnvelope<T>)
+      : ({ success: res.ok } as ApiEnvelope<T>);
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+  return { status: res.status, envelope };
+}
