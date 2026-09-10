@@ -8,7 +8,7 @@
 //! - 后端自己知道的三件事 —— 每步保存成功、问卷答全、方案生成成功 —— 由 handler 直接记;
 //! - 只有页面知道的两件事 —— 页面触达、问卷开始 —— 由前端 Server 端经
 //!   `POST /api/v1/analytics/events` 交给本模块,**白名单只放行这两个**
-//!   (见 [`client_event`]),否则同一个事件会有两个来源,迟早重复计数。
+//!   (见 [`Event::from_client`]),否则同一个事件会有两个来源,迟早重复计数。
 
 use serde_json::{json, Value as Json};
 use sqlx::PgPool;

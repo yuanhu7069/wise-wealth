@@ -1,6 +1,6 @@
 //! 埋点上报 DTO。
 //!
-//! 结构刻意扁平且字段全可空,由 `analytics_service::client_event` 做白名单判定 ——
+//! 结构刻意扁平且字段全可空,由 `analytics_service::Event::from_client` 做白名单判定 ——
 //! 「哪种事件必须带哪个字段」这条规则集中在 service 一处,而不是拆到多个枚举变体上,
 //! 这样被拒时能给出「哪一项不对」的原话,而不是 serde 的一句反序列化失败。
 
