@@ -3,10 +3,12 @@
 //! RULE-002:配置校验失败 → 逐条列出缺失键名(ERR-003 终端文案)→ 退出码 1。
 
 mod api;
+mod dto;
 mod config;
 pub mod domain;
 mod error;
 mod openapi;
+pub mod repos;
 pub mod services;
 mod state;
 
@@ -16,6 +18,12 @@ use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() {
+    // 子命令:seed-user —— 幂等写入/重置账号(ADR-B-002,无注册页)。
+    if std::env::args().nth(1).as_deref() == Some("seed-user") {
+        seed_user().await;
+        return;
+    }
+
     // 1. 配置校验(RULE-002):失败即逐条列出问题并退出
     let config = match config::Config::load() {
         Ok(c) => c,
@@ -70,7 +78,7 @@ async fn main() {
         )
         .layer(TraceLayer::new_for_http());
 
-    // 6. 监听 + 优雅退出
+    // 7. 监听 + 优雅退出
     let addr = std::net::SocketAddr::from(([127, 0, 0, 1], config.app_port));
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -89,11 +97,60 @@ async fn main() {
         });
 }
 
-async fn run_migrations(pool: &sqlx::PgPool) {
-    let migrator = sqlx::migrate!("./migrations");
+async fn run_migrations(pool: &sqlx::PgPool) {    let migrator = sqlx::migrate!("./migrations");
     match migrator.run(pool).await {
         Ok(_) => tracing::info!("数据库迁移:全部已应用"),
         Err(e) => tracing::warn!("数据库迁移失败(不阻塞启动,health 将反映 db=error): {e}"),
+    }
+}
+
+/// 幂等写入种子账号(ADR-B-002):账号不存在则新建,存在则只更新口令。
+///
+/// 凭证只经 `SEED_USERNAME` / `SEED_PASSWORD` 环境变量传入 —— **不走命令行参数**,
+/// 因为命令行参数会出现在 `ps` 输出里。口令只进 argon2 哈希,任何路径都不打印。
+async fn seed_user() {
+    let config = match config::Config::load() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("配置有误,无法写入账号:");
+            for p in &e.problems {
+                eprintln!("  - {p}");
+            }
+            std::process::exit(1);
+        }
+    };
+
+    let (Some(username), Some(password)) = (
+        config.seed_username.as_deref(),
+        config.seed_password.as_deref(),
+    ) else {
+        eprintln!("缺少 SEED_USERNAME / SEED_PASSWORD —— 凭证只经环境变量传入,请检查 .env。");
+        std::process::exit(1);
+    };
+
+    // 种子命令必须真的连上库(与服务的惰性连接相反):写不进去就是失败。
+    let pool = match sqlx::PgPool::connect(&config.database_url).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("数据库连接失败(连接串不打印):{e}");
+            std::process::exit(1);
+        }
+    };
+
+    let hash = match services::auth_service::hash_password(password) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("口令哈希失败:{e}");
+            std::process::exit(1);
+        }
+    };
+
+    match repos::users::upsert(&pool, username, &hash).await {
+        Ok(_) => println!("账号已就绪:{username}(口令已写入,不打印)"),
+        Err(e) => {
+            eprintln!("写入账号失败:{e}");
+            std::process::exit(1);
+        }
     }
 }
 

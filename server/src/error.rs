@@ -75,11 +75,25 @@ impl ErrorCode {
 }
 
 /// 应用错误:thiserror 领域错误,统一转信封响应。
-/// A 期 health 链路直接在 handler 内吸收 db 故障(不上抛),AppError 供 B 期起
-/// 业务端点使用;为避免骨架期 dead_code 告警,当前仅错误转换单测消费。
 #[derive(Debug, thiserror::Error)]
-#[allow(dead_code)]
 pub enum AppError {
+    /// 未认证/会话失效(RULE-001)。前端据此跳登录并保留现场。
+    #[error("未认证")]
+    Unauthorized,
+
+    /// 凭证不符(登录端点专用)。与 UNAUTHORIZED 同码不同文案 —— 前端按请求位置区分
+    /// 二者(登录页收到的 401 = 凭证不符;别处 = 会话过期),故不新增错误码。
+    #[error("凭证不符")]
+    InvalidCredentials,
+
+    /// 请求过于频繁(RULE-002 登录限流)
+    #[error("请求过于频繁")]
+    RateLimited,
+
+    /// 入参校验失败(DTO 层)。文案面向用户,不含技术细节。
+    #[error("校验失败: {0}")]
+    Validation(String),
+
     /// 数据库访问失败(pg pool 查询/初始化故障)。内部信息不外泄,响应仅带兜底文案。
     #[error("数据库错误: {0}")]
     Database(#[from] sqlx::Error),
@@ -98,11 +112,22 @@ impl From<ErrorCode> for AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         // 兜底文案:生产环境禁止技术细节(基线 §6.1 规则 3)。
-        // A 期出现的实际错误仅 INTERNAL_ERROR 一类(arch-a.md §4)。
-        let code = match &self {
-            AppError::Database(_) | AppError::Internal(_) => ErrorCode::INTERNAL_ERROR,
+        let (code, message) = match &self {
+            AppError::Unauthorized => (ErrorCode::UNAUTHORIZED, "登录已过期,请重新登录"),
+            AppError::InvalidCredentials => (ErrorCode::UNAUTHORIZED, "用户名或密码不正确"),
+            AppError::RateLimited => (ErrorCode::RATE_LIMITED, "操作太频繁了,稍后再试"),
+            AppError::Validation(msg) => (ErrorCode::VALIDATION_ERROR, msg.as_str()),
+            AppError::Database(err) => {
+                // 技术细节只进日志,不进响应(红线 8)
+                tracing::error!("数据库错误: {err}");
+                (ErrorCode::INTERNAL_ERROR, "服务器开小差了,请稍后重试")
+            }
+            AppError::Internal(err) => {
+                tracing::error!("内部错误: {err:#}");
+                (ErrorCode::INTERNAL_ERROR, "服务器开小差了,请稍后重试")
+            }
         };
-        let body = Envelope::err(code, "服务器开小差了,请稍后重试");
+        let body = Envelope::err(code, message);
         let status = code.status();
         (status, Json(body)).into_response()
     }
@@ -115,6 +140,19 @@ impl<T: Serialize + utoipa::ToSchema> IntoResponse for ApiOk<T> {
     fn into_response(self) -> Response {
         (StatusCode::OK, Json(Envelope::ok(self.0))).into_response()
     }
+}
+
+/// 从 validator 的错误集合里取第一条面向用户的文案。
+///
+/// DTO 的每条 `#[validate(message = "…")]` 都写好了人话,这里只负责把它们捞出来;
+/// 捞不到时给一句通用兜底(不允许把 `ValidationErrors` 的 Debug 输出丢给用户)。
+pub fn first_validation_message(errors: &validator::ValidationErrors) -> String {
+    errors
+        .field_errors()
+        .values()
+        .flat_map(|errs| errs.iter())
+        .find_map(|e| e.message.as_ref().map(|m| m.to_string()))
+        .unwrap_or_else(|| "请检查填写的内容".to_string())
 }
 
 #[cfg(test)]

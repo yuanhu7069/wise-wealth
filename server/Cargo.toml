@@ -20,3 +20,9 @@ dotenvy = "0.15"
 uuid = { version = "1", features = ["serde", "v7"] }
 tower-http = { version = "0.6", features = ["trace", "set-header"] }
 toml = "1.1.5"
+argon2 = "0.5"
+jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+[dev-dependencies]
+tower = { version = "0.5.3", features = ["util"] }

@@ -18,6 +18,14 @@ pub struct Config {
     pub api_base_url_configured: bool,
     /// RUST_LOG(缺省 info)
     pub rust_log: String,
+    /// JWT 签名密钥(B 期,ADR-B-002)。长度不足 32 字符即拒绝启动 —— 过短的签名密钥等于没有。
+    pub jwt_secret: String,
+    /// 会话有效期(天),缺省 30
+    pub session_ttl_days: i64,
+    /// 种子账号用户名(可选:仅 `seed-user` 子命令消费,不设置不影响服务启动)
+    pub seed_username: Option<String>,
+    /// 种子账号口令(可选:同上;只进 argon2 哈希,禁入日志)
+    pub seed_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,6 +78,13 @@ impl Config {
         let db_prod = get("DATABASE_URL_PROD");
         let rust_log = get("RUST_LOG").unwrap_or_else(|| "info".to_string());
         let api_base_configured = get("API_BASE_URL").is_some();
+        let jwt_secret_raw = get("JWT_SECRET");
+        let session_ttl_days = get("SESSION_TTL_DAYS")
+            .and_then(|v| v.parse::<i64>().ok())
+            .filter(|d| *d > 0)
+            .unwrap_or(30);
+        let seed_username = get("SEED_USERNAME");
+        let seed_password = get("SEED_PASSWORD");
 
         // 1. APP_ENV
         let app_env = match app_env_str.as_deref() {
@@ -101,6 +116,19 @@ impl Config {
             }
             None => {
                 problems.push("APP_PORT(缺失)".to_string());
+                None
+            }
+        };
+
+        // 3. JWT_SECRET(B 期新增,ADR-B-002):会话签名密钥,短于 32 字符即视为未配置。
+        let jwt_secret = match jwt_secret_raw {
+            Some(s) if s.chars().count() >= 32 => Some(s),
+            Some(_) => {
+                problems.push("JWT_SECRET(长度不足 32 字符:签名密钥过短等于没有)".to_string());
+                None
+            }
+            None => {
+                problems.push("JWT_SECRET(缺失)".to_string());
                 None
             }
         };
@@ -172,6 +200,13 @@ impl Config {
                 return Err(ConfigError { problems });
             }
         };
+        let jwt_secret = match jwt_secret {
+            Some(s) => s,
+            None => {
+                problems.push("JWT_SECRET(缺失)".to_string());
+                return Err(ConfigError { problems });
+            }
+        };
 
         Ok(Self {
             app_env,
@@ -179,16 +214,22 @@ impl Config {
             database_url,
             api_base_url_configured: api_base_configured,
             rust_log,
+            jwt_secret,
+            session_ttl_days,
+            seed_username,
+            seed_password,
         })
     }
 
     /// 启动摘要:只输出「已配置/缺失」状态,不含任何值(基线红线 2/9)。
     pub fn summary(&self) -> String {
         format!(
-            "配置摘要: APP_ENV={} | APP_PORT=已配置 | DATABASE_URL_{}=已配置 | API_BASE_URL={} | RUST_LOG=已配置(值不打印)",
+            "配置摘要: APP_ENV={} | APP_PORT=已配置 | DATABASE_URL_{}=已配置 | API_BASE_URL={} | JWT_SECRET=已配置 | 会话有效期={}天 | 种子账号={} | RUST_LOG=已配置(值不打印)",
             self.app_env,
             if self.app_env == AppEnv::Dev { "DEV" } else { "PROD" },
             if self.api_base_url_configured { "已配置" } else { "缺失(可选)" },
+            self.session_ttl_days,
+            if self.seed_username.is_some() { "已配置" } else { "未配置(可选)" },
         )
     }
 }
@@ -231,6 +272,11 @@ mod tests {
                 "postgres://u:p@db.example.com:5432/wise_wealth_dev".to_string(),
             ),
             ("API_BASE_URL".to_string(), "http://127.0.0.1:8080".to_string()),
+            // B 期新增的必填项:会话签名密钥(ADR-B-002)
+            (
+                "JWT_SECRET".to_string(),
+                "test-secret-at-least-32-characters-long".to_string(),
+            ),
         ])
     }
 
