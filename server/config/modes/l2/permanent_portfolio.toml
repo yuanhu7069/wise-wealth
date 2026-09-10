@@ -1,0 +1,13 @@
+# 永久组合 —— L2 大类配置
+#
+# 出处:Harry Browne(1981)
+# 用途:回撤反应为「清仓」或「减仓观察」时的基础档(权益占比最低的一档)
+id = "permanent_portfolio"
+name = "永久组合"
+classes = [
+  { name = "权益类", basis_points = 2500 },
+  { name = "长期债券", basis_points = 2500 },
+  { name = "黄金", basis_points = 2500 },
+  { name = "现金类", basis_points = 2500 },
+]
+note = "四类各 25%,任一类偏离过大时再平衡"

@@ -1,0 +1,47 @@
+# 四账户理财法 —— L1 分账模式
+#
+# 出处:[韩] 高敬镐《膨胀吧,钱包君》(原作《4개의 통장》;2011 重庆出版社版名「四本存折系统」,
+#      2016 广东人民出版社版名「4 个定制账户」,ISBN 9787218110226)
+# 可信度:verified(产品 PRD §7.1 已逐条核证)
+#
+# 求解语义(引擎按此顺序算,见 domain/engine.rs):
+#   工资桶 = 月固定支出 → 消费桶 = 30% 税后月收入 → 备用桶 = 应急金规则 → 投资桶 = 余量
+id = "four_accounts"
+name = "四账户理财法"
+tagline = "工资 · 消费 · 备用 · 投资"
+credibility = "verified"
+fit_for = ["理财小白", "月光族"]
+
+[[buckets]]
+id = "salary"
+name = "工资账户"
+purpose = "大额固定支出扣划"
+share = { type = "fixed_expenses" }
+is_necessary = true
+
+[[buckets]]
+id = "spend"
+name = "消费账户"
+purpose = "日常饮食、交通、日用品"
+share = { type = "pct", basis_points = 3000 }
+is_necessary = true
+
+[[buckets]]
+id = "reserve"
+name = "备用账户"
+purpose = "覆盖应急金目标(达标后停止转入,份额自动进投资账户)"
+share = { type = "rule", rule = "emergency_fund" }
+
+[[buckets]]
+id = "invest"
+name = "投资账户"
+purpose = "长期投资"
+share = { type = "remainder" }
+is_investable = true
+
+# 应急月数按收入稳定性取档;需赡养人数 > 0 时上浮一档(3→6→9→12,上限 12)
+[emergency_fund]
+stable = 3
+normal = 6
+volatile = 9
+freelance = 9

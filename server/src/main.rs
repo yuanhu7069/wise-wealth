@@ -4,6 +4,7 @@
 
 mod api;
 mod config;
+pub mod domain;
 mod error;
 mod openapi;
 pub mod services;
@@ -35,17 +36,31 @@ async fn main() {
         .init();
     tracing::info!("{}", config.summary());
 
-    // 3. 数据库连接池(惰性:库不可达不阻塞启动,health 如实反映 db=error)
-    let app_state = state::AppState::new(&config)
-        .unwrap_or_else(|e| {
-            tracing::error!("连接参数解析失败(连接串不打印): {e:#}");
+    // 3. 模式库:构建期内嵌,启动期解析并校验(ADR-B-001)。
+    //    坏配置在此失败 —— 不带病启动,也不把错误推迟到用户点「生成方案」的那一刻。
+    let library = match domain::ModeLibrary::load_embedded() {
+        Ok(lib) => lib,
+        Err(e) => {
+            eprintln!("模式库配置有误:{e}");
+            eprintln!("模式配置位于 server/config/modes/,修正后重新启动。");
             std::process::exit(1);
-        });
+        }
+    };
 
-    // 4. 迁移(空基线迁移,打通链路;失败仅告警不退出,health 会如实反映 db=error)
+    // 4. 数据库连接池(惰性:库不可达不阻塞启动,health 如实反映 db=error)
+    let app_state = state::AppState::new(&config, library).unwrap_or_else(|e| {
+        tracing::error!("连接参数解析失败(连接串不打印): {e:#}");
+        std::process::exit(1);
+    });
+    tracing::info!(
+        "模式库已装载:{} 个 L1 模式",
+        app_state.library.modes().len()
+    );
+
+    // 5. 迁移(空基线迁移,打通链路;失败仅告警不退出,health 会如实反映 db=error)
     run_migrations(&app_state.pool).await;
 
-    // 5. 路由 + 安全响应头 + tracing(含 request_id)
+    // 6. 路由 + 安全响应头 + tracing(含 request_id)
     let app = api::routes(app_state)
         .layer(
             tower_http::set_header::SetResponseHeaderLayer::overriding(

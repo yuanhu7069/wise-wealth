@@ -1,0 +1,41 @@
+# 50/30/20 —— L1 分账模式
+#
+# 出处:Elizabeth Warren《All Your Worth》(2005)
+# 可信度:verified
+#
+# 与四账户的结构差异(引擎需同时支持两种形状,这正是「配置驱动」要证明的事):
+#   无固定支出桶 —— 必要开销已含在「必要桶」的 50% 里
+#   无规则桶     —— 储蓄桶是比例桶,应急金在这里只做**达标标注**,不做桶间让位
+#   无余量桶     —— 三个比例桶恰好占满 100%
+id = "fifty_30_20"
+name = "50/30/20"
+tagline = "必要 50 · 想要 30 · 储蓄 20"
+credibility = "verified"
+fit_for = ["理财新手", "已有储蓄习惯"]
+
+[[buckets]]
+id = "needs"
+name = "必要账户"
+purpose = "房租、房贷、饮食、交通等必要开销"
+share = { type = "pct", basis_points = 5000 }
+is_necessary = true
+
+[[buckets]]
+id = "wants"
+name = "想要账户"
+purpose = "娱乐、外食、购物等弹性开销"
+share = { type = "pct", basis_points = 3000 }
+
+[[buckets]]
+id = "savings"
+name = "储蓄账户"
+purpose = "应急金与长期投资(应急金未达标期间优先补足)"
+share = { type = "pct", basis_points = 2000 }
+is_investable = true
+
+# 与四账户取同一套月数规则:达标标注对两种模式都成立,区别只在于有没有桶真的按它转钱
+[emergency_fund]
+stable = 3
+normal = 6
+volatile = 9
+freelance = 9

@@ -1,0 +1,10 @@
+# 60/40 —— L2 大类配置
+#
+# 出处:传统基准配置
+# 用途:回撤反应为「不动」时的基础档
+id = "sixty_forty"
+name = "60/40"
+classes = [
+  { name = "权益类", basis_points = 6000 },
+  { name = "债券类", basis_points = 4000 },
+]
