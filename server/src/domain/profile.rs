@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// 变体名带数字,serde 的自动 snake_case 转换在数字边界上不可预期,故**逐个显式 rename**:
 /// 这些字符串会写进数据库文本列与 API 载荷,改动即数据迁移。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 pub enum Horizon {
     /// 1 年内
     #[serde(rename = "within_1y")]
@@ -30,7 +30,7 @@ pub enum Horizon {
 }
 
 /// 回撤反应(问卷第 2 题):行为指标,比风险偏好自评有效一个数量级(产品 PRD §4.2.1)。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum DrawdownResponse {
     /// 清仓,先落袋
@@ -44,7 +44,7 @@ pub enum DrawdownResponse {
 }
 
 /// 收入稳定性(问卷第 3 题):决定应急金要留几个月。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum IncomeStability {
     /// 很稳
@@ -59,7 +59,7 @@ pub enum IncomeStability {
 
 /// 理财目标(问卷第 5 题):本期**采集、入库、在方案页展示,但不参与任何计算**
 /// (为追踪期的「距离感进度条」与将来的达成概率预留)。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Goal {
     /// 购房
@@ -142,6 +142,21 @@ pub struct Profile {
     pub goal: Goal,
 }
 
+
+/// 领域的「线上表示」:与各枚举的 `#[serde(rename)]` **同一来源**。
+///
+/// 数据库文本列与 API 载荷共用它 —— 否则两处各写一份字符串映射,
+/// 早晚会在某次改名后走岔,而那种错只会在读回数据时才暴露。
+///
+/// 只会被用在单位枚举上,序列化不可能失败;真失败时返回空串也会被
+/// `FromStr` 一侧拒绝,不会静默变成合法值。
+pub fn wire<T: serde::Serialize>(value: &T) -> String {
+    serde_json::to_value(value)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,6 +194,16 @@ mod tests {
         }
         let d: DrawdownResponse = serde_json::from_str("\"liquidate\"").unwrap();
         assert_eq!(d, DrawdownResponse::Liquidate);
+    }
+
+    #[test]
+    fn wire_与_serde_表示一致() {
+        // 数据库存的是 wire();API 传的是 serde。二者必须永远一致。
+        for h in [Horizon::Within1y, Horizon::Y1to3, Horizon::Y5to10] {
+            assert_eq!(wire(&h), serde_json::to_value(h).unwrap().as_str().unwrap());
+        }
+        assert_eq!(wire(&Goal::Wealth), "wealth");
+        assert_eq!(wire(&IncomeStability::Volatile), "volatile");
     }
 
     #[test]

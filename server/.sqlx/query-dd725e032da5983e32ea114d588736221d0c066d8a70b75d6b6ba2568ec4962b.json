@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO profiles (\n            id, user_id, horizon, drawdown_response, income_stability,\n            has_social_security, has_commercial_insurance, mortgage_balance_cents,\n            dependents, inflow_cents, expense_fixed_monthly_cents, savings_cents,\n            goal, draft_step, questionnaire_completed\n        )\n        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)\n        ON CONFLICT (user_id) DO UPDATE SET\n            horizon = EXCLUDED.horizon,\n            drawdown_response = EXCLUDED.drawdown_response,\n            income_stability = EXCLUDED.income_stability,\n            has_social_security = EXCLUDED.has_social_security,\n            has_commercial_insurance = EXCLUDED.has_commercial_insurance,\n            mortgage_balance_cents = EXCLUDED.mortgage_balance_cents,\n            dependents = EXCLUDED.dependents,\n            inflow_cents = EXCLUDED.inflow_cents,\n            expense_fixed_monthly_cents = EXCLUDED.expense_fixed_monthly_cents,\n            savings_cents = EXCLUDED.savings_cents,\n            goal = EXCLUDED.goal,\n            draft_step = EXCLUDED.draft_step,\n            questionnaire_completed = EXCLUDED.questionnaire_completed,\n            updated_at = now()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool",
+        "Int8",
+        "Int2",
+        "Int8",
+        "Int8",
+        "Int8",
+        "Text",
+        "Int2",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dd725e032da5983e32ea114d588736221d0c066d8a70b75d6b6ba2568ec4962b"
+}

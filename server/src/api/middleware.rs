@@ -15,9 +15,6 @@ pub const SESSION_COOKIE: &str = "ww_session";
 /// 当前用户:由 `require_auth` 写入请求扩展,handler 用 `Extension<CurrentUser>` 取用。
 ///
 /// 这解决了「中间件校验了,handler 却不知道是谁」的问题 —— 校验与使用同一份解析结果。
-// 本工单(02)尚无业务端点可保护,故生产构建下暂时未构造;
-// ticket 03 的首个受保护端点(档案读写)落地后此标注即删。
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct CurrentUser {
     /// 用户 id(UUID 字符串)
@@ -40,8 +37,6 @@ pub fn cookie_value<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
 /// RULE-001:挂在受保护路由组上的鉴权层 —— **默认拒绝**,无有效会话一律 401 信封。
 ///
 /// 前端隐藏按钮不算权限(基线 ADR-005),这里是唯一的信任边界。
-// 同上:本工单尚无受保护端点,生产构建下暂未被调用;ticket 03 挂上首个端点后删此标注。
-#[allow(dead_code)]
 pub async fn require_auth(
     State(state): State<AppState>,
     mut req: Request,

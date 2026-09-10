@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT horizon, drawdown_response, income_stability,\n               has_social_security, has_commercial_insurance, mortgage_balance_cents,\n               dependents, inflow_cents, expense_fixed_monthly_cents, savings_cents,\n               goal, draft_step, questionnaire_completed\n        FROM profiles WHERE user_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "horizon",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "horizon"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "drawdown_response",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "drawdown_response"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "income_stability",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "income_stability"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "has_social_security",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "has_social_security"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "has_commercial_insurance",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "has_commercial_insurance"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "mortgage_balance_cents",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "mortgage_balance_cents"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "dependents",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "dependents"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "inflow_cents",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "inflow_cents"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "expense_fixed_monthly_cents",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "expense_fixed_monthly_cents"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "savings_cents",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "savings_cents"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "goal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "goal"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "draft_step",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "draft_step"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "questionnaire_completed",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "questionnaire_completed"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "6dae25a15c7eb10e334275e76b7c58b49c079b20aac3087ec41c0754802e1e3c"
+}

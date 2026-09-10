@@ -4,10 +4,11 @@ pub mod middleware;
 pub mod v1 {
     pub mod auth;
     pub mod health;
+    pub mod profiles;
 }
 
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::Router;
 
 use crate::state::AppState;
@@ -28,9 +29,25 @@ pub fn routes(state: AppState) -> Router {
         .route("/auth/logout", post(crate::api::v1::auth::logout))
         .route("/auth/me", get(crate::api::v1::auth::me));
 
+    // 受保护组:默认拒绝。首个业务端点(档案读写)已经挂上,
+    // 后续端点(方案生成 / 模式列表 / 埋点)按同样方式追加即可。
+    let protected = Router::new()
+        .route(
+            "/profiles/me",
+            get(crate::api::v1::profiles::get_profile),
+        )
+        .route(
+            "/profiles/me/step",
+            put(crate::api::v1::profiles::save_step),
+        )
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::api::middleware::require_auth,
+        ));
+
     Router::new()
         .route("/health", get(crate::api::v1::health::health_handler))
-        .nest("/api/v1", public)
+        .nest("/api/v1", public.merge(protected))
         .with_state(state)
 }
 
