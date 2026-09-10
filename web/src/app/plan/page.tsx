@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { SiteFooterShell } from "@/components/site-footer-shell";
+import { trackPageView } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
 import { requireSession, SESSION_COOKIE } from "@/lib/session";
 
@@ -33,6 +34,10 @@ export default async function PlanPage() {
   }
 
   if (!plan) redirect("/");
+
+  // 埋点(prd-v1 §9.5:页面触达)。无方案时上面已经跳回首页 ——
+  // 那次跳转不该在这里记下一条 p04 触达,用户根本没看到方案页
+  await trackPageView("p04");
 
   return (
     <>

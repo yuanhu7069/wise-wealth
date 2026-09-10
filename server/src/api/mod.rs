@@ -2,6 +2,7 @@
 
 pub mod middleware;
 pub mod v1 {
+    pub mod analytics;
     pub mod auth;
     pub mod health;
     pub mod modes;
@@ -45,6 +46,10 @@ pub fn routes(state: AppState) -> Router {
         .route("/modes", get(crate::api::v1::modes::list_modes))
         .route("/plans", post(crate::api::v1::plans::generate_plan))
         .route("/plans/active", get(crate::api::v1::plans::active_plan))
+        .route(
+            "/analytics/events",
+            post(crate::api::v1::analytics::record_event),
+        )
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             crate::api::middleware::require_auth,

@@ -12,6 +12,7 @@ use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanView};
 use crate::error::{ApiOk, AppError};
 use crate::repos;
 use crate::repos::plans::{BucketRow, PlanRecord};
+use crate::services::analytics_service::{self, Event};
 use crate::services::plan_service::{self, PlanError};
 use crate::state::AppState;
 
@@ -109,6 +110,16 @@ pub async fn generate_plan(
         version = generated.plan.version,
         "方案已生成"
     );
+
+    // 埋点(prd-v1 §9.5):生成率与模式偏好。载荷只带模式 id 与版本号,金额不入埋点。
+    analytics_service::record(
+        &state.pool,
+        &Event::PlanGenerated {
+            l1_mode: generated.plan.l1_mode.clone(),
+            plan_version: generated.plan.version,
+        },
+    )
+    .await;
 
     let view = to_view(&state, &generated.plan, generated.buckets)?;
     Ok(ApiOk(view))

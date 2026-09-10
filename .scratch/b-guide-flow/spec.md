@@ -127,7 +127,12 @@ Feature: b-guide-flow
 | GET | `/modes` | 模式元数据（名称/理念/徽章/适用标签） | 需登录 |
 | POST | `/plans` | 生成方案（读完整档案 → 引擎 → 版本化落库） | 需登录 |
 | GET | `/plans/active` | 当前 active 方案 | 需登录 |
+| POST | `/analytics/events` | 客户端埋点上报（页面触达 / 问卷开始） | 需登录 |
 | GET | `/health` | 健康探测（A 期不变） | 公开 |
+
+> `/analytics/events` 是实现期对本表的补全（ticket 07）：`page_view` 与 `questionnaire_start`
+> 的触发点是「P01/P03/P04 服务端渲染」，渲染发生在 Next 侧、够不到数据库，需要一个上报入口。
+> 入口白名单只放行前端才知道的这两类事件；后端自己知道的三类直接入库，不走上报。
 
 ### 引擎规则（产品核心，逐条可判定）
 

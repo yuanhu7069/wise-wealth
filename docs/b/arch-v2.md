@@ -72,7 +72,7 @@
 | `plan_buckets` | id, plan_id FK, bucket_id, name, amount_monthly_cents, target_amount_cents NULL, note TEXT | 每方案 3-4 行 |
 | `analytics_events` | id, event_type, payload_json JSONB, occurred_at | §9.5 五事件；payload 仅枚举/步号 |
 
-迁移：`0002_b_auth_and_users.up/down.sql`、`0003_b_profiles_plans_buckets.up/down.sql`、`0004_b_analytics_events.up/down.sql`——**结构迁移可回滚（DOWN 全写）**；`.sqlx/` 离线缓存照常提交。
+迁移（实际落地为五份，DOWN 全写、**结构迁移可回滚**）：`0002_auth_users`、`0003_profiles`、`0004_plans`（plans + plan_buckets）、`0005_plan_investable`（首页摘要冻结列）、`0006_analytics_events`；`.sqlx/` 离线缓存照常提交。
 
 ## 3. 需求 → 能力映射（RULE → 代码落点）
 
@@ -101,9 +101,18 @@
 | PUT | `/profiles/me/step` | 保存单步答案（upsert + draft_step 推进） | JWT | `{step, answers…}`（DTO 分步校验） | `{profile}` |
 | POST | `/plans` | 生成方案（读完整档案 → 引擎 → 版本化落库） | JWT | `{l1_mode}` | `{plan, buckets, l2, traces}` |
 | GET | `/plans/active` | 当前 active 方案 | JWT | - | 同上 |
+| POST | `/analytics/events` | 上报客户端埋点（页面触达 / 问卷开始） | JWT | `{event, page_id?}` | `{accepted}` |
 | GET | `/health` | A 期不变 | 公开 | - | 不变 |
 
+> **`/analytics/events` 是实现期对本表的补全（ticket 07 记录）**：prd §9.5 要求 `page_view` 与
+> `questionnaire_start` 在「P03/P01/P04 服务端渲染」时触发，而服务端渲染发生在 Next 侧、
+> 够不到数据库 —— 必须有一个上报入口。基线 §11.3「在后端或 Server Action 触发」由它承接：
+> 入口只放行**前端才知道**的两类事件，后端自己知道的三类（每步保存 / 问卷答全 / 方案生成）
+> 直接在各自 handler 里入库，避免同一事实两个来源。
+
 > codegen 链路不变：utoipa → openapi.json → api-types.ts；**每次接口变更后重跑 `scripts/gen-types.sh`**（web/scripts/）。
+> 注册面现状：`openapi.rs` 已注册 `/health` 与 `/analytics/events`；profiles / plans / modes 六个端点
+> 只有 `#[utoipa::path]` 注解、未挂进 `ApiDoc`，是 04-06 期的存量缺口（见 ticket 07 完成记录「遗留」）。
 
 ## 5. 权限校验点清单
 
@@ -113,6 +122,7 @@
 | login 限流 | `api/middleware/login_limiter.rs` | 1 分钟 5 次失败 | 429 RATE_LIMITED |
 | from 参数白名单 | `dto/login_dto.rs` + Next 侧同校验 | 仅 `/` 开头且非 `//` | 丢弃 from，登录后落 `/` |
 | profiles/plans 路径归属 | service 层（单用户下恒真，**结构就位**：查询一律带 user_id 条件） | - | 404 NOT_FOUND |
+| 埋点事件白名单 | `services/analytics_service.rs`（`Event::from_client`） | 只接受 `page_view` / `questionnaire_start`，page_id ∈ {p01,p03,p04} | 422 VALIDATION_ERROR 信封 |
 
 越权测试（基线 §14.1）：每个业务端点写一条「无 Cookie → 期望 401」用例；`from=//evil.com` 用例一条。
 

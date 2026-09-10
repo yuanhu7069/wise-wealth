@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/api/v1/analytics/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 上报埋点事件(仅 page_view / questionnaire_start)
+         * @description 成功恒 200:埋点的写失败在 service 层就被吞掉(RULE-019,只留告警日志),
+         *     上报端拿不到「写没写进去」—— 否则调用方迟早会为它加分支,那就成了主流程的依赖。
+         */
+        post: operations["record_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -48,6 +69,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description 客户端上报一条埋点事件(仅页面触达与问卷开始;其余三类后端自己记)。 */
+        ClientEventRequest: {
+            /** @description 事件名:`page_view` / `questionnaire_start` */
+            event: string;
+            /** @description 页面 id:`p01` / `p03` / `p04`(page_view 必填,其余不得携带) */
+            page_id?: string | null;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_EventAck: {
+            /**
+             * @description 上报回执。与 A 期 `logout` 的 `OkBody` 同一形状(基线 §6.1 统一信封:
+             *     成功也要有 data),字段名如实描述**请求被受理**,不声称「已入库」——
+             *     写失败在服务端就被吞掉(RULE-019),这里说 recorded 会是假话。
+             */
+            data?: {
+                /** @description 固定 true:请求合法且已交给埋点服务 */
+                accepted: boolean;
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
         /**
          * @description 统一响应信封。
          *
@@ -75,6 +123,15 @@ export interface components {
          * @enum {string}
          */
         ErrorCode: "VALIDATION_ERROR" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "INTERNAL_ERROR";
+        /**
+         * @description 上报回执。与 A 期 `logout` 的 `OkBody` 同一形状(基线 §6.1 统一信封:
+         *     成功也要有 data),字段名如实描述**请求被受理**,不声称「已入库」——
+         *     写失败在服务端就被吞掉(RULE-019),这里说 recorded 会是假话。
+         */
+        EventAck: {
+            /** @description 固定 true:请求合法且已交给埋点服务 */
+            accepted: boolean;
+        };
         /** @description 健康数据(RULE-001 白名单:恰好三个字段,不含连接串/主机名/内部路径)。 */
         HealthData: {
             /** @description "ok" | "error" — 数据库可用性 */
@@ -93,6 +150,44 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    record_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientEventRequest"];
+            };
+        };
+        responses: {
+            /** @description 已受理 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_EventAck"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 事件名不在白名单,或 page_id 与该事件不匹配 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     health_handler_alias: {
         parameters: {
             query?: never;

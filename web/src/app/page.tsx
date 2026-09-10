@@ -10,6 +10,7 @@
 import { cookies } from "next/headers";
 
 import { SiteFooterShell } from "@/components/site-footer-shell";
+import { trackPageView } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
 import { requireSession, SESSION_COOKIE } from "@/lib/session";
 
@@ -38,6 +39,8 @@ async function loadHomeState(): Promise<HomeState> {
 export default async function Page() {
   // RULE-001:P01 属受保护页面,未登录跳登录页并在登录后回跳
   await requireSession("/");
+  // 埋点(prd-v1 §9.5:页面触达)。放在会话校验之后:未登录不该产生触达记录
+  await trackPageView("p01");
 
   const state = await loadHomeState();
 

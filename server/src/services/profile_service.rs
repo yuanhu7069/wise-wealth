@@ -29,10 +29,22 @@ const LAST_ANSWER_STEP: i16 = 5;
 /// 步进上限:答完步 5 之后停在步 6(推荐)
 const MAX_DRAFT_STEP: i16 = 6;
 
+/// 一次保存的结果:合并后的档案 + 这次保存带来的状态跃迁。
+#[derive(Debug, Clone)]
+pub struct StepOutcome {
+    /// 合并后的档案行(可直接落库)
+    pub row: ProfileRow,
+    /// 这次保存是否让问卷从「未答全」变成「答全」。
+    ///
+    /// 埋点「问卷完成」的触发条件就是这个跃迁 —— 规则(何时算答完)留在 service,
+    /// 而不是让 handler 拿 `is_complete()` 自己判一次:那是业务判断,不是协议转换。
+    pub completed_now: bool,
+}
+
 /// 把某一步的答案合并进既有档案。
 ///
-/// 返回合并后的行与新的草稿步号。不修改入参(纯函数)。
-pub fn apply_step(current: &ProfileRow, req: &StepRequest) -> Result<ProfileRow, StepError> {
+/// 返回合并后的行、新的草稿步号与完成跃迁。不修改入参(纯函数)。
+pub fn apply_step(current: &ProfileRow, req: &StepRequest) -> Result<StepOutcome, StepError> {
     if req.step < 1 || req.step > LAST_ANSWER_STEP {
         return Err(StepError::InvalidStep);
     }
@@ -111,7 +123,14 @@ pub fn apply_step(current: &ProfileRow, req: &StepRequest) -> Result<ProfileRow,
     let advanced = (req.step + 1).min(MAX_DRAFT_STEP);
     next.draft_step = current.draft_step.max(advanced);
 
-    Ok(next)
+    // 跃迁只在「未答全 → 答全」那一刻为真:重新生成时回头改数字会再存一次步 5,
+    // 那不该再记一条「问卷完成」(完成率会算出超过 100% 的数字)。
+    let completed_now = !current.is_complete() && next.is_complete();
+
+    Ok(StepOutcome {
+        row: next,
+        completed_now,
+    })
 }
 
 #[cfg(test)]
@@ -159,7 +178,7 @@ mod tests {
 
     #[test]
     fn 步一保存久期并推进到步二() {
-        let row = apply_step(&empty(), &step1()).unwrap();
+        let row = apply_step(&empty(), &step1()).unwrap().row;
         assert_eq!(row.horizon.as_deref(), Some("y5_10"));
         assert_eq!(row.draft_step, 2);
         assert!(!row.questionnaire_completed);
@@ -197,7 +216,7 @@ mod tests {
         ));
         // 合法 + 其余可空
         req.dependents = Some(1);
-        let row = apply_step(&empty(), &req).unwrap();
+        let row = apply_step(&empty(), &req).unwrap().row;
         assert_eq!(row.dependents, Some(1));
         assert!(!row.has_social_security, "未勾选视为无");
         assert_eq!(row.mortgage_balance_cents, None, "选填留空即为空");
@@ -220,32 +239,32 @@ mod tests {
     fn 步五_存款缺省视为零() {
         let mut req = step5();
         req.savings_cents = None;
-        let row = apply_step(&empty(), &req).unwrap();
+        let row = apply_step(&empty(), &req).unwrap().row;
         assert_eq!(row.savings_cents, Some(0), "选填缺省应为 0 而非 NULL");
     }
 
     #[test]
     fn 步五答全才标记完成() {
         // 只有步 5:前面的步没答,不算完成(否则推荐端点会拿到半份档案)
-        let only5 = apply_step(&empty(), &step5()).unwrap();
+        let only5 = apply_step(&empty(), &step5()).unwrap().row;
         assert!(!only5.questionnaire_completed, "跳步作答不该标记完成");
         assert_eq!(only5.draft_step, 6, "进度仍推进到推荐步");
 
         // 逐步答全:标记完成
-        let mut row = apply_step(&empty(), &step1()).unwrap();
+        let mut row = apply_step(&empty(), &step1()).unwrap().row;
         let mut r2 = step1();
         r2.step = 2;
         r2.drawdown_response = Some(DrawdownResponse::Hold);
-        row = apply_step(&row, &r2).unwrap();
+        row = apply_step(&row, &r2).unwrap().row;
         let mut r3 = step1();
         r3.step = 3;
         r3.income_stability = Some(IncomeStability::Volatile);
-        row = apply_step(&row, &r3).unwrap();
+        row = apply_step(&row, &r3).unwrap().row;
         let mut r4 = step1();
         r4.step = 4;
         r4.dependents = Some(1);
-        row = apply_step(&row, &r4).unwrap();
-        let row = apply_step(&row, &step5()).unwrap();
+        row = apply_step(&row, &r4).unwrap().row;
+        let row = apply_step(&row, &step5()).unwrap().row;
         assert!(row.questionnaire_completed, "答全五步才标记完成");
     }
 
@@ -260,23 +279,55 @@ mod tests {
     }
 
     #[test]
+    fn 完成跃迁只在答全那一刻为真() {
+        let mut row = apply_step(&empty(), &step1()).unwrap().row;
+        let mut r2 = step1();
+        r2.step = 2;
+        r2.drawdown_response = Some(DrawdownResponse::Hold);
+        row = apply_step(&row, &r2).unwrap().row;
+        let mut r3 = step1();
+        r3.step = 3;
+        r3.income_stability = Some(IncomeStability::Volatile);
+        row = apply_step(&row, &r3).unwrap().row;
+        let mut r4 = step1();
+        r4.step = 4;
+        r4.dependents = Some(1);
+        row = apply_step(&row, &r4).unwrap().row;
+
+        // 答到步 4 都还没答全:每次保存都不该产生「问卷完成」跃迁
+        let out = apply_step(&row, &step5()).unwrap();
+        assert!(out.completed_now, "步 5 存下且答全时应有跃迁");
+
+        // 再存一次步 5(重新生成前改数字):状态没变,不该再跃迁
+        let again = apply_step(&out.row, &step5()).unwrap();
+        assert!(!again.completed_now, "已答全后再保存不得重复跃迁");
+    }
+
+    #[test]
+    fn 跳步作答不产生完成跃迁() {
+        // 只答步 5:自己那步校验通过,但问卷没答全 —— 不算完成(与 is_complete 同一判据)
+        let out = apply_step(&empty(), &step5()).unwrap();
+        assert!(!out.completed_now);
+    }
+
+    #[test]
     fn 重答旧步不回退进度() {
         // 先答到步 5
-        let mut row = apply_step(&empty(), &step1()).unwrap();
+        let mut row = apply_step(&empty(), &step1()).unwrap().row;
         let mut req2 = step1();
         req2.step = 2;
         req2.drawdown_response = Some(DrawdownResponse::Hold);
-        row = apply_step(&row, &req2).unwrap();
+        row = apply_step(&row, &req2).unwrap().row;
         let mut req3 = step1();
         req3.step = 3;
         req3.income_stability = Some(IncomeStability::Volatile);
-        row = apply_step(&row, &req3).unwrap();
+        row = apply_step(&row, &req3).unwrap().row;
         assert_eq!(row.draft_step, 4);
 
         // 回头改步 1(重新生成时预填后改答案):进度必须留在步 4
         let mut redo1 = step1();
         redo1.horizon = Some(Horizon::Y3to5);
-        let row = apply_step(&row, &redo1).unwrap();
+        let row = apply_step(&row, &redo1).unwrap().row;
         assert_eq!(row.horizon.as_deref(), Some("y3_5"), "答案应被更新");
         assert_eq!(row.draft_step, 4, "进度不得回退");
     }
@@ -284,13 +335,13 @@ mod tests {
     #[test]
     fn 合并只动本步字段() {
         // 步 5 提交不得清掉步 1-3 的答案
-        let mut row = apply_step(&empty(), &step1()).unwrap();
+        let mut row = apply_step(&empty(), &step1()).unwrap().row;
         let mut req2 = step1();
         req2.step = 2;
         req2.drawdown_response = Some(DrawdownResponse::Hold);
-        row = apply_step(&row, &req2).unwrap();
+        row = apply_step(&row, &req2).unwrap().row;
 
-        let row = apply_step(&row, &step5()).unwrap();
+        let row = apply_step(&row, &step5()).unwrap().row;
         assert_eq!(row.horizon.as_deref(), Some("y5_10"), "步 1 答案应保留");
         assert_eq!(row.drawdown_response.as_deref(), Some("hold"));
         assert_eq!(row.goal.as_deref(), Some("wealth"));

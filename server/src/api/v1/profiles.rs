@@ -9,6 +9,7 @@ use crate::dto::profile::{ProfileView, StepRequest};
 use crate::error::{ApiOk, AppError};
 use crate::repos;
 use crate::repos::profiles::ProfileRow;
+use crate::services::analytics_service::{self, Event};
 use crate::services::profile_service::{self, StepError};
 use crate::state::AppState;
 
@@ -107,14 +108,25 @@ pub async fn save_step(
     let current = repos::profiles::get(&state.pool, user_id)
         .await?
         .unwrap_or_default();
-    let merged = profile_service::apply_step(&current, &req)?;
-    repos::profiles::upsert(&state.pool, user_id, &merged).await?;
+    let outcome = profile_service::apply_step(&current, &req)?;
+    repos::profiles::upsert(&state.pool, user_id, &outcome.row).await?;
+
+    // 埋点(prd-v1 §9.5):每步保存成功记一条带步号的事件,用于定位步骤流失;
+    // 「何时算答完」由 service 判(StepOutcome),这里只负责把结论记下来。
+    analytics_service::record(
+        &state.pool,
+        &Event::QuestionnaireStepCompleted { step: req.step },
+    )
+    .await;
+    if outcome.completed_now {
+        analytics_service::record(&state.pool, &Event::QuestionnaireCompleted).await;
+    }
 
     // 基线 §11.1:关键业务操作留审计日志。问卷步骤承载收入/存款等财务字段,
     // 属于「金额变更」一类,写入必须留痕(只记步号与用户名,金额不入日志)。
     tracing::info!(user = %user.username, step = req.step, "问卷步骤已保存");
 
-    Ok(ApiOk(to_view(&merged)))
+    Ok(ApiOk(to_view(&outcome.row)))
 }
 
 /// 会话里的用户 id 是 UUID 字符串。会话由本服务签发,格式已锁定;
