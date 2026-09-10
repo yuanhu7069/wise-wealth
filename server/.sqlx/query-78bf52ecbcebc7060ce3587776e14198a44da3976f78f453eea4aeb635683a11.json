@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, l1_mode, l2_mode, version, is_active,\n               to_char(created_at, 'YYYY-MM-DD') AS \"created_date!\",\n               profile_snapshot_json, l2_allocation_json, emergency_json,\n               notices_json, traces_json\n        FROM plans\n        WHERE user_id = $1 AND is_active\n        ",
+  "query": "\n        SELECT id, l1_mode, l2_mode, version, is_active, investable_monthly_cents,\n               to_char(created_at, 'YYYY-MM-DD') AS \"created_date!\",\n               profile_snapshot_json, l2_allocation_json, emergency_json,\n               notices_json, traces_json\n        FROM plans\n        WHERE user_id = $1 AND is_active\n        ",
   "describe": {
     "columns": [
       {
@@ -60,12 +60,23 @@
       },
       {
         "ordinal": 5,
+        "name": "investable_monthly_cents",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "investable_monthly_cents"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
         "name": "created_date!",
         "type_info": "Text",
         "origin": "Expression"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "profile_snapshot_json",
         "type_info": "Jsonb",
         "origin": {
@@ -76,7 +87,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "l2_allocation_json",
         "type_info": "Jsonb",
         "origin": {
@@ -87,7 +98,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "emergency_json",
         "type_info": "Jsonb",
         "origin": {
@@ -98,7 +109,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "notices_json",
         "type_info": "Jsonb",
         "origin": {
@@ -109,7 +120,7 @@
         }
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "traces_json",
         "type_info": "Jsonb",
         "origin": {
@@ -131,6 +142,7 @@
       false,
       false,
       false,
+      false,
       null,
       false,
       false,
@@ -139,5 +151,5 @@
       false
     ]
   },
-  "hash": "17d67328fbefc3342e536ba8b0c3d58dba3f2987bc546690edf12d1be5f83bef"
+  "hash": "78bf52ecbcebc7060ce3587776e14198a44da3976f78f453eea4aeb635683a11"
 }

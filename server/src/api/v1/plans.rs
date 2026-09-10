@@ -53,6 +53,7 @@ fn to_view(
         created_date: plan.created_date.clone(),
         l1_mode: plan.l1_mode.clone(),
         l1_mode_name,
+        investable_monthly_cents: plan.investable_monthly_cents,
         buckets: buckets
             .into_iter()
             .map(|b| BucketView {

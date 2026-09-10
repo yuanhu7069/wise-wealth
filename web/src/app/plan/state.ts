@@ -65,6 +65,8 @@ export interface PlanView {
   created_date: string;
   l1_mode: string;
   l1_mode_name: string;
+  /** 投资桶的每月转入(整数分):首页摘要的「每月可投资」 */
+  investable_monthly_cents: number;
   buckets: PlanBucket[];
   l2: PlanL2;
   emergency: PlanEmergency;

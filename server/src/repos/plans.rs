@@ -35,6 +35,8 @@ pub struct PlanRecord {
     pub version: i32,
     /// 是否当前方案
     pub is_active: bool,
+    /// 生成当时投资桶的每月转入(分):首页摘要的「每月可投资」
+    pub investable_monthly_cents: i64,
     /// 生成日期(YYYY-MM-DD)
     pub created_date: String,
     /// 档案快照
@@ -57,6 +59,8 @@ pub struct NewPlan<'a> {
     pub l1_mode: &'a str,
     /// L2 配置 id
     pub l2_mode: &'a str,
+    /// 投资桶的每月转入(分,生成当时冻结)
+    pub investable_monthly_cents: i64,
     /// 档案快照
     pub profile_snapshot: &'a Json,
     /// L2 配置快照
@@ -81,6 +85,7 @@ pub async fn insert_plan(pool: &PgPool, new: &NewPlan<'_>) -> Result<Uuid, sqlx:
         user_id,
         l1_mode,
         l2_mode,
+        investable_monthly_cents,
         profile_snapshot,
         l2_allocation,
         emergency,
@@ -102,19 +107,21 @@ pub async fn insert_plan(pool: &PgPool, new: &NewPlan<'_>) -> Result<Uuid, sqlx:
         r#"
         INSERT INTO plans (
             id, user_id, l1_mode, l2_mode, version, is_active,
+            investable_monthly_cents,
             profile_snapshot_json, l2_allocation_json, emergency_json,
             notices_json, traces_json
         )
         VALUES (
             $1, $2, $3, $4,
             (SELECT COALESCE(MAX(version), 0) + 1 FROM plans WHERE user_id = $2),
-            TRUE, $5, $6, $7, $8, $9
+            TRUE, $5, $6, $7, $8, $9, $10
         )
         "#,
         plan_id,
         user_id,
         l1_mode,
         l2_mode,
+        investable_monthly_cents,
         profile_snapshot,
         l2_allocation,
         emergency,
@@ -155,7 +162,7 @@ pub async fn active_for_user(
 ) -> Result<Option<PlanRecord>, sqlx::Error> {
     let row = sqlx::query!(
         r#"
-        SELECT id, l1_mode, l2_mode, version, is_active,
+        SELECT id, l1_mode, l2_mode, version, is_active, investable_monthly_cents,
                to_char(created_at, 'YYYY-MM-DD') AS "created_date!",
                profile_snapshot_json, l2_allocation_json, emergency_json,
                notices_json, traces_json
@@ -173,6 +180,7 @@ pub async fn active_for_user(
         l2_mode: r.l2_mode,
         version: r.version,
         is_active: r.is_active,
+        investable_monthly_cents: r.investable_monthly_cents,
         created_date: r.created_date,
         profile_snapshot: r.profile_snapshot_json,
         l2_allocation: r.l2_allocation_json,

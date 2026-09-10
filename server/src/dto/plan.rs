@@ -42,6 +42,8 @@ pub struct PlanView {
     pub l1_mode: String,
     /// L1 模式展示名
     pub l1_mode_name: String,
+    /// 投资桶的每月转入(分,生成当时冻结):首页摘要的「每月可投资」
+    pub investable_monthly_cents: i64,
     /// 各桶金额
     pub buckets: Vec<BucketView>,
     /// 投资桶的大类配置(快照回读)

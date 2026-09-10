@@ -67,6 +67,7 @@ pub async fn generate(
             user_id,
             l1_mode: &result.mode_id,
             l2_mode: &result.l2.id,
+            investable_monthly_cents: investable_of(&result),
             profile_snapshot: &profile_snapshot,
             l2_allocation: &l2_allocation,
             emergency: &emergency,
@@ -83,6 +84,18 @@ pub async fn generate(
     debug_assert_eq!(plan.id, plan_id);
 
     Ok(GeneratedPlan { plan, buckets })
+}
+
+/// 「每月可投资」= 投资桶的月转入(分);模式未标注投资桶时为 0。
+///
+/// 取引擎解出的 `l2_bucket_id`(唯一 `is_investable` 桶)而不是按桶 id 猜:
+/// 首页摘要与方案页的 L2 配置段由此指向同一个桶 —— 两处各判一次,迟早不一致。
+fn investable_of(result: &PlanResult) -> i64 {
+    result
+        .l2_bucket_id
+        .as_ref()
+        .and_then(|id| result.buckets.iter().find(|b| b.id == *id))
+        .map_or(0, |b| b.amount_monthly_cents)
 }
 
 /// 引擎输出 → 落库行。纯函数,顺序即展示顺序。
@@ -138,6 +151,19 @@ mod tests {
         // 只有规则桶带目标金额
         assert_eq!(rows[2].target_cents, Some(9_720_000));
         assert_eq!(rows[0].target_cents, None);
+    }
+
+    #[test]
+    fn 首页摘要的每月可投资取投资桶金额() {
+        let m = lib();
+        let result = engine::solve(&profile_a(), m.mode("four_accounts").unwrap(), &m).unwrap();
+        // 金例 A:投资桶 800 分→¥800.00,与方案页分配总览的 invest 行同源
+        assert_eq!(investable_of(&result), 80_000);
+
+        let fifty = engine::solve(&profile_a(), m.mode("fifty_30_20").unwrap(), &m).unwrap();
+        // 50/30/20 无余量桶,储蓄桶兼作投资桶 —— 取引擎标注的那个桶而不是按桶名猜
+        assert_eq!(fifty.l2_bucket_id.as_deref(), Some("savings"));
+        assert_eq!(investable_of(&fifty), 240_000); // 与 engine 的 savings ¥2,400.00 同源
     }
 
     #[test]

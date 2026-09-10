@@ -8,6 +8,7 @@
  * 无客户端状态:生成/重试发生在 P03 步 6,本页只渲染既有方案,故是纯 server 组件
  * (基线 §7.4「能服务端渲染就不上客户端」)。
  */
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import { Disclaimer } from "@/components/disclaimer";
@@ -246,7 +247,10 @@ export function PlanView({ plan }: { plan: Plan }) {
       </Section>
 
       <div className="flex flex-wrap gap-base-md">
+        {/* 重新生成 = 回 P03 改答案(上一次的作答逐题预填,只改变化的数字),再生成即版本 +1。
+            design-v2 §1.3:P04 →「重新生成」回 P03 步 6 */}
         <Link href="/questionnaire" className={buttonVariants({ variant: "ghost" })}>
+          <RefreshCw className="size-4" aria-hidden="true" />
           重新生成
         </Link>
         <Link href="/" className={buttonVariants({ variant: "ghost" })}>
