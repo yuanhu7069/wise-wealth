@@ -7,6 +7,9 @@ target/
 node_modules/
 .next/
 
+# 数据库备份(arch-v2 §7:本地 backups/ + 异地各一份;只在本机留存,不入库)
+backups/
+
 # 日志与临时文件
 *.log
 .DS_Store

@@ -8,7 +8,7 @@
 ```
 server/   Rust 后端(axum 0.8 + sqlx 0.9 + PostgreSQL,监听 :8080)
 web/      Next.js 16 前端(App Router + Tailwind 4 + shadcn 结构组件,监听 :3000)
-scripts/  start.sh / check.sh / web 内 gen-types.sh、check-tokens.sh
+scripts/  start.sh / check.sh / backup.sh / restore-drill.sh / seed-user.sh / web 内 gen-types.sh、check-tokens.sh
 docs/     基线实例文档与 A 期计划
 ```
 
@@ -67,10 +67,46 @@ cd server && SQLX_OFFLINE=true cargo build --release   # 后端 release 二进�
 
 A 期为工程骨架期,构建仅验证可通过、无运行部署目标;B 期起按 PRD 交付形态补部署说明。
 
-## 数据库备份(ADR-A-002)
+## 数据库备份与恢复(ADR-A-002 / arch-v2 §7)
 
-A 期迁移链仅 `0001_init_baseline`(占位)。真实备份策略(每日全量 + WAL)随 B 期引入;
-当前手工备份命令:`pg_dump "$DATABASE_URL_DEV" > backup.sql`(从 `.env` 取连接串,勿写死)。
+> ⚠️ **恢复演练未通过前,不录入不可重建的真实数据**(prd-v1 红线 4)。
+> **当前状态(2026-09-11):备份链路已交付并实测通过;恢复演练尚未执行** ——
+> 副本库需实例管理员创建(应用角色无建库权限),见 `.scratch/b-guide-flow/issues/08-backup-and-restore.md`
+> 与 `docs/b/test-report-b.md` §1.2。**故本红线仍在生效。**
+
+### 备份
+
+```bash
+scripts/backup.sh              # pg_dump 自定义格式 → backups/ + .sha256 校验文件
+scripts/backup.sh --keep-all   # 只备份不清理(归档留档时用)
+```
+
+- 产出:`backups/wise_wealth_YYYYMMDD_HHMM.dump`(自定义格式,恢复时可选择/校验)+ 同名 `.sha256`
+- 保留策略:**日备 7 份 + 周备 4 份**,超出自动清理(判据取文件名里的时间戳,不取 mtime ——
+  拷贝与同步会改 mtime,文件名才是备份的身份)
+- `backups/` 已 gitignore:**备份文件不进版本库**
+- 备份只在本机磁盘,挡不住本机磁盘故障:**请手工拷一份到云盘或另一台机器**(异地副本)
+- 目标库按 `.env` 的 `APP_ENV` 选:dev → `DATABASE_URL_DEV`,prod → `DATABASE_URL_PROD`
+
+### 恢复与演练(同一条路径)
+
+```bash
+scripts/restore-drill.sh                    # 先备份,再拿这份备份演练
+scripts/restore-drill.sh backups/xxx.dump   # 演练指定备份(「从旧备份恢复」场景)
+```
+
+演练脚本做四件事:①校验 SHA256(没有校验值的备份不算备份)②恢复到副本库
+(`WW_DRILL_DB`,缺省 `wise_wealth_backup_test`)③抽验行数、金额合计与内容指纹与源库**逐项一致**
+④用副本库起一次服务,`/health` 返回 `db=ok` 且能读出方案数据。全程不写源库。
+
+真的需要恢复时,手工命令与脚本同款:
+
+```bash
+pg_restore --clean --if-exists --no-owner --no-privileges --dbname="$DATABASE_URL_DEV" backups/xxx.dump
+```
+
+副本库需要 CREATEDB 权限;当前角色没有该权限时,脚本会打印需要管理员执行的 SQL 并以退出码 3
+结束 —— 它不会降级成「恢复进源库」,那等于用恢复演练制造一次事故。
 
 ## 常用命令
 
@@ -79,4 +115,6 @@ cd server && SQLX_OFFLINE=true cargo test    # 后端单测(离线)
 cd server && cargo sqlx prepare              # 更新 .sqlx 查询缓存
 cd web && npm run lint                       # biome
 cd web && npm run typecheck                  # tsc --noEmit
+scripts/backup.sh                            # 备份数据库(自定义格式 + SHA256 + 保留策略)
+scripts/restore-drill.sh                     # 恢复演练(副本库抽验 + 副本库起服务验证)
 ```
