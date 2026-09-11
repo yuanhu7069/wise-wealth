@@ -107,7 +107,7 @@ function NumberField({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none"
+        className="h-11 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none sm:h-10"
       />
       {hint ? <p className="text-label text-text-aux">{hint}</p> : null}
     </div>
@@ -219,7 +219,8 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
     <div className="flex flex-col gap-base-lg">
       {/* 顶部工具行:退出向导与草稿提示(design-v2 §1.4) */}
       <div className="flex flex-wrap items-center justify-between gap-base-md text-label">
-        <Link href="/" className="text-text-aux hover:text-primary">
+        {/* 触控热区 ≥ h-11(基线 §16):padding 撑开热区 + 负 margin 抵消,文字的视觉位置不变 */}
+        <Link href="/" className="-my-base-lg py-base-lg text-text-aux hover:text-primary">
           ← 返回首页
         </Link>
         <span className="text-text-aux">每步自动保存草稿,中断后可恢复</span>
@@ -399,7 +400,9 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
                           推荐
                         </span>
                       ) : null}
-                      <span className="rounded-full bg-primary-bg px-base-sm text-label text-primary">
+                      {/* 前景用 accent-foreground 而非 primary:暗色下 primary 落在浅绿底上对比度不足,
+                          与 Badge 组件同一口径(2026-09-11 走查 §8-E) */}
+                      <span className="rounded-full bg-primary-bg px-base-sm text-label text-accent-foreground">
                         {CREDIBILITY_LABEL[c.credibility]}
                       </span>
                     </span>

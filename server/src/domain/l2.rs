@@ -73,8 +73,9 @@ pub fn match_l2(profile: &Profile, lib: &ModeLibrary) -> Result<L2Allocation, L2
         let cfg = lib
             .l2(CASH_OVER_L2_ID)
             .ok_or_else(|| L2Error::MissingConfig(CASH_OVER_L2_ID.to_string()))?;
+        // horizon.label() 自带「内」字(如「1 年内」),模板里不能再补一个 —— 否则出现「在 1 年内 内」
         let reason = format!(
-            "资金久期在 {} 内,短期要用的钱不进入权益类与债券类",
+            "资金久期在 {},短期要用的钱不进入权益类与债券类",
             profile.horizon.label()
         );
         return Ok(L2Allocation::from_config(cfg, reason));

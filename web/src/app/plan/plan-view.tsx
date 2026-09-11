@@ -41,10 +41,15 @@ function Section({
 function NoticeBar({ notice }: { notice: keyof typeof NOTICE_COPY }) {
   const copy = NOTICE_COPY[notice];
   const severe = notice === "insufficient_income";
+  /*
+   * 底色用 bg-card 而非 bg-subtle:严重提示的文字色是 --color-danger,它在 bg-subtle 上
+   * 亮暗两态都低于正文下限 4.5:1(实测 4.00:1 / 4.24:1),换到 bg-card 后是 4.55:1 / 4.61:1
+   * (2026-09-11 走查实测,test-report-b.md §8-E)。
+   */
   return (
     <div
       role="status"
-      className="flex flex-col gap-base-xs rounded-md border border-divider bg-bg-subtle px-base-lg py-base-md"
+      className="flex flex-col gap-base-xs rounded-md border border-divider bg-bg-card px-base-lg py-base-md"
     >
       <p className={cn("text-body font-medium", severe ? "text-danger" : "text-text-title")}>
         {copy.title}

@@ -30,7 +30,7 @@ export function LoginForm({ from }: LoginFormProps) {
           id="username"
           name="username"
           autoComplete="username"
-          className="h-10 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none"
+          className="h-11 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none sm:h-10"
         />
       </div>
 
@@ -44,7 +44,7 @@ export function LoginForm({ from }: LoginFormProps) {
           type="password"
           autoComplete="current-password"
           aria-describedby={state.error ? "login-error" : undefined}
-          className="h-10 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none"
+          className="h-11 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none sm:h-10"
         />
         {state.error ? (
           // 错误文案与输入框程序化关联(design 基线 §10.7)

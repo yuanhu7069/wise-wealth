@@ -22,8 +22,40 @@ docs/     基线实例文档与 A 期计划
 
 ```bash
 cp .env.example .env
-# 编辑 .env:DATABASE_URL_DEV / DATABASE_URL_PROD(APP_ENV=dev 时要求 DEV 库与 PROD 库不同)
+# 编辑 .env:
+#   DATABASE_URL_DEV / DATABASE_URL_PROD(APP_ENV=dev 时要求 DEV 库与 PROD 库不同)
+#   JWT_SECRET(会话签名密钥,≥32 字符,如 openssl rand -base64 32)
+#   SEED_USERNAME / SEED_PASSWORD —— 登录账号,见下节
+scripts/seed-user.sh   # 把上面那对账号写进数据库(必须在首次登录前跑一次)
 ```
+
+## 登录(AC-1 / ADR-B-002)
+
+**没有注册页,也没有内置默认密码**;登录账号由 `.env` 的 `SEED_USERNAME` / `SEED_PASSWORD`
+经种子脚本写入数据库,再在登录页 `/login` 用这一对值登录:
+
+```bash
+scripts/seed-user.sh            # 幂等:账号不存在则新建,存在则只重置口令
+```
+
+- 用户名与口令**就是 `.env` 里那两个值**:它们只存在于本地 `.env`(已 gitignore),
+  不进版本库、也不写进本文档 —— 想知道是什么就打开 `.env` 看,或重新设一对再跑脚本
+- 忘记口令:改 `.env` 的 `SEED_PASSWORD` 后重跑 `scripts/seed-user.sh`(口令只进 argon2 哈希,
+  含启动日志在内的任何路径都不打印原文)
+- **没跑种子脚本 → 页面能开但登不进去**,因为库里根本没有这个账号(报错是「用户名或密码不正确」)
+- 未登录访问任何业务页面 → 跳 `/login?from=<原路径>`,登录后回到原处;是会话过期(带着旧 Cookie
+  被拒)则额外带 `&expired=1`,登录页提示「登录已过期」
+- 连续输错 5 次后,第 6 次起 1 分钟内返回 429(页面提示「操作太频繁,稍后再试」)
+
+### 顶部栏:主题切换与登出
+
+登录后页面顶部有常驻栏(品牌名回首页 + 主题切换 + 登出):
+
+- **主题切换**:三态循环 `跟随系统 → 亮 → 暗`。默认跟随系统(交给 `prefers-color-scheme`,
+  不写 class);手动选择写进 `localStorage`(`ww-theme`)并在**首帧前**由内联脚本应用(防首次绘制闪烁);
+  读不出偏好时回跟随系统。两条路径共用同一组 `--dark-*` Token(单点定义),不会出现取色不一致
+- **登出**:点「登出」清会话 Cookie 并回 `/login`;未登录时不显示该按钮(顶部栏仍在,
+  用于切主题)。登出后访问业务页会被送回 `/login?from=<原路径>`
 
 ## 一键启动(AC-1:≤60s 双服务在线)
 

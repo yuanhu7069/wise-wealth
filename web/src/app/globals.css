@@ -5,9 +5,14 @@
  * 唯一值来源 = design 基线;本文件逐 Token 抄入,禁止发明数值(design-a.md §3)。
  * Tailwind v4:--color-X 自动生成 bg-X/text-X/border-X 等工具类;
  * --text-* 生成字号工具类;--spacing-* / --radius-* / --shadow-* 同理。
- * 暗色:仅跟随系统(OUT-008 不做手动切换),按基线 §5.1.2 逐 Token 重定义。
+ * 暗色:跟随系统(media)+ 手动切换(class 三态,design-v2 §3.3 补齐 A 期 OUT-008),
+ * 按基线 §5.1.2 逐 Token 重定义 —— 暗色值写在 --dark-* 组里**单点定义**,
+ * 两条生效路径(系统偏好 / 手动 .dark)只做机械映射,避免两份值漂移。
  * shadcn 默认 slate 色板全部映射到苑问色板(主色松墨绿 #4A6B57),禁留默认色。
  */
+
+/* design-v2 §3.3:class 策略的 dark 变体接线(值表唯一来源仍是基线 §5.1.2,此处只接变体) */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   /* ===== 基线 §5.1.1 亮色色板 ===== */
@@ -96,39 +101,112 @@
   --shadow-card: 0 1px 3px rgba(31, 31, 31, 0.06);
   --shadow-float: 0 4px 14px rgba(31, 31, 31, 0.1);
   --shadow-modal: 0 12px 40px rgba(31, 31, 31, 0.16);
+
+  /*
+   * B 期新增(design-v2 §3.3 / §97):可点击文字色 —— ghost 按钮与文字按钮(如「登出」)。
+   * 亮取 --color-primary(#4A6B57,页面底 5.65:1);暗取 --color-primary-light(#8AA894,卡片底 5.30:1)。
+   * 为什么需要它:--color-primary 在暗色卡片底只有 4.34:1,够不到正文 4.5:1 的线,
+   * 而暗色下更亮的那档主色就是 §5.1.2 已定义的 primary-light。两个值都来自基线,不是新色值。
+   */
+  --color-action: #4a6b57;
+
+  /*
+   * ===== 基线 §5.1.2 暗色值组(单点定义) =====
+   * 只在"暗色生效"时被下面两条路径**机械映射**回 --color-*;值本身不得在别处重复书写。
+   * 两条路径是 design-v2 §3.3 的要求:跟随系统走 media(与 A 期实现兼容),手动走 .dark class。
+   */
+  --dark-color-primary: #6b8b77;
+  --dark-color-primary-deep: #4a6b57;
+  --dark-color-primary-light: #8aa894;
+  --dark-color-primary-bg: #243029;
+  --dark-color-success: #4fa98a;
+  --dark-color-warning: #d9a952;
+  --dark-color-danger: #d4694f;
+  --dark-color-up: #d9564c;
+  --dark-color-down: #3ea46b;
+  --dark-color-text-title: #f0efed;
+  --dark-color-text-body: #c9c7c3;
+  --dark-color-text-aux: #8a8884;
+  --dark-color-text-inverse: #14161a;
+  --dark-color-text-disabled: #5e5c59;
+  --dark-color-divider: #2e3135;
+  --dark-color-bg-page: #14161a;
+  --dark-color-bg-card: #1e2024;
+  --dark-color-bg-subtle: #24272b;
+  --dark-color-action: #8aa894;
+  /* 基线 §5.5 规则 3:暗色降低阴影存在感,用 divider 边框表达层级 */
+  --dark-shadow-card: 0 0 0 1px #2e3135;
+  --dark-shadow-float: 0 0 0 1px #2e3135;
+  --dark-shadow-modal: 0 0 0 1px #2e3135;
+  /* shadcn 映射里只有这两项在暗色下取值不同(其余都是 var() 引用,自动跟随) */
+  --dark-primary-foreground: #14161a;
+  --dark-accent-foreground: #edf2ee;
 }
 
-/* ===== 基线 §5.1.2 暗色映射(仅系统偏好,无手动切换) ===== */
+/* ===== 暗色生效路径 ①:跟随系统(无手动偏好时不加 class,与 A 期实现兼容) =====
+ * :not(.light) 是必需的 —— 否则「手动切亮」在系统为暗色时会被这条 media 覆盖回去。 */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #6b8b77;
-    --color-primary-deep: #4a6b57;
-    --color-primary-light: #8aa894;
-    --color-primary-bg: #243029;
-    --color-success: #4fa98a;
-    --color-warning: #d9a952;
-    --color-danger: #d4694f;
-    --color-up: #d9564c;
-    --color-down: #3ea46b;
-    --color-text-title: #f0efed;
-    --color-text-body: #c9c7c3;
-    --color-text-aux: #8a8884;
-    --color-text-inverse: #14161a;
-    --color-text-disabled: #5e5c59;
-    --color-divider: #2e3135;
-    --color-bg-page: #14161a;
-    --color-bg-card: #1e2024;
-    --color-bg-subtle: #24272b;
-    /* 基线 §5.5 规则 3:暗色降低阴影存在感,用 divider 边框表达层级 */
-    --shadow-card: 0 0 0 1px #2e3135;
-    --shadow-float: 0 0 0 1px #2e3135;
-    --shadow-modal: 0 0 0 1px #2e3135;
+  :root:not(.light) {
+    --color-primary: var(--dark-color-primary);
+    --color-primary-deep: var(--dark-color-primary-deep);
+    --color-primary-light: var(--dark-color-primary-light);
+    --color-primary-bg: var(--dark-color-primary-bg);
+    --color-success: var(--dark-color-success);
+    --color-warning: var(--dark-color-warning);
+    --color-danger: var(--dark-color-danger);
+    --color-up: var(--dark-color-up);
+    --color-down: var(--dark-color-down);
+    --color-text-title: var(--dark-color-text-title);
+    --color-text-body: var(--dark-color-text-body);
+    --color-text-aux: var(--dark-color-text-aux);
+    --color-text-inverse: var(--dark-color-text-inverse);
+    --color-text-disabled: var(--dark-color-text-disabled);
+    --color-divider: var(--dark-color-divider);
+    --color-bg-page: var(--dark-color-bg-page);
+    --color-bg-card: var(--dark-color-bg-card);
+    --color-bg-subtle: var(--dark-color-bg-subtle);
+    --color-action: var(--dark-color-action);
+    --shadow-card: var(--dark-shadow-card);
+    --shadow-float: var(--dark-shadow-float);
+    --shadow-modal: var(--dark-shadow-modal);
   }
 }
 
+/* ===== 暗色生效路径 ②:手动切暗(<html class="dark">,design-v2 §3.3) ===== */
+:root.dark {
+  --color-primary: var(--dark-color-primary);
+  --color-primary-deep: var(--dark-color-primary-deep);
+  --color-primary-light: var(--dark-color-primary-light);
+  --color-primary-bg: var(--dark-color-primary-bg);
+  --color-success: var(--dark-color-success);
+  --color-warning: var(--dark-color-warning);
+  --color-danger: var(--dark-color-danger);
+  --color-up: var(--dark-color-up);
+  --color-down: var(--dark-color-down);
+  --color-text-title: var(--dark-color-text-title);
+  --color-text-body: var(--dark-color-text-body);
+  --color-text-aux: var(--dark-color-text-aux);
+  --color-text-inverse: var(--dark-color-text-inverse);
+  --color-text-disabled: var(--dark-color-text-disabled);
+  --color-divider: var(--dark-color-divider);
+  --color-bg-page: var(--dark-color-bg-page);
+  --color-bg-card: var(--dark-color-bg-card);
+  --color-bg-subtle: var(--dark-color-bg-subtle);
+  --color-action: var(--dark-color-action);
+  --shadow-card: var(--dark-shadow-card);
+  --shadow-float: var(--dark-shadow-float);
+  --shadow-modal: var(--dark-shadow-modal);
+}
+
+/* 三态 color-scheme:无 class = 跟随系统;.light / .dark = 强制(UA 控件与滚动条同步) */
 :root {
-  /* 跟随系统:让 UA 默认 UI(滚动条/表单控件)与页面同色 */
   color-scheme: light dark;
+}
+:root.light {
+  color-scheme: light;
+}
+:root.dark {
+  color-scheme: dark;
 }
 
 /* ===== shadcn CSS 变量 → 苑问色板映射(design-a.md §3,禁留 slate 默认色) ===== */
@@ -154,16 +232,18 @@
   --radius: var(--radius-md);
 }
 
+/* shadcn 暗色覆盖(两条路径同上)。其余项(foreground / card-foreground / secondary-foreground /
+ * muted-foreground)都是 var(--color-*) 引用,已随上面的 ①② 自动跟随,不必重复列举。 */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground: var(--color-text-body);
-    --card-foreground: var(--color-text-body);
-    --popover-foreground: var(--color-text-body);
-    --primary-foreground: #14161a;
-    --secondary-foreground: var(--color-text-body);
-    --muted-foreground: var(--color-text-aux);
-    --accent-foreground: #edf2ee;
+  :root:not(.light) {
+    --primary-foreground: var(--dark-primary-foreground);
+    --accent-foreground: var(--dark-accent-foreground);
   }
+}
+
+:root.dark {
+  --primary-foreground: var(--dark-primary-foreground);
+  --accent-foreground: var(--dark-accent-foreground);
 }
 
 /* ===== Tailwind v4 @theme:生成语义工具类 ===== */
@@ -187,6 +267,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* 可点击文字色(B 期新增语义别名,值仍是基线色板:亮 primary / 暗 primary-light) */
+  --color-action: var(--color-action);
 
   /* 基线 §5.1 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
   --color-success: var(--color-success);
