@@ -16,3 +16,7 @@ Issues 以本地 markdown 文件跟踪，存放于 `.scratch/<feature-slug>/`（
 ### Domain docs
 
 Single-context：根 `CONTEXT.md`（由 /domain-modeling 惰性创建，缺失时静默跳过）+ `docs/adr/`（领域 ADR；工程期 ADR 在各期 arch 文档内，两者并行）。See `docs/agents/domain.md`.
+
+### Design 基线（参考设计型，2026-09-17 起生效）
+
+本项目 Web 域生效的 design 基线是**参考设计型**：治理规则见 `docs/base_line/基线-design-参考设计-Web域.md`；视觉真源 = 根目录 `DESIGN.md`（改造件，**已断源——禁止对其执行 `designmd.sh update`**）；参考件在 `docs/design-ref/`（只读比对基准）。界面实现的唯一值来源是 `DESIGN.md`，`web/src/app/globals.css` 逐 Token 抄入它（check.sh 内 `designmd validate` 防漂移）。本地化调整清单见 `.scratch/stripe-restyle/spec.md` §2.2。`docs/base_line/基线-design-Web域.md` 是自有风格基线的镜像，本项目**不遵循**它。

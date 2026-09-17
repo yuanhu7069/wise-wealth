@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "designs": {
+    "Stripi-Inspired-design-analysis": {
+      "source": "voltagent/awesome-design-md",
+      "sourcePath": "design-md/stripe/DESIGN.md",
+      "outputPath": "docs/design-ref/DESIGN.stripe.md",
+      "ref": "HEAD",
+      "commitSha": "8147538b4226ae41e2487a9179e3bcc1f68e8554",
+      "contentHash": "5c8806b7dd3e0c2554ccba9d1e2a7c78e7c6e50e44fcf6ff5daea6026f8a9ed9",
+      "fetchedAt": "2026-09-17T14:10:03.457Z"
+    }
+  }
+}
