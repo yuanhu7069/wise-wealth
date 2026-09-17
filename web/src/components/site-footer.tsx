@@ -6,7 +6,7 @@
  * - 用原生 `<details>` 而非客户端状态:折叠是浏览器原生能力,不必为此引入
  *   "use client"(design 基线 §7.4 组件复用规则、§8.2 少动效)。
  *
- * 字号取 `--text-label` 档(design 基线 §5.2 的最小档);不再更小 —— 越档即偏离基线。
+ * 字号取 `text-caption` 档(DESIGN.md「Typography」caption 档);页脚说明类文字不上更小档。
  */
 import { ChevronDown } from "lucide-react";
 
@@ -31,10 +31,13 @@ export function SiteFooter({
 }: SiteFooterProps) {
   return (
     <footer
-      className={cn("border-t border-divider bg-bg-card px-lg pt-base-lg pb-base-xxl", className)}
+      className={cn(
+        "border-t border-hairline bg-canvas px-base-lg pt-base-lg pb-base-xxl",
+        className,
+      )}
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-base-xs">
-        <p className="flex items-center gap-base-xs text-label text-text-aux">
+        <p className="flex items-center gap-base-xs text-caption text-ink-mute">
           <span
             aria-hidden="true"
             className={cn("size-2 rounded-full", healthy ? "bg-success" : "bg-warning")}
@@ -43,7 +46,7 @@ export function SiteFooter({
         </p>
 
         {hideLegal ? null : (
-          <details className="group text-label text-text-aux">
+          <details className="group text-caption text-ink-mute">
             <summary className="flex cursor-pointer list-none items-center gap-base-xs marker:content-none">
               <span>{LEGAL_LINE}</span>
               <span className="flex shrink-0 items-center gap-base-xs underline underline-offset-2">

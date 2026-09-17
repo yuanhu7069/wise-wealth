@@ -4,26 +4,25 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * shadcn Button(基线 §7.2 按钮):主题经 globals.css CSS 变量映射到苑问色板。
- * ghost variant 供文字按钮(重试)使用——design-a.md §7。
+ * 参考件 `button-primary-pill` 体系(DESIGN.md「Buttons」):全部 pill 圆角,
+ * 实心靛蓝每区块至多一个;hover deep / active press。
+ * ghost variant 供文字按钮(重试/重新生成)使用;destructive 底用 danger-strong(白字达标)。
  *
- * 两处 B 期修正(2026-09-11 走查,test-report-b.md §8-E / §8-B):
- * ① ghost 用 `text-action` 而非 `text-primary` —— primary 在暗色卡片底只有 4.34:1;
- * ② 尺寸在移动断点抬到 h-11,桌面回到 h-10(基线 §16 触控热区 / design-v2 §43)。
+ * 移动断点抬到 h-11 保证触控目标不小于 44 像素(DESIGN.md「Touch Targets」,从严于参考)。
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-body font-medium transition-colors disabled:pointer-events-none disabled:text-text-disabled [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-button-md transition-colors disabled:pointer-events-none disabled:text-ink-mute-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        secondary: "border border-border bg-card text-foreground hover:bg-muted",
+        default: "bg-primary text-on-primary hover:bg-primary-deep active:bg-primary-press",
+        secondary: "border border-primary bg-canvas text-primary hover:bg-accent",
         ghost: "text-action hover:bg-accent",
-        destructive: "bg-destructive text-primary-foreground hover:bg-destructive/90",
+        destructive: "bg-danger-strong text-on-primary hover:bg-danger/90",
       },
       size: {
         default: "h-11 px-base-lg sm:h-10",
-        sm: "h-11 px-base-md sm:h-8",
+        sm: "h-11 px-base-lg text-button-sm sm:h-9",
         lg: "h-11 px-base-xl",
         icon: "size-11 sm:size-10",
       },

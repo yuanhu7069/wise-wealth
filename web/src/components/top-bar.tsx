@@ -17,12 +17,11 @@ export async function TopBar() {
   const loggedIn = store.has(SESSION_COOKIE);
 
   return (
-    <header className="flex h-13 shrink-0 items-center justify-between gap-base-lg border-b border-divider bg-card px-base-lg sm:h-14">
-      {/* 触控热区取基线 §16 / design-v2 §43 要求的最小高度:18 像素文字自带高度只有约 25 像素,
-          靠 min-h 撑起来 */}
+    <header className="flex h-13 shrink-0 items-center justify-between gap-base-lg border-b border-hairline bg-canvas-card px-base-lg sm:h-14">
+      {/* 触控热区 ≥44 像素(DESIGN.md「Touch Targets」):文字行高只有约 25 像素,靠 min-h 撑起来 */}
       <Link
         href="/"
-        className="inline-flex min-h-11 items-center text-section-title text-text-title sm:min-h-10"
+        className="inline-flex min-h-11 items-center text-heading-sm text-ink sm:min-h-10"
       >
         智策理财
       </Link>
@@ -32,7 +31,7 @@ export async function TopBar() {
           <form action={logoutAction}>
             <button
               type="submit"
-              className="inline-flex min-h-11 items-center rounded-md px-base-sm text-body text-action hover:bg-accent sm:min-h-10"
+              className="inline-flex min-h-11 items-center rounded-full px-base-md text-body-md text-action hover:bg-accent sm:min-h-10"
             >
               登出
             </button>

@@ -4,20 +4,19 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * shadcn Badge:主色浅底 + **accent 前景**(design-a.md §7),Pill 圆角。
+ * 参考件 `pill-tag-soft`(DESIGN.md「Pills, Tags, and Chips」):subdued 靛底 + press 靛字。
  *
- * 前景为什么不是 `text-primary`:基线 §5.1.1 的 primary 在暗色浅绿底上只有 3.65:1,
- * 够不到正文 4.5:1 —— 2026-09-11 走查实测,见 test-report-b.md §8-E。
- * `--accent-foreground` 正是「浅绿底上的前景色」这项语义:亮色取 primary-deep、
- * 暗色取浅色前景,两个值都来自基线 §5.1.2。
+ * 前景为什么走 `--accent-foreground` 而不是写死 primary-press:亮色取 press(对 subdued 底
+ * 6.17:1)、暗色取深靛(9.1:1),由 globals.css 的 shadcn 映射层按模式切换,两态都过 4.5 线。
+ * 字阶 `micro-cap`(参考件 10 像素上调一档,中文可读性,spec §2.2#5)。
  */
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-base-xs overflow-hidden rounded-full border border-transparent px-base-sm py-px text-label whitespace-nowrap",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-base-xs overflow-hidden rounded-full border border-transparent px-base-sm py-px text-micro-cap whitespace-nowrap",
   {
     variants: {
       variant: {
-        default: "bg-primary-bg text-accent-foreground",
-        secondary: "bg-bg-subtle text-text-body",
+        default: "bg-primary-bg-subdued-hover text-accent-foreground",
+        secondary: "bg-canvas-soft text-ink-secondary",
       },
     },
     defaultVariants: { variant: "default" },
