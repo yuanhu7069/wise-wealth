@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check.sh — 全量质量门(AC-6 等):clippy + cargo test + biome + tsc + Token 门禁。
+# check.sh — 全量质量门(AC-6 等):clippy + cargo test + biome + tsc + Token 门禁 + designmd validate。
 # 用法:scripts/check.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -26,8 +26,13 @@ if ! (cd web && npx tsc --noEmit); then
   fail=1
 fi
 
-echo "== 5/5 Token 门禁(RULE-006:禁裸色值/px,globals.css 除外)=="
+echo "== 5/6 Token 门禁(RULE-006:禁裸色值/px,globals.css 除外)=="
 if ! (cd web && bash scripts/check-tokens.sh); then
+  fail=1
+fi
+
+echo "== 6/6 designmd validate(DESIGN.md 改造件防漂移,参考设计基线 §3)=="
+if ! npx -y designmd.sh@latest validate ./DESIGN.md >/dev/null; then
   fail=1
 fi
 

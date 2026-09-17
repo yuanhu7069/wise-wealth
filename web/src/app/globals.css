@@ -1,198 +1,240 @@
 @import "tailwindcss";
 
 /*
- * 智策理财 · design 基线 Token 全量落地(基线-设计 §5.1.1/§5.1.2/§5.2/§5.3/§5.4/§5.5)
- * 唯一值来源 = design 基线;本文件逐 Token 抄入,禁止发明数值(design-a.md §3)。
+ * 智策理财 · 视觉真源 = 根目录 DESIGN.md(改造件,参考设计型基线,已断源)。
+ * 本文件逐 Token 抄入 DESIGN.md,禁止发明数值;与参考件的差异必须能在
+ * .scratch/stripe-restyle/spec.md §2.2 与 DESIGN.md 文末 Local Adjustments 找到。
  * Tailwind v4:--color-X 自动生成 bg-X/text-X/border-X 等工具类;
- * --text-* 生成字号工具类;--spacing-* / --radius-* / --shadow-* 同理。
- * 暗色:跟随系统(media)+ 手动切换(class 三态,design-v2 §3.3 补齐 A 期 OUT-008),
- * 按基线 §5.1.2 逐 Token 重定义 —— 暗色值写在 --dark-* 组里**单点定义**,
- * 两条生效路径(系统偏好 / 手动 .dark)只做机械映射,避免两份值漂移。
- * shadcn 默认 slate 色板全部映射到苑问色板(主色松墨绿 #4A6B57),禁留默认色。
+ * --text-* 生成字号工具类(字重/行高/字距随三元组合并);--spacing-* / --radius-* / --shadow-* 同理。
+ * 暗色:跟随系统(media)+ 手动切换(class 三态),暗色值在 --dark-* 组**单点定义**,
+ * 两条生效路径只做机械映射,避免两份值漂移。暗色派生依据 DESIGN.md「Colors §Dark mode」。
+ * shadcn 默认 slate 色板全部映射到参考件色板(主色靛蓝 #533AFD),禁留默认色。
  */
 
-/* design-v2 §3.3:class 策略的 dark 变体接线(值表唯一来源仍是基线 §5.1.2,此处只接变体) */
+/* class 策略的 dark 变体接线(值表唯一来源仍是 DESIGN.md 暗色表,此处只接变体) */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* ===== 基线 §5.1.1 亮色色板 ===== */
-  --color-primary: #4a6b57;
-  --color-primary-deep: #3a5546;
-  --color-primary-light: #6b8b77;
-  --color-primary-bg: #edf2ee;
-  --color-success: #3e8e6e;
-  --color-warning: #c8963e;
+  /* ===== DESIGN.md colors · 亮色(照参考件,含本地语义色) ===== */
+  --color-primary: #533afd;
+  --color-primary-deep: #4434d4;
+  --color-primary-press: #2e2b8c;
+  --color-primary-soft: #665efd;
+  --color-primary-bg-subdued-hover: #b9b9f9;
+  --color-brand-dark-900: #1c1e54;
+  --color-ink: #0d253d;
+  --color-ink-secondary: #273951;
+  --color-ink-mute: #64748d;
+  --color-ink-mute-2: #61718a;
+  --color-on-primary: #ffffff;
+  --color-canvas: #ffffff;
+  --color-canvas-card: #ffffff;
+  --color-canvas-soft: #f6f9fc;
+  --color-canvas-cream: #f5e9d4;
+  --color-hairline: #e3e8ee;
+  --color-hairline-input: #a8c3de;
+  --color-success: #357a5f;
+  --color-warning: #b3831f; /* 仅图标/边框/底(3.38:1);不作正文小字,文本提示用 ink/danger/success */
   --color-danger: #c0553f;
+  --color-danger-strong: #c0553f; /* 危险按钮专用底(白字 4.55:1);暗色取深档 */
   --color-up: #c7453c; /* 涨红(中国习惯) */
-  --color-down: #2e8b57; /* 跌绿(中国习惯) */
-  --color-text-title: #1f1f1f;
-  --color-text-body: #3d3d3d;
-  --color-text-aux: #8a8580;
-  --color-text-inverse: #ffffff;
-  --color-text-disabled: #b5b0aa;
-  --color-divider: #e5e1db;
-  --color-bg-page: #faf9f7;
-  --color-bg-card: #ffffff;
-  --color-bg-subtle: #f2f0ec;
-  --color-bg-overlay: rgba(31, 31, 31, 0.45);
+  --color-down: #27835a; /* 跌绿(中国习惯;原 #2E8B57 对白底 4.25 不过线,调深) */
+  --color-bg-overlay: rgba(13, 37, 61, 0.45);
 
-  /*
-   * 基线 §6.3 图表固定色板(六个分类色,「禁止随机生成颜色」)。
-   * 基线只为图表色板给出一套值、未定义暗色变体(§5.1.2 只映射语义色),
-   * 故暗色下沿用同值 —— 低饱和色在深底上仍可辨,且不发明基线外的新色值。
-   * 首个色与 --color-primary 同值属基线原样(色板第一色即品牌主色)。
-   */
-  --color-chart-1: #4a6b57;
-  --color-chart-2: #8aa894;
-  --color-chart-3: #c8963e;
-  --color-chart-4: #7b8fa1;
-  --color-chart-5: #b08070;
-  --color-chart-6: #6e7f8d;
+  /* DESIGN.md「Chart」固定六色(禁止随机取色;首色即主色,顺序即取值顺序) */
+  --color-chart-1: #533afd;
+  --color-chart-2: #665efd;
+  --color-chart-3: #ea2261;
+  --color-chart-4: #9b6829;
+  --color-chart-5: #64748d;
+  --color-chart-6: #1c1e54;
 
-  /* ===== 基线 §5.2 字阶(六档,禁止档外字号) ===== */
-  --text-page-title: 1.5rem; /* 24px */
-  --text-page-title--font-weight: 600;
-  --text-page-title--line-height: 1.35;
-  --text-section-title: 1.125rem; /* 18px */
-  --text-section-title--font-weight: 600;
-  --text-section-title--line-height: 1.4;
-  --text-body: 0.9375rem; /* 15px */
-  --text-body--font-weight: 400;
-  --text-body--line-height: 1.65;
-  --text-aux: 0.8125rem; /* 13px */
-  --text-aux--font-weight: 400;
-  --text-aux--line-height: 1.5;
-  --text-label: 0.75rem; /* 12px */
-  --text-label--font-weight: 500;
-  --text-label--line-height: 1.4;
-  --text-data: 0.9375rem; /* 15px */
-  --text-data--font-weight: 500;
-  --text-data--line-height: 1.4;
-  /*
-   * 声明条专用档(11px)。**显式偏离基线 §5.2 的 12px 下限** —— 2026-09-10 苑问选定,
-   * 理由是让 P03 固定操作栏在 375px 下真正单行不折(RULE-020 记有该偏离)。
-   * 唯一用途是操作栏内的声明行,不得当通用小字档使用。
-   */
+  /* mesh 不设新色站:P01 hero 一律取下列已 token 化的参考件色板值,柔和感靠透明度+模糊,
+   * 组件层不得出现 mesh 专用的裸色值 —— canvas-cream / lemon / magenta / primary / ruby */
+
+  /* ===== DESIGN.md typography(字阶档,中文调优:400/零负字距) ===== */
+  --text-display-xxl: 3.5rem; /* 56px */
+  --text-display-xxl--font-weight: 400;
+  --text-display-xxl--line-height: 1.03;
+  --text-display-xl: 3rem; /* 48px */
+  --text-display-xl--font-weight: 400;
+  --text-display-xl--line-height: 1.15;
+  --text-display-lg: 2rem; /* 32px */
+  --text-display-lg--font-weight: 400;
+  --text-display-lg--line-height: 1.1;
+  --text-display-md: 1.625rem; /* 26px */
+  --text-display-md--font-weight: 400;
+  --text-display-md--line-height: 1.12;
+  --text-heading-lg: 1.375rem; /* 22px */
+  --text-heading-lg--font-weight: 400;
+  --text-heading-lg--line-height: 1.1;
+  --text-heading-md: 1.25rem; /* 20px */
+  --text-heading-md--font-weight: 400;
+  --text-heading-md--line-height: 1.4;
+  --text-heading-sm: 1.125rem; /* 18px */
+  --text-heading-sm--font-weight: 400;
+  --text-heading-sm--line-height: 1.4;
+  --text-body-lg: 1rem; /* 16px */
+  --text-body-lg--font-weight: 400;
+  --text-body-lg--line-height: 1.4;
+  --text-body-md: 0.9375rem; /* 15px */
+  --text-body-md--font-weight: 400;
+  --text-body-md--line-height: 1.4;
+  /* 金额/数字档:负字距保留(拉丁数字),tnum 由下方 .text-body-tabular 增强规则自动附带 */
+  --text-body-tabular: 0.875rem; /* 14px */
+  --text-body-tabular--font-weight: 400;
+  --text-body-tabular--line-height: 1.4;
+  --text-body-tabular--letter-spacing: -0.0263rem; /* -0.42px */
+  --text-button-md: 1rem; /* 16px */
+  --text-button-md--font-weight: 400;
+  --text-button-md--line-height: 1;
+  --text-button-sm: 0.875rem; /* 14px */
+  --text-button-sm--font-weight: 400;
+  --text-button-sm--line-height: 1;
+  --text-caption: 0.8125rem; /* 13px */
+  --text-caption--font-weight: 400;
+  --text-caption--line-height: 1.4;
+  /* 声明条档(11px):P03 固定操作栏 RULE-020 下限,不当通用小字档使用 */
   --text-micro: 0.6875rem; /* 11px */
   --text-micro--font-weight: 400;
   --text-micro--line-height: 1.4;
+  --text-micro-cap: 0.6875rem; /* 11px(参考 10px,中文可读性上调) */
+  --text-micro-cap--font-weight: 400;
+  --text-micro-cap--line-height: 1.15;
+  --text-micro-cap--letter-spacing: 0.00625rem; /* +0.1px */
 
-  /* ===== 基线 §5.2 字体栈(不引入外部字体文件) ===== */
+  /* ===== DESIGN.md「Font Family」(Inter 由 next/font 注入 --font-inter) ===== */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI",
-    Roboto, sans-serif;
+    var(--font-inter), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
   --font-mono: "SF Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
 
-  /* ===== 基线 §5.3 间距(4px 基准六档) ===== */
+  /* ===== DESIGN.md spacing(基准 8px 八档) ===== */
+  --spacing-xxs: 0.125rem; /* 2px */
   --spacing-xs: 0.25rem; /* 4px */
   --spacing-sm: 0.5rem; /* 8px */
   --spacing-md: 0.75rem; /* 12px */
   --spacing-lg: 1rem; /* 16px */
-  --spacing-xl: 1.25rem; /* 20px */
+  --spacing-xl: 1.5rem; /* 24px */
   --spacing-xxl: 2rem; /* 32px */
+  --spacing-huge: 4rem; /* 64px */
 
-  /* ===== 基线 §5.4 圆角 ===== */
+  /* ===== DESIGN.md rounded ===== */
+  --radius-xs: 0.25rem; /* 4px */
   --radius-sm: 0.375rem; /* 6px */
-  --radius-md: 0.625rem; /* 10px */
-  --radius-lg: 0.875rem; /* 14px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem; /* 16px */
   --radius-full: 9999px;
 
-  /* ===== 基线 §5.5 阴影(仅三级,且轻) ===== */
-  --shadow-card: 0 1px 3px rgba(31, 31, 31, 0.06);
-  --shadow-float: 0 4px 14px rgba(31, 31, 31, 0.1);
-  --shadow-modal: 0 12px 40px rgba(31, 31, 31, 0.16);
+  /* ===== DESIGN.md「Elevation & Depth」(蓝调阴影 L1/L2 + modal 派生档) ===== */
+  --shadow-card: 0 1px 3px rgba(0, 55, 112, 0.08);
+  --shadow-float: 0 8px 24px rgba(0, 55, 112, 0.08), 0 2px 6px rgba(0, 55, 112, 0.04);
+  --shadow-modal: 0 16px 48px rgba(0, 55, 112, 0.16), 0 4px 12px rgba(0, 55, 112, 0.08);
 
   /*
-   * B 期新增(design-v2 §3.3 / §97):可点击文字色 —— ghost 按钮与文字按钮(如「登出」)。
-   * 亮取 --color-primary(#4A6B57,页面底 5.65:1);暗取 --color-primary-light(#8AA894,卡片底 5.30:1)。
-   * 为什么需要它:--color-primary 在暗色卡片底只有 4.34:1,够不到正文 4.5:1 的线,
-   * 而暗色下更亮的那档主色就是 §5.1.2 已定义的 primary-light。两个值都来自基线,不是新色值。
+   * 可点击文字色(语义别名):亮取 primary(白底 6.19:1),暗取 subdued(卡片底 ≥9:1)。
+   * 值都来自 DESIGN.md 色板,不是新色值。
    */
-  --color-action: #4a6b57;
+  --color-action: #533afd;
 
   /*
-   * ===== 基线 §5.1.2 暗色值组(单点定义) =====
+   * ===== DESIGN.md 暗色派生值组(单点定义) =====
    * 只在"暗色生效"时被下面两条路径**机械映射**回 --color-*;值本身不得在别处重复书写。
-   * 两条路径是 design-v2 §3.3 的要求:跟随系统走 media(与 A 期实现兼容),手动走 .dark class。
+   * 两条路径:跟随系统走 media,手动走 .dark class。
    */
-  --dark-color-primary: #6b8b77;
-  --dark-color-primary-deep: #4a6b57;
-  --dark-color-primary-light: #8aa894;
-  --dark-color-primary-bg: #243029;
+  --dark-color-canvas: #0e1020;
+  --dark-color-canvas-card: #151832;
+  --dark-color-canvas-soft: #1b1f3b;
+  --dark-color-canvas-cream: #2a2440;
+  --dark-color-hairline: #262b4d;
+  --dark-color-hairline-input: #3f4670;
+  --dark-color-ink: #eef0fb;
+  --dark-color-ink-secondary: #c3c8de;
+  --dark-color-ink-mute: #848cad;
+  --dark-color-ink-mute-2: #6b7294;
+  --dark-color-bg-overlay: rgba(4, 6, 16, 0.6);
   --dark-color-success: #4fa98a;
   --dark-color-warning: #d9a952;
   --dark-color-danger: #d4694f;
-  --dark-color-up: #d9564c;
+  --dark-color-danger-strong: #b84e36; /* 白字 5.02:1(danger #d4694f 作按钮底只有 3.54) */
+  --dark-color-up: #dd5a50; /* 对卡片底 4.68(#d9564c 只有 4.46) */
   --dark-color-down: #3ea46b;
-  --dark-color-text-title: #f0efed;
-  --dark-color-text-body: #c9c7c3;
-  --dark-color-text-aux: #8a8884;
-  --dark-color-text-inverse: #14161a;
-  --dark-color-text-disabled: #5e5c59;
-  --dark-color-divider: #2e3135;
-  --dark-color-bg-page: #14161a;
-  --dark-color-bg-card: #1e2024;
-  --dark-color-bg-subtle: #24272b;
-  --dark-color-action: #8aa894;
-  /* 基线 §5.5 规则 3:暗色降低阴影存在感,用 divider 边框表达层级 */
-  --dark-shadow-card: 0 0 0 1px #2e3135;
-  --dark-shadow-float: 0 0 0 1px #2e3135;
-  --dark-shadow-modal: 0 0 0 1px #2e3135;
-  /* shadcn 映射里只有这两项在暗色下取值不同(其余都是 var() 引用,自动跟随) */
-  --dark-primary-foreground: #14161a;
-  --dark-accent-foreground: #edf2ee;
+  --dark-color-action: #b9b9f9;
+  /* DESIGN.md 暗色图表顺序:亮色优先(primary-soft/subdued/magenta/ruby/lemon/ink-mute) */
+  --dark-color-chart-1: #665efd;
+  --dark-color-chart-2: #b9b9f9;
+  --dark-color-chart-3: #f96bee;
+  --dark-color-chart-4: #ea2261;
+  --dark-color-chart-5: #9b6829;
+  --dark-color-chart-6: #848cad;
+  /* DESIGN.md「Elevation」暗色规则:阴影一律换 hairline 边框表达 */
+  --dark-shadow-card: 0 0 0 1px #262b4d;
+  --dark-shadow-float: 0 0 0 1px #262b4d;
+  --dark-shadow-modal: 0 0 0 1px #262b4d;
+  /* shadcn 映射里只有这一项在暗色下取值不同(subdued 底上需要深前景,对 #1c1e54 9.1:1) */
+  --dark-accent-foreground: #1c1e54;
 }
 
-/* ===== 暗色生效路径 ①:跟随系统(无手动偏好时不加 class,与 A 期实现兼容) =====
+/* ===== 暗色生效路径 ①:跟随系统(无手动偏好时不加 class) =====
  * :not(.light) 是必需的 —— 否则「手动切亮」在系统为暗色时会被这条 media 覆盖回去。 */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --color-primary: var(--dark-color-primary);
-    --color-primary-deep: var(--dark-color-primary-deep);
-    --color-primary-light: var(--dark-color-primary-light);
-    --color-primary-bg: var(--dark-color-primary-bg);
+    --color-canvas: var(--dark-color-canvas);
+    --color-canvas-card: var(--dark-color-canvas-card);
+    --color-canvas-soft: var(--dark-color-canvas-soft);
+    --color-canvas-cream: var(--dark-color-canvas-cream);
+    --color-hairline: var(--dark-color-hairline);
+    --color-hairline-input: var(--dark-color-hairline-input);
+    --color-ink: var(--dark-color-ink);
+    --color-ink-secondary: var(--dark-color-ink-secondary);
+    --color-ink-mute: var(--dark-color-ink-mute);
+    --color-ink-mute-2: var(--dark-color-ink-mute-2);
+    --color-bg-overlay: var(--dark-color-bg-overlay);
     --color-success: var(--dark-color-success);
     --color-warning: var(--dark-color-warning);
     --color-danger: var(--dark-color-danger);
+    --color-danger-strong: var(--dark-color-danger-strong);
     --color-up: var(--dark-color-up);
     --color-down: var(--dark-color-down);
-    --color-text-title: var(--dark-color-text-title);
-    --color-text-body: var(--dark-color-text-body);
-    --color-text-aux: var(--dark-color-text-aux);
-    --color-text-inverse: var(--dark-color-text-inverse);
-    --color-text-disabled: var(--dark-color-text-disabled);
-    --color-divider: var(--dark-color-divider);
-    --color-bg-page: var(--dark-color-bg-page);
-    --color-bg-card: var(--dark-color-bg-card);
-    --color-bg-subtle: var(--dark-color-bg-subtle);
     --color-action: var(--dark-color-action);
+    --color-chart-1: var(--dark-color-chart-1);
+    --color-chart-2: var(--dark-color-chart-2);
+    --color-chart-3: var(--dark-color-chart-3);
+    --color-chart-4: var(--dark-color-chart-4);
+    --color-chart-5: var(--dark-color-chart-5);
+    --color-chart-6: var(--dark-color-chart-6);
     --shadow-card: var(--dark-shadow-card);
     --shadow-float: var(--dark-shadow-float);
     --shadow-modal: var(--dark-shadow-modal);
   }
 }
 
-/* ===== 暗色生效路径 ②:手动切暗(<html class="dark">,design-v2 §3.3) ===== */
+/* ===== 暗色生效路径 ②:手动切暗(<html class="dark">) ===== */
 :root.dark {
-  --color-primary: var(--dark-color-primary);
-  --color-primary-deep: var(--dark-color-primary-deep);
-  --color-primary-light: var(--dark-color-primary-light);
-  --color-primary-bg: var(--dark-color-primary-bg);
+  --color-canvas: var(--dark-color-canvas);
+  --color-canvas-card: var(--dark-color-canvas-card);
+  --color-canvas-soft: var(--dark-color-canvas-soft);
+  --color-canvas-cream: var(--dark-color-canvas-cream);
+  --color-hairline: var(--dark-color-hairline);
+  --color-hairline-input: var(--dark-color-hairline-input);
+  --color-ink: var(--dark-color-ink);
+  --color-ink-secondary: var(--dark-color-ink-secondary);
+  --color-ink-mute: var(--dark-color-ink-mute);
+  --color-ink-mute-2: var(--dark-color-ink-mute-2);
+  --color-bg-overlay: var(--dark-color-bg-overlay);
   --color-success: var(--dark-color-success);
   --color-warning: var(--dark-color-warning);
   --color-danger: var(--dark-color-danger);
+  --color-danger-strong: var(--dark-color-danger-strong);
   --color-up: var(--dark-color-up);
   --color-down: var(--dark-color-down);
-  --color-text-title: var(--dark-color-text-title);
-  --color-text-body: var(--dark-color-text-body);
-  --color-text-aux: var(--dark-color-text-aux);
-  --color-text-inverse: var(--dark-color-text-inverse);
-  --color-text-disabled: var(--dark-color-text-disabled);
-  --color-divider: var(--dark-color-divider);
-  --color-bg-page: var(--dark-color-bg-page);
-  --color-bg-card: var(--dark-color-bg-card);
-  --color-bg-subtle: var(--dark-color-bg-subtle);
   --color-action: var(--dark-color-action);
+  --color-chart-1: var(--dark-color-chart-1);
+  --color-chart-2: var(--dark-color-chart-2);
+  --color-chart-3: var(--dark-color-chart-3);
+  --color-chart-4: var(--dark-color-chart-4);
+  --color-chart-5: var(--dark-color-chart-5);
+  --color-chart-6: var(--dark-color-chart-6);
   --shadow-card: var(--dark-shadow-card);
   --shadow-float: var(--dark-shadow-float);
   --shadow-modal: var(--dark-shadow-modal);
@@ -209,46 +251,44 @@
   color-scheme: dark;
 }
 
-/* ===== shadcn CSS 变量 → 苑问色板映射(design-a.md §3,禁留 slate 默认色) ===== */
+/* ===== shadcn CSS 变量 → 参考件色板映射(禁留 slate 默认色) ===== */
 :root {
-  --background: var(--color-bg-page);
-  --foreground: var(--color-text-body);
-  --card: var(--color-bg-card);
-  --card-foreground: var(--color-text-body);
-  --popover: var(--color-bg-card);
-  --popover-foreground: var(--color-text-body);
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink-secondary);
+  --card: var(--color-canvas-card);
+  --card-foreground: var(--color-ink-secondary);
+  --popover: var(--color-canvas-card);
+  --popover-foreground: var(--color-ink-secondary);
   --primary: var(--color-primary);
-  --primary-foreground: var(--color-text-inverse);
-  --secondary: var(--color-bg-subtle);
-  --secondary-foreground: var(--color-text-body);
-  --muted: var(--color-bg-subtle);
-  --muted-foreground: var(--color-text-aux);
-  --accent: var(--color-primary-bg);
-  --accent-foreground: var(--color-primary-deep);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-canvas-soft);
+  --secondary-foreground: var(--color-ink-secondary);
+  --muted: var(--color-canvas-soft);
+  --muted-foreground: var(--color-ink-mute);
+  --accent: var(--color-primary-bg-subdued-hover);
+  /* subdued 底上的前景:亮取 press(6.17:1)、暗取深靛(9.1:1)——deep 只有 4.22:1,不过正文线 */
+  --accent-foreground: var(--color-primary-press);
   --destructive: var(--color-danger);
-  --border: var(--color-divider);
-  --input: var(--color-divider);
+  --border: var(--color-hairline);
+  --input: var(--color-hairline-input);
   --ring: var(--color-primary);
   --radius: var(--radius-md);
 }
 
-/* shadcn 暗色覆盖(两条路径同上)。其余项(foreground / card-foreground / secondary-foreground /
- * muted-foreground)都是 var(--color-*) 引用,已随上面的 ①② 自动跟随,不必重复列举。 */
+/* shadcn 暗色覆盖(两条路径同上)。其余项都是 var(--color-*) 引用,已随 ①② 自动跟随。 */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --primary-foreground: var(--dark-primary-foreground);
     --accent-foreground: var(--dark-accent-foreground);
   }
 }
 
 :root.dark {
-  --primary-foreground: var(--dark-primary-foreground);
   --accent-foreground: var(--dark-accent-foreground);
 }
 
 /* ===== Tailwind v4 @theme:生成语义工具类 ===== */
 @theme inline {
-  /* 颜色(全部来自苑问色板,无 shadcn 默认 slate) */
+  /* shadcn 别名(组件层经此间接用色) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -267,30 +307,34 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  /* 可点击文字色(B 期新增语义别名,值仍是基线色板:亮 primary / 暗 primary-light) */
-  --color-action: var(--color-action);
 
-  /* 基线 §5.1 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
+  /* DESIGN.md 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
+  --color-canvas: var(--color-canvas);
+  --color-canvas-card: var(--color-canvas-card);
+  --color-canvas-soft: var(--color-canvas-soft);
+  --color-canvas-cream: var(--color-canvas-cream);
+  --color-hairline: var(--color-hairline);
+  --color-hairline-input: var(--color-hairline-input);
+  --color-primary-deep: var(--color-primary-deep);
+  --color-primary-press: var(--color-primary-press);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-bg-subdued-hover: var(--color-primary-bg-subdued-hover);
+  --color-brand-dark-900: var(--color-brand-dark-900);
+  --color-ink: var(--color-ink);
+  --color-ink-secondary: var(--color-ink-secondary);
+  --color-ink-mute: var(--color-ink-mute);
+  --color-ink-mute-2: var(--color-ink-mute-2);
+  --color-on-primary: var(--color-on-primary);
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
+  --color-danger-strong: var(--color-danger-strong);
   --color-up: var(--color-up);
   --color-down: var(--color-down);
-  --color-primary-bg: var(--color-primary-bg);
-  --color-primary-deep: var(--color-primary-deep);
-  --color-primary-light: var(--color-primary-light);
-  --color-divider: var(--color-divider);
-  --color-bg-page: var(--color-bg-page);
-  --color-bg-card: var(--color-bg-card);
-  --color-bg-subtle: var(--color-bg-subtle);
+  --color-action: var(--color-action);
   --color-bg-overlay: var(--color-bg-overlay);
-  --color-text-title: var(--color-text-title);
-  --color-text-body: var(--color-text-body);
-  --color-text-aux: var(--color-text-aux);
-  --color-text-inverse: var(--color-text-inverse);
-  --color-text-disabled: var(--color-text-disabled);
 
-  /* 基线 §6.3 图表色板(分类色,顺序即取值顺序) */
+  /* DESIGN.md「Chart」图表色板(分类色,顺序即取值顺序) */
   --color-chart-1: var(--color-chart-1);
   --color-chart-2: var(--color-chart-2);
   --color-chart-3: var(--color-chart-3);
@@ -298,45 +342,74 @@
   --color-chart-5: var(--color-chart-5);
   --color-chart-6: var(--color-chart-6);
 
-  /* 基线 §5.2 字阶六档(:root 存字号/字重/行高三元组;主值 inline 引用,元组变量同步注册,
-   * Tailwind v4 将 --text-X--font-weight/--text-X--line-height 合并进对应字号工具类) */
-  --text-page-title: var(--text-page-title);
-  --text-page-title--font-weight: var(--text-page-title--font-weight);
-  --text-page-title--line-height: var(--text-page-title--line-height);
-  --text-section-title: var(--text-section-title);
-  --text-section-title--font-weight: var(--text-section-title--font-weight);
-  --text-section-title--line-height: var(--text-section-title--line-height);
-  --text-body: var(--text-body);
-  --text-body--font-weight: var(--text-body--font-weight);
-  --text-body--line-height: var(--text-body--line-height);
-  --text-aux: var(--text-aux);
-  --text-aux--font-weight: var(--text-aux--font-weight);
-  --text-aux--line-height: var(--text-aux--line-height);
-  --text-label: var(--text-label);
-  --text-label--font-weight: var(--text-label--font-weight);
-  --text-label--line-height: var(--text-label--line-height);
-  --text-data: var(--text-data);
-  --text-data--font-weight: var(--text-data--font-weight);
-  --text-data--line-height: var(--text-data--line-height);
-  /* 声明条档(11px,显式偏离基线 §5.2 下限 —— 见 :root 注释与 prd-v1 RULE-020) */
+  /* DESIGN.md 字阶(:root 存字号/字重/行高/字距元组;主值 inline 引用,元组变量同步注册,
+   * Tailwind v4 将 --text-X--font-weight/--line-height/--letter-spacing 合并进字号工具类) */
+  --text-display-xxl: var(--text-display-xxl);
+  --text-display-xxl--font-weight: var(--text-display-xxl--font-weight);
+  --text-display-xxl--line-height: var(--text-display-xxl--line-height);
+  --text-display-xl: var(--text-display-xl);
+  --text-display-xl--font-weight: var(--text-display-xl--font-weight);
+  --text-display-xl--line-height: var(--text-display-xl--line-height);
+  --text-display-lg: var(--text-display-lg);
+  --text-display-lg--font-weight: var(--text-display-lg--font-weight);
+  --text-display-lg--line-height: var(--text-display-lg--line-height);
+  --text-display-md: var(--text-display-md);
+  --text-display-md--font-weight: var(--text-display-md--font-weight);
+  --text-display-md--line-height: var(--text-display-md--line-height);
+  --text-heading-lg: var(--text-heading-lg);
+  --text-heading-lg--font-weight: var(--text-heading-lg--font-weight);
+  --text-heading-lg--line-height: var(--text-heading-lg--line-height);
+  --text-heading-md: var(--text-heading-md);
+  --text-heading-md--font-weight: var(--text-heading-md--font-weight);
+  --text-heading-md--line-height: var(--text-heading-md--line-height);
+  --text-heading-sm: var(--text-heading-sm);
+  --text-heading-sm--font-weight: var(--text-heading-sm--font-weight);
+  --text-heading-sm--line-height: var(--text-heading-sm--line-height);
+  --text-body-lg: var(--text-body-lg);
+  --text-body-lg--font-weight: var(--text-body-lg--font-weight);
+  --text-body-lg--line-height: var(--text-body-lg--line-height);
+  --text-body-md: var(--text-body-md);
+  --text-body-md--font-weight: var(--text-body-md--font-weight);
+  --text-body-md--line-height: var(--text-body-md--line-height);
+  --text-body-tabular: var(--text-body-tabular);
+  --text-body-tabular--font-weight: var(--text-body-tabular--font-weight);
+  --text-body-tabular--line-height: var(--text-body-tabular--line-height);
+  --text-body-tabular--letter-spacing: var(--text-body-tabular--letter-spacing);
+  --text-button-md: var(--text-button-md);
+  --text-button-md--font-weight: var(--text-button-md--font-weight);
+  --text-button-md--line-height: var(--text-button-md--line-height);
+  --text-button-sm: var(--text-button-sm);
+  --text-button-sm--font-weight: var(--text-button-sm--font-weight);
+  --text-button-sm--line-height: var(--text-button-sm--line-height);
+  --text-caption: var(--text-caption);
+  --text-caption--font-weight: var(--text-caption--font-weight);
+  --text-caption--line-height: var(--text-caption--line-height);
   --text-micro: var(--text-micro);
   --text-micro--font-weight: var(--text-micro--font-weight);
   --text-micro--line-height: var(--text-micro--line-height);
+  --text-micro-cap: var(--text-micro-cap);
+  --text-micro-cap--font-weight: var(--text-micro-cap--font-weight);
+  --text-micro-cap--line-height: var(--text-micro-cap--line-height);
+  --text-micro-cap--letter-spacing: var(--text-micro-cap--letter-spacing);
 
-  /* 基线 §5.3 间距六档(注册名加 base- 前缀:裸 xs/sm/…/xxl 档名会撞 Tailwind 内置刻度——
-   * 注册 --spacing-xl 后 v4 把 max-w-xl 从容器刻度 36rem 劫持成 20px。base- 前缀错开,
+  /* DESIGN.md spacing 八档(注册名加 base- 前缀:裸 xs/sm/…档名会撞 Tailwind 内置刻度——
+   * 注册 --spacing-xl 后 v4 把 max-w-xl 从容器刻度 36rem 劫持成 24px。base- 前缀错开,
    * 工具类形态 gap-base-lg / p-base-xl / w-base-md 等) */
+  --spacing-base-xxs: var(--spacing-xxs);
   --spacing-base-xs: var(--spacing-xs);
   --spacing-base-sm: var(--spacing-sm);
   --spacing-base-md: var(--spacing-md);
   --spacing-base-lg: var(--spacing-lg);
   --spacing-base-xl: var(--spacing-xl);
   --spacing-base-xxl: var(--spacing-xxl);
+  --spacing-base-huge: var(--spacing-huge);
 
   /* 圆角 */
+  --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
 
   /* 阴影 */
   --shadow-card: var(--shadow-card);
@@ -344,19 +417,20 @@
   --shadow-modal: var(--shadow-modal);
 }
 
-/* ===== 基线全局规则 ===== */
+/* ===== DESIGN.md 全局规则 ===== */
 body {
-  background: var(--color-bg-page);
-  color: var(--color-text-body);
+  background: var(--color-canvas);
+  color: var(--color-ink-secondary);
   font-family: var(--font-sans);
 }
 
-/* 基线 §5.2 规则 2:数值/金额/日期必须等宽数字(工具类 text-data 搭配使用) */
-.tabular-nums {
+/* DESIGN.md「Typography · Principles」:金额/数字一律等宽——字号档自带,此处补 font-variant,
+ * 使 text-body-tabular 单个类即满足「tnum + 负字距 + 14px」完整财务数字形态 */
+.text-body-tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* 基线 §8 规则 5:尊重系统减弱动效设置——所有动画时长归零(AC-9)。
+/* 基线规则:尊重系统减弱动效设置——所有动画时长归零。
  * !important 为 reduced-motion 全局降级的标准写法(需覆盖工具类优先级),此处属有意使用。 */
 @media (prefers-reduced-motion: reduce) {
   *,
