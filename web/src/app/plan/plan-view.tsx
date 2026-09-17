@@ -31,7 +31,7 @@ function Section({
 }) {
   return (
     <section className={cn("flex flex-col gap-base-md", className)}>
-      <h2 className="text-section-title text-text-title">{title}</h2>
+      <h2 className="text-heading-md text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -49,12 +49,10 @@ function NoticeBar({ notice }: { notice: keyof typeof NOTICE_COPY }) {
   return (
     <div
       role="status"
-      className="flex flex-col gap-base-xs rounded-md border border-divider bg-bg-card px-base-lg py-base-md"
+      className="flex flex-col gap-base-xs rounded-md border border-hairline bg-canvas-card px-base-lg py-base-md"
     >
-      <p className={cn("text-body font-medium", severe ? "text-danger" : "text-text-title")}>
-        {copy.title}
-      </p>
-      <p className="text-aux text-text-body">{copy.description}</p>
+      <p className={cn("text-body-md", severe ? "text-danger" : "text-ink")}>{copy.title}</p>
+      <p className="text-caption text-ink-secondary">{copy.description}</p>
     </div>
   );
 }
@@ -66,18 +64,18 @@ function NoticeBar({ notice }: { notice: keyof typeof NOTICE_COPY }) {
 function EmergencyPanel({ emergency }: { emergency: Plan["emergency"] }) {
   const coverage = formatMonthsTenths(emergency.coverage_tenths);
   return (
-    <div className="flex flex-col gap-base-xs rounded-md bg-bg-subtle px-base-lg py-base-md">
-      <p className="text-body text-text-body">
+    <div className="flex flex-col gap-base-xs rounded-md bg-canvas-soft px-base-lg py-base-md">
+      <p className="text-body-md text-ink-secondary">
         应急金:
-        <span className={cn("font-medium", emergency.is_met ? "text-success" : "text-text-title")}>
+        <span className={emergency.is_met ? "text-success" : "text-ink"}>
           {emergency.is_met ? "已达标" : "未达标"}
         </span>
         {" · "}目标 {emergency.months} 个月 = {formatCurrency(emergency.target_cents)}
-        <span className="text-aux text-text-aux">
+        <span className="text-caption text-ink-mute-2">
           (必要月支出 {formatCurrency(emergency.necessary_monthly_cents)})
         </span>
       </p>
-      <p className="text-aux text-text-body">
+      <p className="text-caption text-ink-secondary">
         现有存款已覆盖约 {coverage} 个月
         {emergency.is_met
           ? ""
@@ -86,7 +84,7 @@ function EmergencyPanel({ emergency }: { emergency: Plan["emergency"] }) {
             } 个月补齐`}
       </p>
       {emergency.is_met ? (
-        <p className="text-aux text-text-body">
+        <p className="text-caption text-ink-secondary">
           {emergency.surplus_cents > 0
             ? `超出应急目标的部分不再单独预留:投资账户已有家底 ${formatCurrency(emergency.surplus_cents)}`
             : "超出应急目标的部分不再单独预留,份额自动进入投资账户"}
@@ -103,23 +101,23 @@ function OverviewSection({ plan }: { plan: Plan }) {
       <div className="overflow-hidden rounded-lg bg-card shadow-card">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-bg-subtle text-label text-text-aux">
-              <th scope="col" className="px-base-lg py-base-sm text-left font-medium">
+            <tr className="bg-canvas-soft text-caption text-ink-mute-2">
+              <th scope="col" className="px-base-lg py-base-sm text-left">
                 账户
               </th>
-              <th scope="col" className="px-base-lg py-base-sm text-right font-medium">
+              <th scope="col" className="px-base-lg py-base-sm text-right">
                 每月转入
               </th>
-              <th scope="col" className="px-base-lg py-base-sm text-left font-medium">
+              <th scope="col" className="px-base-lg py-base-sm text-left">
                 用途
               </th>
             </tr>
           </thead>
           <tbody>
             {plan.buckets.map((bucket, i) => (
-              <tr key={bucket.bucket_id} className="border-t border-divider">
-                <th scope="row" className="h-11 px-base-lg text-left text-body font-normal">
-                  <span className="flex items-center gap-base-sm text-text-title">
+              <tr key={bucket.bucket_id} className="border-t border-hairline">
+                <th scope="row" className="h-11 px-base-lg text-left text-body-md font-normal">
+                  <span className="flex items-center gap-base-sm text-ink">
                     <span
                       aria-hidden="true"
                       className={cn("size-2.5 shrink-0 rounded-full", chartBgClass(i))}
@@ -127,10 +125,10 @@ function OverviewSection({ plan }: { plan: Plan }) {
                     {bucket.name}
                   </span>
                 </th>
-                <td className="h-11 px-base-lg text-right text-data text-text-title tabular-nums whitespace-nowrap">
+                <td className="h-11 px-base-lg text-right text-body-tabular text-ink whitespace-nowrap">
                   {formatCurrency(bucket.amount_monthly_cents)}
                 </td>
-                <td className="h-11 px-base-lg text-aux text-text-aux">{bucket.purpose}</td>
+                <td className="h-11 px-base-lg text-caption text-ink-mute">{bucket.purpose}</td>
               </tr>
             ))}
           </tbody>
@@ -148,10 +146,10 @@ function L2Section({ l2 }: { l2: Plan["l2"] }) {
       <div className="flex flex-col gap-base-md rounded-lg bg-card p-base-lg shadow-card">
         <div className="flex flex-wrap items-center gap-base-sm">
           <Badge>{l2.name}</Badge>
-          <span className="text-aux text-text-aux">{l2.reason}</span>
+          <span className="text-caption text-ink-mute">{l2.reason}</span>
         </div>
 
-        <div className="flex h-3 w-full overflow-hidden rounded-full bg-bg-subtle">
+        <div className="flex h-3 w-full overflow-hidden rounded-full bg-canvas-soft">
           {l2.classes.map((cls, i) => (
             <span
               key={cls.name}
@@ -166,7 +164,7 @@ function L2Section({ l2 }: { l2: Plan["l2"] }) {
           {l2.classes.map((cls, i) => (
             <li
               key={cls.name}
-              className="flex items-center gap-base-xs text-aux text-text-body tabular-nums"
+              className="flex items-center gap-base-xs text-caption text-ink-secondary tabular-nums"
             >
               <span
                 aria-hidden="true"
@@ -177,8 +175,8 @@ function L2Section({ l2 }: { l2: Plan["l2"] }) {
           ))}
         </ul>
 
-        {l2.note ? <p className="text-aux text-text-aux">{l2.note}</p> : null}
-        <p className="text-label text-text-aux">仅到大类资产,不涉及任何具体产品</p>
+        {l2.note ? <p className="text-caption text-ink-mute">{l2.note}</p> : null}
+        <p className="text-caption text-ink-mute">仅到大类资产,不涉及任何具体产品</p>
       </div>
     </Section>
   );
@@ -188,12 +186,12 @@ function L2Section({ l2 }: { l2: Plan["l2"] }) {
 function ExecutionSection({ plan }: { plan: Plan }) {
   return (
     <Section title="三、执行规则">
-      <div className="flex flex-col gap-base-sm rounded-lg bg-card p-base-lg text-body text-text-body shadow-card">
+      <div className="flex flex-col gap-base-sm rounded-lg bg-card p-base-lg text-body-md text-ink-secondary shadow-card">
         <p>1. 每月发薪日定投,金额按上表执行</p>
         <p>2. 投资账户偏离目标比例 5% 时触发再平衡</p>
         <p>3. 优先用新增资金补低配(现金再平衡,规避赎回费与择时)</p>
         {plan.emergency.is_met ? null : (
-          <p className="text-aux text-text-aux">
+          <p className="text-caption text-ink-mute">
             应急金未达标期间,备用账户优先补应急(每月{" "}
             {formatCurrency(plan.emergency.monthly_toward_emergency_cents)},约{" "}
             {plan.emergency.months_to_fill ?? 0} 个月达标),达标后这部分份额转入投资账户。
@@ -213,10 +211,10 @@ function SuggestionSection({ plan }: { plan: Plan }) {
   return (
     <Section title="四、落地建议">
       <div className="flex flex-col gap-base-sm rounded-lg bg-card p-base-lg shadow-card">
-        <p className="text-body text-text-body">
+        <p className="text-body-md text-ink-secondary">
           建议开 2-3 张银行卡分别对应上表账户:{names}。资金到账后按上表金额分配。
         </p>
-        <p className="text-aux text-text-aux">仅为账户组织建议,不涉及任何划转操作</p>
+        <p className="text-caption text-ink-mute">仅为账户组织建议,不涉及任何划转操作</p>
       </div>
     </Section>
   );
@@ -226,8 +224,8 @@ export function PlanView({ plan }: { plan: Plan }) {
   return (
     <div className="flex flex-col gap-base-xxl">
       <header className="flex flex-col gap-base-xs">
-        <h1 className="text-page-title text-text-title">你的方案</h1>
-        <p className="text-aux text-text-aux">
+        <h1 className="text-display-md text-ink">你的方案</h1>
+        <p className="text-caption text-ink-mute">
           {plan.l1_mode_name} · 第 {plan.version} 版 · 生成于 {plan.created_date}
         </p>
       </header>
@@ -252,9 +250,8 @@ export function PlanView({ plan }: { plan: Plan }) {
       </Section>
 
       <div className="flex flex-wrap gap-base-md">
-        {/* 重新生成 = 回 P03 改答案(上一次的作答逐题预填,只改变化的数字),再生成即版本 +1。
-            design-v2 §1.3:P04 →「重新生成」回 P03 步 6 */}
-        <Link href="/questionnaire" className={buttonVariants({ variant: "ghost" })}>
+        {/* 重新生成 = 回 P03 从步 1 走(restart=1;作答仍预填,只改变化的数字),再生成即版本 +1 */}
+        <Link href="/questionnaire?restart=1" className={buttonVariants({ variant: "ghost" })}>
           <RefreshCw className="size-4" aria-hidden="true" />
           重新生成
         </Link>

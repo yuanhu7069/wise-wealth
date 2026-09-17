@@ -61,17 +61,17 @@ function Choice<T extends string>({
             onClick={() => onSelect(opt.value)}
             aria-pressed={selected}
             className={cn(
-              "flex min-h-11 items-center gap-base-md rounded-md border px-base-lg py-base-md text-left text-body",
+              "flex min-h-11 items-center gap-base-md rounded-md border px-base-lg py-base-md text-left text-body-md",
               selected
-                ? "border-2 border-primary bg-primary-bg font-medium text-text-title"
-                : "border-divider bg-bg-card text-text-body hover:border-text-aux",
+                ? "border-2 border-primary bg-primary/10 text-ink"
+                : "border-hairline bg-canvas-card text-ink-secondary hover:border-text-caption",
             )}
           >
             <span
               aria-hidden="true"
               className={cn(
                 "size-4 shrink-0 rounded-full border-2",
-                selected ? "border-primary bg-primary" : "border-divider",
+                selected ? "border-primary bg-primary" : "border-hairline",
               )}
             />
             {opt.label}
@@ -99,7 +99,7 @@ function NumberField({
 }) {
   return (
     <div className="flex flex-col gap-base-xs">
-      <label htmlFor={id} className="text-label font-medium text-text-title">
+      <label htmlFor={id} className="text-caption text-ink">
         {label} {required ? <span className="text-danger">*</span> : null}
       </label>
       <input
@@ -107,9 +107,9 @@ function NumberField({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 rounded-sm border border-divider bg-bg-card px-base-md text-body text-text-body focus:border-primary focus:outline-none sm:h-10"
+        className="h-11 rounded-sm border border-hairline bg-canvas-card px-base-md text-body-md text-ink-secondary focus:border-primary focus:outline-none sm:h-10"
       />
-      {hint ? <p className="text-label text-text-aux">{hint}</p> : null}
+      {hint ? <p className="text-caption text-ink-mute">{hint}</p> : null}
     </div>
   );
 }
@@ -167,8 +167,13 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
     let alive = true;
     void loadModesAction().then((result) => {
       if (!alive) return;
-      if (result.ok) setModes(result.data);
-      else setModesError(result.error);
+      if (result.ok) {
+        setModes(result.data);
+        // 默认选中推荐项:「生成方案」不因用户没点卡片而禁用 —— 推荐本身就是系统的
+        // 首选建议,用户仍可改选另一张卡;仅当尚未显式选择时才代填(函数式更新避免闭包旧值)
+        const rec = result.data.items.find((c) => c.is_recommended) ?? result.data.items[0];
+        if (rec) setChosen((prev) => prev || rec.id);
+      } else setModesError(result.error);
     });
     return () => {
       alive = false;
@@ -216,14 +221,14 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
   const copy = STEP_COPY[step - 1];
 
   return (
-    <div className="flex flex-col gap-base-lg">
+    <div className="flex flex-1 flex-col gap-base-lg">
       {/* 顶部工具行:退出向导与草稿提示(design-v2 §1.4) */}
-      <div className="flex flex-wrap items-center justify-between gap-base-md text-label">
+      <div className="flex flex-wrap items-center justify-between gap-base-md text-caption">
         {/* 触控热区 ≥ h-11(基线 §16):padding 撑开热区 + 负 margin 抵消,文字的视觉位置不变 */}
-        <Link href="/" className="-my-base-lg py-base-lg text-text-aux hover:text-primary">
+        <Link href="/" className="-my-base-lg py-base-lg text-ink-mute hover:text-primary">
           ← 返回首页
         </Link>
-        <span className="text-text-aux">每步自动保存草稿,中断后可恢复</span>
+        <span className="text-ink-mute">每步自动保存草稿,中断后可恢复</span>
       </div>
 
       {/* 步进条 */}
@@ -241,18 +246,18 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
             aria-hidden="true"
             className={cn(
               "h-1 flex-1 rounded-full",
-              n < step ? "bg-primary-light" : n === step ? "bg-primary" : "bg-divider",
+              n < step ? "bg-primary-soft" : n === step ? "bg-primary" : "bg-hairline",
             )}
           />
         ))}
-        <span className="shrink-0 text-label text-text-aux">
+        <span className="shrink-0 text-caption text-ink-mute">
           {step} / {TOTAL_STEPS}
         </span>
       </div>
 
       <header className="flex flex-col gap-base-xs">
-        <h1 className="text-section-title text-text-title">{copy.title}</h1>
-        <p className="text-label text-text-aux">{copy.subtitle}</p>
+        <h1 className="text-heading-md text-ink">{copy.title}</h1>
+        <p className="text-caption text-ink-mute">{copy.subtitle}</p>
       </header>
 
       {step === 1 ? (
@@ -280,9 +285,9 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
       ) : null}
 
       {step === 4 ? (
-        <div className="flex flex-col gap-base-lg">
+        <div className="flex flex-1 flex-col gap-base-lg">
           <div className="flex flex-col gap-base-sm">
-            <span className="text-label font-medium text-text-title">社保</span>
+            <span className="text-caption text-ink">社保</span>
             <Choice<"yes" | "no">
               options={[
                 { value: "yes", label: "有" },
@@ -299,7 +304,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
             />
           </div>
           <div className="flex flex-col gap-base-sm">
-            <span className="text-label font-medium text-text-title">商业保险</span>
+            <span className="text-caption text-ink">商业保险</span>
             <Choice<"yes" | "no">
               options={[
                 { value: "yes", label: "有" },
@@ -334,7 +339,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
       ) : null}
 
       {step === 5 ? (
-        <div className="flex flex-col gap-base-lg">
+        <div className="flex flex-1 flex-col gap-base-lg">
           <NumberField
             id="inflow"
             label="月收入(税后)"
@@ -358,7 +363,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
             onChange={(v) => setYuan((p) => ({ ...p, savings: v }))}
           />
           <div className="flex flex-col gap-base-sm">
-            <span className="text-label font-medium text-text-title">
+            <span className="text-caption text-ink">
               理财目标 <span className="text-danger">*</span>
             </span>
             <Choice<Goal>
@@ -373,11 +378,13 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
       {step === TOTAL_STEPS ? (
         <div className="flex flex-col gap-base-md">
           {modesError ? (
-            <p role="alert" className="text-label text-danger">
+            <p role="alert" className="text-caption text-danger">
               {modesError}
             </p>
           ) : null}
-          {!modes && !modesError ? <p className="text-label text-text-aux">正在生成推荐…</p> : null}
+          {!modes && !modesError ? (
+            <p className="text-caption text-ink-mute">正在生成推荐…</p>
+          ) : null}
           {modes ? (
             <>
               <div className="grid gap-base-md md:grid-cols-2">
@@ -390,33 +397,33 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
                     className={cn(
                       "flex flex-col gap-base-sm rounded-lg border p-base-lg text-left",
                       chosen === c.id
-                        ? "border-2 border-primary bg-primary-bg"
-                        : "border-divider bg-bg-card hover:border-text-aux",
+                        ? "border-2 border-primary bg-primary/10"
+                        : "border-hairline bg-canvas-card hover:border-text-caption",
                     )}
                   >
                     <span className="flex flex-wrap items-center gap-base-xs">
                       {c.is_recommended ? (
-                        <span className="rounded-full bg-primary px-base-sm text-label text-text-inverse">
+                        <span className="rounded-full bg-primary px-base-sm text-micro-cap text-on-primary">
                           推荐
                         </span>
                       ) : null}
                       {/* 前景用 accent-foreground 而非 primary:暗色下 primary 落在浅绿底上对比度不足,
                           与 Badge 组件同一口径(2026-09-11 走查 §8-E) */}
-                      <span className="rounded-full bg-primary-bg px-base-sm text-label text-accent-foreground">
+                      <span className="rounded-full bg-primary-bg-subdued-hover px-base-sm text-micro-cap text-accent-foreground">
                         {CREDIBILITY_LABEL[c.credibility]}
                       </span>
                     </span>
-                    <span className="text-body font-medium text-text-title">{c.name}</span>
-                    <span className="text-label text-text-aux">{c.tagline}</span>
+                    <span className="text-body-lg text-ink">{c.name}</span>
+                    <span className="text-caption text-ink-mute">{c.tagline}</span>
                     {c.is_recommended ? (
-                      <span className="border-t border-divider pt-base-sm text-label text-text-body">
+                      <span className="border-t border-hairline pt-base-sm text-caption text-ink-secondary">
                         {modes.recommendation_reason}
                       </span>
                     ) : null}
                   </button>
                 ))}
               </div>
-              <p className="text-label text-text-aux">
+              <p className="text-caption text-ink-mute">
                 投资部分将按 {modes.l2.name} 配置:
                 {modes.l2.classes
                   .map((cl) => `${cl.name} ${Math.round(cl.basis_points / 100)}%`)
@@ -427,11 +434,11 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
           {planError ? (
             <div
               role="alert"
-              className="flex flex-col gap-base-xs rounded-md border border-divider bg-bg-subtle px-base-lg py-base-md"
+              className="flex flex-col gap-base-xs rounded-md border border-hairline bg-canvas-card px-base-lg py-base-md shadow-card"
             >
-              <p className="text-body font-medium text-danger">方案没能生成</p>
-              <p className="text-aux text-text-body">{planError}</p>
-              <p className="text-label text-text-aux">
+              <p className="text-body-md text-danger">方案没能生成</p>
+              <p className="text-caption text-ink-secondary">{planError}</p>
+              <p className="text-caption text-ink-mute">
                 {planExpired
                   ? "重新登录后会回到这一步,已答的问卷都在。"
                   : "你已答的问卷都在,点下方「生成方案」可原样重试。"}
@@ -444,7 +451,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
       {error ? (
         <p
           role="alert"
-          className="rounded-sm bg-bg-subtle px-base-md py-base-sm text-label text-danger"
+          className="rounded-sm bg-canvas-card px-base-md py-base-sm text-caption text-danger shadow-card"
         >
           {error}
         </p>
@@ -455,8 +462,8 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         两条视觉分层的带(v0.7):上带读作「内容区的一部分」(页面底色 + 发丝分隔线),
         下带读作「独立声明条」(次级底色)。P03 **不显示站点页脚** —— 声明就在这一行(RULE-020)。
       */}
-      <div className="sticky bottom-0 mt-base-md border-t border-divider">
-        <div className="flex gap-base-md bg-bg-page py-base-md">
+      <div className="sticky bottom-0 mt-auto border-t border-hairline">
+        <div className="flex gap-base-md bg-canvas py-base-md">
           {step > 1 ? (
             <Button
               variant="secondary"
@@ -482,9 +489,9 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
                 : "下一步 →"}
           </Button>
         </div>
-        <div className="border-t border-divider bg-bg-subtle px-base-md py-base-xs">
+        <div className="border-t border-hairline bg-canvas-soft px-base-md py-base-xs">
           {/* 移动端用更短文案(text-micro 档)保证 375 宽下真正单行不折 —— RULE-020 的显式偏离 */}
-          <p className="text-micro text-text-aux sm:text-label">
+          <p className="text-micro text-ink-mute-2 sm:text-caption">
             <span className="sm:hidden">{LEGAL_LINE_SHORT}</span>
             <span className="hidden sm:inline">{LEGAL_LINE}</span>
           </p>

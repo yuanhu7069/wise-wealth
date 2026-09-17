@@ -35,23 +35,23 @@ function emergencyLine(plan: PlanView): string {
 /** 有方案:摘要卡 + [查看完整方案][重新生成]。 */
 function PlanSummary({ plan }: { plan: PlanView }) {
   return (
-    <section className="flex flex-col gap-base-lg rounded-lg bg-card p-base-xl shadow-card">
+    <section className="flex flex-col gap-base-lg rounded-lg border border-hairline bg-canvas-card p-base-xl shadow-card">
       <div className="flex flex-wrap items-center gap-base-sm">
         <Badge>{plan.l1_mode_name}</Badge>
-        <span className="text-aux text-text-aux">
+        <span className="text-caption text-ink-mute">
           第 {plan.version} 版 · 生成于 {plan.created_date}
         </span>
       </div>
 
       <div className="flex flex-col gap-base-xs">
-        <p className="text-aux text-text-aux">每月可投资</p>
-        {/* 摘要里唯一的「大字」:用户扫一眼首页要拿到的就是这个数 */}
-        <p className="text-page-title text-primary tabular-nums">
+        <p className="text-caption text-ink-mute">每月可投资</p>
+        {/* 摘要里唯一的「大字」:用户扫一眼首页要拿到的就是这个数(display-lg 大字档) */}
+        <p className="text-display-lg text-primary tabular-nums">
           {formatCurrency(plan.investable_monthly_cents)}
         </p>
       </div>
 
-      <p className="flex items-start gap-base-sm rounded-md bg-bg-subtle px-base-lg py-base-md text-body text-text-body">
+      <p className="flex items-start gap-base-sm rounded-md bg-canvas-soft px-base-lg py-base-md text-body-md text-ink-secondary">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
         <span>{emergencyLine(plan)}</span>
       </p>
@@ -60,8 +60,11 @@ function PlanSummary({ plan }: { plan: PlanView }) {
         <Link href="/plan" className={buttonVariants({ size: "lg" })}>
           查看完整方案
         </Link>
-        {/* 重新生成 = 回问卷(答案预填在服务端档案里),改完数字再生成即版本 +1 */}
-        <Link href="/questionnaire" className={buttonVariants({ variant: "ghost", size: "lg" })}>
+        {/* 重新生成 = 回问卷从步 1 走(restart=1;答案仍预填,改完数字再生成即版本 +1) */}
+        <Link
+          href="/questionnaire?restart=1"
+          className={buttonVariants({ variant: "ghost", size: "lg" })}
+        >
           <RefreshCw className="size-4" aria-hidden="true" />
           重新生成
         </Link>
@@ -73,12 +76,14 @@ function PlanSummary({ plan }: { plan: PlanView }) {
 /** 空态三要素(EMPTY-001):图标 + 一句人话说明 + 明确的引导操作。 */
 function EmptyGuide() {
   return (
-    <section className="flex flex-col items-center gap-base-md rounded-lg bg-card p-base-xxl text-center shadow-card">
-      <span className="grid size-14 place-items-center rounded-full bg-primary-bg text-primary">
+    <section className="flex flex-col items-center gap-base-md rounded-lg border border-hairline bg-canvas-card p-base-xxl text-center shadow-card">
+      <span className="grid size-14 place-items-center rounded-full bg-primary-bg-subdued-hover text-primary">
         <Compass className="size-7" aria-hidden="true" />
       </span>
-      <p className="text-body font-medium text-text-title">还没有方案</p>
-      <p className="text-aux text-text-aux">完成 6 步问卷(约 2 分钟),得到你的第一份可照做的方案</p>
+      <p className="text-body-lg text-ink">还没有方案</p>
+      <p className="text-caption text-ink-mute">
+        完成 6 步问卷(约 2 分钟),得到你的第一份可照做的方案
+      </p>
       <Link href="/questionnaire" className={cn(buttonVariants({ size: "lg" }), "mt-base-xs")}>
         开始问卷
       </Link>
@@ -94,11 +99,11 @@ function LoadError() {
   return (
     <section
       role="alert"
-      className="flex flex-col gap-base-md rounded-lg bg-card p-base-xl shadow-card"
+      className="flex flex-col gap-base-md rounded-lg border border-hairline bg-canvas-card p-base-xl shadow-card"
     >
       <div className="flex flex-col gap-base-xs">
-        <p className="text-body font-medium text-text-title">方案暂时读不出来</p>
-        <p className="text-aux text-text-body">
+        <p className="text-body-md text-ink">方案暂时读不出来</p>
+        <p className="text-caption text-ink-secondary">
           服务端没有回应,可能是后端未启动或网络中断。你的问卷与方案都存在服务端,不会因此丢失。
         </p>
       </div>

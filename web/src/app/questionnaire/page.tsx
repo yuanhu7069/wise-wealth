@@ -26,7 +26,12 @@ interface ProfileView {
   goal?: Answers["goal"];
 }
 
-export default async function QuestionnairePage() {
+interface QuestionnairePageProps {
+  /** Next 以 Promise 形式提供 searchParams(Next 15+) */
+  searchParams: Promise<{ restart?: string }>;
+}
+
+export default async function QuestionnairePage({ searchParams }: QuestionnairePageProps) {
   // RULE-001:问卷属受保护页面,未登录跳登录并在登录后回到本页
   await requireSession("/questionnaire");
   // 埋点(prd-v1 §9.5:页面触达)
@@ -34,6 +39,9 @@ export default async function QuestionnairePage() {
 
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value ?? "";
+
+  // restart=1(重新生成入口):从步 1 走,答案照常预填;无参则按断点续答
+  const restart = (await searchParams).restart === "1";
 
   let step = 1;
   let answers: Answers = {};
@@ -46,8 +54,8 @@ export default async function QuestionnairePage() {
     if (envelope.success && envelope.data) {
       hasProfile = true;
       const p = envelope.data;
-      // 断点即进度:答完的人再进来直接看到推荐(步 6),要改答案就点「上一步」
-      step = Math.max(1, Math.min(p.draft_step, TOTAL_STEPS));
+      // 断点即进度:续答场景(未带 restart)答完的人再进来直接看到推荐(步 6)
+      step = restart ? 1 : Math.max(1, Math.min(p.draft_step, TOTAL_STEPS));
       answers = {
         horizon: p.horizon,
         drawdown_response: p.drawdown_response,
@@ -72,14 +80,16 @@ export default async function QuestionnairePage() {
   // 「尚无草稿」最直接的表达。档案读不到时不记:那是后端故障,不是问卷开始。
   // 口径:每次「无草稿进入」都算一次(与 page_view 同),未作答就反复进来会重复记 ——
   // 自用期用来看链路通不通,不做产品指标;真要算开始率,分母按去重后的问卷数算。
-  if (hasProfile && step === 1) {
+  if (hasProfile && step === 1 && !restart) {
     await trackQuestionnaireStart();
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl px-base-lg py-base-xxl">
-      <Card>
-        <CardContent className="pt-base-xl">
+    // 外壳全高拉伸(design-v2 v0.5「操作栏位置恒定」的落地前提):main/Card/CardContent
+    // 逐层 flex-1,内容矮时操作栏经 wizard 根的 mt-auto 恒钉视口底,不再随步骤内容高度跳动
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-base-lg pb-base-lg pt-base-xxl">
+      <Card className="flex flex-1 flex-col">
+        <CardContent className="flex flex-1 flex-col pt-base-xl">
           <Wizard initialStep={step} initialAnswers={answers} />
         </CardContent>
       </Card>

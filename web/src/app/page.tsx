@@ -15,6 +15,7 @@ import { apiGet } from "@/lib/api";
 import { requireSession, SESSION_COOKIE } from "@/lib/session";
 
 import { HomeView, type HomeState } from "./home-view";
+import { MeshBackdrop } from "./mesh-backdrop";
 import type { PlanView } from "./plan/state";
 
 /** 读当前方案:200 有方案 / 404 还没生成过 / 其它与网络失败都归「读不出来」。 */
@@ -46,11 +47,15 @@ export default async function Page() {
 
   return (
     <>
+      {/* hero 带:渐变 mesh 仅此一处(spec §2.2#11);标题叠在氛围色带上 */}
+      <section className="relative isolate overflow-hidden border-b border-hairline">
+        <MeshBackdrop />
+        <div className="relative mx-auto flex w-full max-w-xl flex-col gap-base-xs px-base-lg py-base-xxl">
+          <h1 className="text-display-lg text-ink">智策理财</h1>
+          <p className="text-body-lg text-ink-secondary">双层理财决策工具 · 免费层告诉你怎么做</p>
+        </div>
+      </section>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-base-lg px-base-lg py-base-xxl">
-        <header className="flex flex-col gap-base-xs">
-          <h1 className="text-page-title text-text-title">智策理财</h1>
-          <p className="text-aux text-text-aux">双层理财决策工具 · 免费层告诉你怎么做</p>
-        </header>
         <HomeView state={state} />
       </main>
       {/* 首页页脚保留健康状态与一行免责声明(design-v2 v0.3 / RULE-020) */}
