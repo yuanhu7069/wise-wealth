@@ -19,4 +19,4 @@ Single-context：根 `CONTEXT.md`（由 /domain-modeling 惰性创建，缺失�
 
 ### Design 基线（参考设计型，2026-09-17 起生效）
 
-本项目 Web 域生效的 design 基线是**参考设计型**：治理规则见 `docs/base_line/基线-design-参考设计-Web域.md`；视觉真源 = 根目录 `DESIGN.md`（改造件，**已断源——禁止对其执行 `designmd.sh update`**）；参考件在 `docs/design-ref/`（只读比对基准）。界面实现的唯一值来源是 `DESIGN.md`，`web/src/app/globals.css` 逐 Token 抄入它（check.sh 内 `designmd validate` 防漂移）。本地化调整清单见 `.scratch/stripe-restyle/spec.md` §2.2。`docs/base_line/基线-design-Web域.md` 是自有风格基线的镜像，本项目**不遵循**它。
+本项目 Web 域生效的 design 基线是**参考设计型**：治理规则见 `docs/base_line/基线-design-参考设计-Web域.md`；视觉真源 = 根目录 `DESIGN.md`（改造件，**已断源——禁止对其执行 `designmd.sh update`**）；参考件在 `docs/design-ref/`（只读比对基准）。界面实现的唯一值来源是 `DESIGN.md`，`web/src/app/globals.css` 逐 Token 抄入它（check.sh 内 `designmd validate` 防漂移）。本地化调整清单见 `.scratch/stripe-restyle/spec.md` §2.2；验收 Checklist / 红线 / AI 硬约束见同文档流程节（已定稿，后续实例沿用）。`docs/base_line/基线-design-Web域.md` 是自有风格基线的镜像，本项目**不遵循**它。
