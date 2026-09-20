@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智策理财 — P02 登录页</title>
+<meta name="description" content="智策理财 P02 登录页高保真稿:居中登录卡,含会话过期提示、必填校验样本、错误态与按钮 pending 态。">
+<meta property="og:title" content="智策理财 — P02 登录页">
+<meta property="og:description" content="使用你的账号继续">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230969da'/%3E%3Cpath d='M4 11.5 7 8l2 1.8L12 5' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+ * design-systems/github/tokens.css — 原样粘贴(绑定契约)
+ * ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:           #ffffff;
+  --surface:      #f6f8fa;
+  --surface-warm: var(--surface);
+  --fg:   #1f2328;
+  --fg-2: #1f2328;
+  --muted: #656d76;
+  --meta:  #656d76;
+  --border:      #d0d7de;
+  --border-soft: #d8dee4;
+  --accent:        #0969da;
+  --accent-on:     #ffffff;
+  --accent-hover:  #0550ae;
+  --accent-active: color-mix(in oklab, var(--accent), black 14%);
+  --success: #1a7f37;
+  --warn:    #9a6700;
+  --danger:  #cf222e;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-body:    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono:    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 14px;
+  --text-lg:   16px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  28px;
+  --text-4xl:  32px;
+  --leading-body:     1.5;
+  --leading-tight:    1.25;
+  --tracking-display: -0.01em;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --section-y-desktop: 64px;
+  --section-y-tablet:  48px;
+  --section-y-phone:   32px;
+  --radius-sm:   6px;
+  --radius-md:   6px;
+  --radius-lg:   12px;
+  --radius-pill: 9999px;
+  --elev-flat:   none;
+  --elev-ring:   0 0 0 1px var(--border);
+  --elev-raised: 0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+  --focus-ring: 0 0 0 3px rgba(9, 105, 218, 0.3);
+  --motion-fast:   80ms;
+  --motion-base:   200ms;
+  --ease-standard: ease-out;
+  --container-max:            1280px;
+  --container-gutter-desktop: 24px;
+  --container-gutter-tablet:  16px;
+  --container-gutter-phone:   16px;
+}
+
+/* 中文回退栈(简报既定规则,优先于 token 不可重定义约束) */
+:root {
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono:    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei", monospace;
+}
+
+/* DESIGN.md §2/§4 已文档化色值的绑定扩展(状态底色 / 按钮绿) */
+:root {
+  --btn-primary-bg:     #1f883d;
+  --btn-primary-hover:  #1a7f37;
+  --attention-subtle:   #fff8c5;
+  color-scheme: light;
+}
+
+/* 暗色主题:仅 DESIGN.md §2 Dark Theme 文档值 + color-mix 派生 */
+:root[data-theme="dark"] {
+  --bg:          #0d1117;
+  --surface:     #161b22;
+  --fg:          #e6edf3;
+  --fg-2:        #e6edf3;
+  --muted:       color-mix(in oklab, #e6edf3 62%, #0d1117);
+  --meta:        color-mix(in oklab, #e6edf3 62%, #0d1117);
+  --border:      #30363d;
+  --border-soft: #30363d;
+  --accent:        color-mix(in oklab, #0969da 58%, #ffffff);
+  --accent-hover:  color-mix(in oklab, #0969da 48%, #ffffff);
+  --accent-active: color-mix(in oklab, #0969da 52%, #ffffff);
+  --success:            color-mix(in oklab, #1a7f37 55%, #ffffff);
+  --warn:               color-mix(in oklab, #9a6700 52%, #ffffff);
+  --attention-subtle:   color-mix(in oklab, #9a6700 16%, #161b22);
+  --danger:             color-mix(in oklab, #cf222e 55%, #ffffff);
+  --btn-primary-bg:     #238636;
+  --btn-primary-hover:  #2ea043;
+  --focus-ring: 0 0 0 3px rgba(68, 147, 248, 0.35);
+  color-scheme: dark;
+}
+
+/* ── 基础(与 P01/P03/P04 一致)──────────────────────────────────── */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 500;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.35;
+  margin: 0;
+}
+p { margin: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; left: var(--space-4); top: -48px; z-index: 100;
+  background: var(--bg); color: var(--accent);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3); min-height: 44px;
+  display: inline-flex; align-items: center;
+  transition: top var(--motion-fast) var(--ease-standard);
+}
+.skip-link:focus { top: var(--space-2); }
+
+.container {
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  padding-inline: var(--container-gutter-phone);
+}
+@media (min-width: 640px) { .container { padding-inline: var(--container-gutter-tablet); } }
+
+/* ── 顶栏(与 P01/P03/P04 相同)──────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-2); min-height: 56px;
+}
+.brand {
+  color: var(--fg); font-weight: 600; font-size: var(--text-lg);
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 44px; padding-inline: var(--space-1);
+}
+.brand:hover { text-decoration: none; color: var(--accent); }
+.brand-mark {
+  width: 20px; height: 20px; border-radius: var(--radius-sm);
+  background: var(--accent); color: var(--accent-on);
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.topbar-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+/* ── 按钮 ─────────────────────────────────────────────────────────── */
+.btn {
+  appearance: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 44px; padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600;
+  letter-spacing: 0.02em; line-height: 1.25; text-decoration: none;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  transition: background-color var(--motion-fast) var(--ease-standard),
+              border-color var(--motion-fast) var(--ease-standard),
+              color var(--motion-fast) var(--ease-standard);
+}
+.btn:active { transform: translateY(1px); }
+.btn svg { flex: none; }
+.btn-primary {
+  background: var(--btn-primary-bg); color: #ffffff;
+  border-color: rgba(31, 35, 40, 0.15);
+  box-shadow: 0 1px 0 rgba(31, 35, 40, 0.1);
+}
+.btn-primary:hover { background: var(--btn-primary-hover); }
+.btn-ghost {
+  background: var(--surface); color: var(--fg);
+  border-color: var(--border);
+}
+.btn-ghost:hover { background: color-mix(in oklab, var(--surface), var(--fg) 4%); }
+.btn:disabled { cursor: default; opacity: 0.65; pointer-events: none; }
+.btn-block { width: 100%; }
+.spin { animation: rot 0.8s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ── 分段标注 ─────────────────────────────────────────────────────── */
+.form-tag {
+  display: flex; align-items: center; gap: var(--space-2);
+  color: var(--muted); font-size: var(--text-xs); letter-spacing: 0.02em;
+  margin-bottom: var(--space-2);
+}
+.form-tag::after {
+  content: ""; flex: 1; height: 1px; background: var(--border-soft);
+}
+.tag-gap { margin-top: var(--space-6); }
+
+/* ── 登录卡(max-w-md 居中,平面无投影)────────────────────────────── */
+.login-wrap {
+  max-width: 28rem;   /* max-w-md */
+  margin-inline: auto;
+  padding-block: var(--space-8) var(--space-6);
+}
+.login-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+.login-head h1 { font-size: var(--text-2xl); }
+.login-sub { margin-top: var(--space-1); color: var(--muted); font-size: var(--text-sm); }
+
+/* 会话过期提示条(Attention Subtle 底,小字) */
+.session-note {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  margin-top: var(--space-4);
+  background: var(--attention-subtle);
+  border: 1px solid color-mix(in oklab, var(--warn) 40%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs); color: var(--warn);
+}
+.session-note svg { flex: none; margin-top: 3px; }
+
+/* ── 字段与输入(与 P03 相同)────────────────────────────────────── */
+.field { margin-top: var(--space-4); }
+.field-label {
+  display: flex; align-items: baseline; gap: 2px;
+  font-size: var(--text-sm); font-weight: 600;
+}
+.req { color: var(--danger); }
+.input {
+  width: 100%; min-height: 44px; margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg); color: var(--fg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm); font-weight: 500; line-height: 1.5;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+.input::placeholder { color: var(--muted); }
+.input:focus { border-color: var(--accent); }
+.input[aria-invalid="true"] { border-color: var(--danger); }
+
+/* 错误样本(role=alert,红字小字,与密码框程序化关联) */
+.form-error {
+  display: flex; align-items: flex-start; gap: var(--space-1);
+  margin-top: var(--space-2);
+  color: var(--danger); font-size: var(--text-xs);
+}
+.form-error svg { flex: none; margin-top: 3px; }
+
+.login-actions { margin-top: var(--space-6); }
+
+/* ── pending 态展示 ───────────────────────────────────────────────── */
+.pending-demo { margin-top: var(--space-3); }
+
+/* ── 极端数据核验 ─────────────────────────────────────────────────── */
+.specimen {
+  margin-top: var(--space-6);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--space-4);
+}
+.specimen-title {
+  color: var(--muted); font-size: var(--text-xs); letter-spacing: 0.02em;
+  margin-bottom: var(--space-3);
+}
+.specimen-block + .specimen-block { margin-top: var(--space-4); }
+.specimen-label { font-size: var(--text-xs); color: var(--muted); margin-bottom: var(--space-2); }
+.specimen .field { margin-top: 0; }
+
+/* ── 页脚(与 P01/P03/P04 相同)──────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-8);
+  padding-block: var(--space-5) var(--space-8);
+  color: var(--muted); font-size: var(--text-xs);
+}
+.footer-row {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+.health {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 44px;
+}
+.status-dot { flex: none; width: 8px; height: 8px; border-radius: var(--radius-pill); }
+.status-dot.ok { background: var(--success); }
+.version-no { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.footer-disc { margin-top: var(--space-1); }
+.footer-disc summary {
+  cursor: pointer; color: var(--muted); min-height: 44px;
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  list-style: none;
+}
+.footer-disc summary::-webkit-details-marker { display: none; }
+.footer-disc summary:hover { color: var(--accent); }
+.footer-disc summary .chev { transition: transform var(--motion-fast) var(--ease-standard); }
+.footer-disc details[open] summary .chev { transform: rotate(90deg); }
+.footer-disc .full {
+  margin-top: var(--space-1);
+  border-left: 2px solid var(--border);
+  padding-left: var(--space-3);
+  line-height: 1.75;
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="topbar" data-od-id="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" href="p01-home.html" data-od-id="brand-home" aria-label="智策理财,返回首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 11.5 6 7.5l2.5 2L13.5 4"/></svg>
+      </span>
+      智策理财
+    </a>
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-ghost" id="themeToggle" data-od-id="theme-toggle" aria-pressed="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/>
+          <circle cx="8" cy="8" r="2.6"/>
+        </svg>
+        <span class="t-label">暗色</span>
+      </button>
+      <button type="button" class="btn btn-ghost" data-od-id="btn-logout">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6"/>
+        </svg>
+        登出
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="container">
+  <div class="login-wrap">
+
+    <p class="form-tag">P02 · 登录</p>
+    <section class="login-card" aria-labelledby="login-title" data-od-id="login-card">
+      <div class="login-head">
+        <h1 id="login-title">登录</h1>
+        <p class="login-sub">使用你的账号继续</p>
+      </div>
+
+      <p class="session-note" role="status" data-od-id="session-expired">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 1.8 15 14H1Z"/><path d="M8 6v3.6"/><circle cx="8" cy="11.8" r="0.9" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>登录已过期,请重新登录</span>
+      </p>
+
+      <form id="loginForm" autocomplete="on" novalidate>
+        <div class="field" data-od-id="field-username">
+          <label class="field-label" for="in-username">用户名<span class="req" aria-hidden="true">*</span><span class="sr-only">(必填)</span></label>
+          <input class="input" type="text" id="in-username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field" data-od-id="field-password">
+          <label class="field-label" for="in-password">密码<span class="req" aria-hidden="true">*</span><span class="sr-only">(必填)</span></label>
+          <input class="input" type="password" id="in-password" name="password" autocomplete="current-password" required
+                 aria-invalid="true" aria-describedby="login-error">
+          <p class="form-error" id="login-error" role="alert" data-od-id="login-error">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.2"/><path d="M8 5v3.6"/><circle cx="8" cy="11" r="0.9" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>用户名或密码不对,再试一次</span>
+          </p>
+        </div>
+        <div class="login-actions">
+          <button type="submit" class="btn btn-primary btn-block" id="btnLogin" data-od-id="btn-login">登录</button>
+        </div>
+      </form>
+    </section>
+
+    <p class="form-tag tag-gap">主按钮 · pending 态</p>
+    <div class="pending-demo" data-od-id="pending-demo">
+      <button type="button" class="btn btn-primary btn-block" disabled aria-busy="true">
+        <svg class="spin" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M8 1.5a6.5 6.5 0 1 1-4.6 1.9"/>
+        </svg>
+        登录中…
+      </button>
+    </div>
+
+    <section class="specimen" aria-label="极端数据排版核验" data-od-id="edge-specimen">
+      <p class="specimen-title">极端数据核验(仅排版样本,非产品界面)</p>
+
+      <div class="specimen-block">
+        <p class="specimen-label">超长用户名在输入框内的表现</p>
+        <div class="field">
+          <label class="field-label" for="edge-username">用户名<span class="req" aria-hidden="true">*</span></label>
+          <input class="input" type="text" id="edge-username" value="zhangsan_wise_wealth_8848@example.com.cn">
+        </div>
+      </div>
+
+      <div class="specimen-block">
+        <p class="specimen-label">错误文案两行长文本不破版</p>
+        <p class="form-error">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.2"/><path d="M8 5v3.6"/><circle cx="8" cy="11" r="0.9" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>用户名或密码不对,再试一次。多次失败后请稍等几分钟再操作,你的账号不会被锁定,问卷与方案数据不受影响。</span>
+        </p>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer" data-od-id="footer">
+  <div class="container">
+    <div class="footer-row">
+      <span class="health" data-od-id="health-status">
+        <span class="status-dot ok" aria-hidden="true"></span>
+        服务正常
+      </span>
+      <span class="version-no">v1.2.0</span>
+    </div>
+    <div class="footer-disc">
+      <p>智策理财只提供决策参考,不构成投资建议;不接触、不托管、不执行任何资金操作。</p>
+      <details>
+        <summary>
+          <svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+          免责声明完整原文
+        </summary>
+        <p class="full">本应用提供的全部内容(包括但不限于方案表、金额测算、状态判断)均基于你主动填写的问卷数据自动生成,仅作个人理财学习与决策参考,不构成任何形式的投资建议、收益承诺或风险担保。智策理财不接触、不托管、不代管、不执行任何资金操作,你的资产始终完全由本人掌控。方案可能因数据缺失、市场变化或模型局限而与实际情况不符,请结合自身风险承受能力独立判断;因依赖本应用内容做出的任何决策及其后果,由你本人承担。</p>
+      </details>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  var KEY = 'ww-theme';
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved === 'dark' || saved === 'light') {
+    root.setAttribute('data-theme', saved);
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    root.setAttribute('data-theme', 'dark');
+  }
+  function sync() {
+    var dark = root.getAttribute('data-theme') === 'dark';
+    btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    btn.querySelector('.t-label').textContent = dark ? '亮色' : '暗色';
+  }
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    sync();
+  });
+  sync();
+
+  /* 登录按钮 pending 态演示:提交后短暂进入「登录中…」,再恢复 */
+  var form = document.getElementById('loginForm');
+  var loginBtn = document.getElementById('btnLogin');
+  var loginBtnHTML = loginBtn.innerHTML;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (loginBtn.disabled) return;
+    loginBtn.disabled = true;
+    loginBtn.setAttribute('aria-busy', 'true');
+    loginBtn.innerHTML =
+      '<svg class="spin" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 1-4.6 1.9"/></svg>登录中…';
+    window.setTimeout(function () {
+      loginBtn.disabled = false;
+      loginBtn.removeAttribute('aria-busy');
+      loginBtn.innerHTML = loginBtnHTML;
+    }, 1600);
+  });
+})();
+</script>
+</body>
+</html>

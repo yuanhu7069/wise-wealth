@@ -2,6 +2,7 @@
  * P02 登录页(server 壳)。职责只有两件:
  * ① 已登录时直接回跳(不让用户重复登录);② 把 after-whitelist 的 from 交给表单。
  */
+import { AlertTriangle } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { SiteFooterShell } from "@/components/site-footer-shell";
@@ -34,9 +35,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="text-caption text-ink-mute">使用你的账号继续</p>
             </header>
             {/* ERR-006 辅助条:仅「有会话但已失效」时出现。首次访问也带着 from,
-                但那时说「已过期」是错的 —— 判据来自 requireSession 的 expired 标记。 */}
+                但那时说「已过期」是错的 —— 判据来自 requireSession 的 expired 标记。
+                产物(od-redesign):Attention Subtle 底 + warning 图标与文字,role=status。 */}
             {params.expired ? (
-              <p className="rounded-sm bg-canvas-soft px-base-md py-base-sm text-caption text-ink-mute-2">
+              <p
+                role="status"
+                className="flex items-center gap-base-sm rounded-sm bg-attention-subtle px-base-md py-base-sm text-caption text-warning"
+              >
+                <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
                 登录已过期,请重新登录
               </p>
             ) : null}
