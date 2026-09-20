@@ -23,7 +23,7 @@ Status: in-progress
 | 旧真源处置 | DESIGN.md 搬 `docs/design-ref/`；check.sh 摘除 `designmd validate`；`design-lock.json` 删除；`check-tokens.sh` 保留（代码卫生门禁，与真源无关） |
 | 品牌色 | 不预锁；对比后若需对齐品牌绿，进调整清单 |
 | 期管理 | `.scratch/od-redesign/` + 期文档 `docs/d/`；生成记录与快照进 `docs/design/` |
-| 授权节奏 | 候选 3 连发一次授权（已获）；铺开阶段每页正式生成前打招呼 |
+| 授权节奏 | 候选 3 连发一次授权（已获）；铺开阶段原定每页打招呼——**2026-09-21 苑问改为批量授权**：P04/P03/P02 全部生成+落地完成后统一复核（T1 人眼项与 T2 走查随之延后） |
 
 ## 3 流程（三道闸门，每页一轮）
 

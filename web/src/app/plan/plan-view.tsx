@@ -1,5 +1,5 @@
 /**
- * P04 方案页五段(P04 五段结构见 prd-v1 §8.2,文案取值参照原型 design-v1.html 的 P04)。
+ * P04 方案页五段(P04 五段结构见 prd-v1 §8.2;od-redesign 期按固化产物 p04-plan-github.html 重排)。
  *
  * 五段:分配总览 → 投资账户内部配置(L2) → 执行规则(L3) → 落地建议 → 风险提示。
  * 全部数字来自后端方案**快照**(`/api/v1/plans/active`),页面不重算、不猜测 ——
@@ -8,7 +8,7 @@
  * 无客户端状态:生成/重试发生在 P03 步 6,本页只渲染既有方案,故是纯 server 组件
  * (基线 §7.4「能服务端渲染就不上客户端」)。
  */
-import { RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import { Disclaimer } from "@/components/disclaimer";
@@ -19,40 +19,70 @@ import { cn } from "@/lib/utils";
 
 import { chartBgClass, NOTICE_COPY, type PlanView as Plan } from "./state";
 
-/** 段骨架:统一段间距(--space-xxl)与段标题字阶(design-v2 §3.1「P04 五段」行)。 */
-function Section({
-  title,
+/**
+ * 分区卡(产物 .plan-card):hairline 一像素边 + Canvas Subtle 头条 + 平面卡体。
+ * 五段里「表格/规则/建议」类内容用它;风险提示是正文段,不走卡。
+ */
+function PlanCard({
+  label,
   children,
   className,
 }: {
-  title: string;
+  label: string;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <section className={cn("flex flex-col gap-base-md", className)}>
+    <section
+      className={cn(
+        "flex flex-col overflow-hidden rounded-sm border border-hairline bg-canvas-card",
+        className,
+      )}
+    >
+      <div className="border-b border-hairline bg-canvas-soft px-base-lg py-base-sm text-caption font-semibold text-ink">
+        {label}
+      </div>
+      <div className="flex flex-col gap-base-md p-base-lg">{children}</div>
+    </section>
+  );
+}
+
+/** 段标题(风险提示等正文段用)。 */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-base-md">
       <h2 className="text-heading-md text-ink">{title}</h2>
       {children}
     </section>
   );
 }
 
-/** 提示条:引擎给事实,文案取自 NOTICE_COPY(RULE-008 三要素)。 */
+/**
+ * 提示条(产物 .notice):引擎给事实,文案取自 NOTICE_COPY(RULE-008 三要素)。
+ * 严重 = Danger Subtle 底 + danger 标题;提醒 = Attention Subtle 底 + warning 标题
+ * (两对底/字配色均为 GitHub DS 文档化组合,对比度过 4.5 线)。
+ */
 function NoticeBar({ notice }: { notice: keyof typeof NOTICE_COPY }) {
   const copy = NOTICE_COPY[notice];
   const severe = notice === "insufficient_income";
-  /*
-   * 底色用 bg-card 而非 bg-subtle:严重提示的文字色是 --color-danger,它在 bg-subtle 上
-   * 亮暗两态都低于正文下限 4.5:1(实测 4.00:1 / 4.24:1),换到 bg-card 后是 4.55:1 / 4.61:1
-   * (2026-09-11 走查实测,test-report-b.md §8-E)。
-   */
   return (
     <div
       role="status"
-      className="flex flex-col gap-base-xs rounded-md border border-hairline bg-canvas-card px-base-lg py-base-md"
+      className={cn(
+        "flex items-start gap-base-md rounded-sm px-base-lg py-base-md",
+        severe ? "bg-danger-subtle" : "bg-attention-subtle",
+      )}
     >
-      <p className={cn("text-body-md", severe ? "text-danger" : "text-ink")}>{copy.title}</p>
-      <p className="text-caption text-ink-secondary">{copy.description}</p>
+      <AlertTriangle
+        aria-hidden="true"
+        className={cn("mt-0.5 size-4 shrink-0", severe ? "text-danger" : "text-warning")}
+      />
+      <div className="flex flex-col gap-base-xs">
+        <p className={cn("text-body-md font-semibold", severe ? "text-danger" : "text-warning")}>
+          {copy.title}
+        </p>
+        <p className="text-caption text-ink-secondary">{copy.description}</p>
+      </div>
     </div>
   );
 }
@@ -60,12 +90,20 @@ function NoticeBar({ notice }: { notice: keyof typeof NOTICE_COPY }) {
 /**
  * 应急金状态(AC-25/26/31)。**不塞进表格单元格**:表格只放模式配置里的用途原文,
  * 状态类信息集中在这里 —— 否则同一事实(备用的用途)会有配置与状态两个来源。
+ * 状态圆点(产物 .status-dot):绿 = 已达标,黄 = 未达标。
  */
 function EmergencyPanel({ emergency }: { emergency: Plan["emergency"] }) {
   const coverage = formatMonthsTenths(emergency.coverage_tenths);
   return (
-    <div className="flex flex-col gap-base-xs rounded-md bg-canvas-soft px-base-lg py-base-md">
-      <p className="text-body-md text-ink-secondary">
+    <div className="flex flex-col gap-base-xs rounded-sm bg-canvas-soft px-base-lg py-base-md">
+      <p className="flex items-center gap-base-sm text-body-md text-ink-secondary">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "size-2 shrink-0 rounded-full",
+            emergency.is_met ? "bg-success" : "bg-warning",
+          )}
+        />
         应急金:
         <span className={emergency.is_met ? "text-success" : "text-ink"}>
           {emergency.is_met ? "已达标" : "未达标"}
@@ -76,7 +114,7 @@ function EmergencyPanel({ emergency }: { emergency: Plan["emergency"] }) {
         </span>
       </p>
       <p className="text-caption text-ink-secondary">
-        现有存款已覆盖约 {coverage} 个月
+        现有存款已覆盖约 <span className="font-mono tabular-nums">{coverage}</span> 个月
         {emergency.is_met
           ? ""
           : `,按每月 ${formatCurrency(emergency.monthly_toward_emergency_cents)} 的节奏,约 ${
@@ -94,11 +132,11 @@ function EmergencyPanel({ emergency }: { emergency: Plan["emergency"] }) {
   );
 }
 
-/** 一、分配总览(基线 §6.1 表格:数值右对齐 / tabular-nums / 行高 44 / 仅横向细线)。 */
+/** 一、分配总览(GitHub 密排表:Subtle 表头条 / hairline 行线 / 数值等宽右对齐 / 行高 44 触控)。 */
 function OverviewSection({ plan }: { plan: Plan }) {
   return (
-    <Section title="一、分配总览">
-      <div className="overflow-hidden rounded-lg bg-card shadow-card">
+    <PlanCard label="一、分配总览">
+      <div className="overflow-hidden rounded-sm border border-hairline">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-canvas-soft text-caption text-ink-mute-2">
@@ -135,70 +173,85 @@ function OverviewSection({ plan }: { plan: Plan }) {
         </table>
       </div>
       <EmergencyPanel emergency={plan.emergency} />
-    </Section>
+    </PlanCard>
   );
 }
 
-/** 二、投资账户内部配置:横向比例条 + 文字并列(色盲可读,基线 §6.2 规则 2)。 */
+/** 二、投资账户内部配置:横向比例条 + 文字图例并列(色盲可读,基线 §6.2 规则 2)。 */
 function L2Section({ l2 }: { l2: Plan["l2"] }) {
+  const legend = l2.classes
+    .map((cls) => `${cls.name} ${Math.round(cls.basis_points / 100)}%`)
+    .join("、");
   return (
-    <Section title="二、投资账户内部配置">
-      <div className="flex flex-col gap-base-md rounded-lg bg-card p-base-lg shadow-card">
-        <div className="flex flex-wrap items-center gap-base-sm">
-          <Badge>{l2.name}</Badge>
-          <span className="text-caption text-ink-mute">{l2.reason}</span>
-        </div>
-
-        <div className="flex h-3 w-full overflow-hidden rounded-full bg-canvas-soft">
-          {l2.classes.map((cls, i) => (
-            <span
-              key={cls.name}
-              className={cn("h-full", chartBgClass(i))}
-              // 宽度即占比(万分比 → %)。比例条是图形,宽度仍需内联 —— 工具类无法表达任意百分比。
-              style={{ width: `${cls.basis_points / 100}%` }}
-            />
-          ))}
-        </div>
-
-        <ul className="flex flex-wrap gap-base-md">
-          {l2.classes.map((cls, i) => (
-            <li
-              key={cls.name}
-              className="flex items-center gap-base-xs text-caption text-ink-secondary tabular-nums"
-            >
-              <span
-                aria-hidden="true"
-                className={cn("size-2.5 shrink-0 rounded-full", chartBgClass(i))}
-              />
-              {cls.name} {Math.round(cls.basis_points / 100)}%
-            </li>
-          ))}
-        </ul>
-
-        {l2.note ? <p className="text-caption text-ink-mute">{l2.note}</p> : null}
-        <p className="text-caption text-ink-mute">仅到大类资产,不涉及任何具体产品</p>
+    <PlanCard label="二、投资账户内部配置">
+      <div className="flex flex-wrap items-center gap-base-sm">
+        <Badge>{l2.name}</Badge>
+        <span className="text-caption text-ink-mute">{l2.reason}</span>
       </div>
-    </Section>
+
+      {/* 宽度即占比(万分比 → %)。比例条是图形,宽度仍需内联 —— 工具类无法表达任意百分比。 */}
+      <div
+        role="img"
+        aria-label={`投资账户配置比例:${legend}`}
+        className="flex h-3 w-full overflow-hidden rounded-full bg-canvas-soft"
+      >
+        {l2.classes.map((cls, i) => (
+          <span
+            key={cls.name}
+            className={cn("h-full", chartBgClass(i))}
+            style={{ width: `${cls.basis_points / 100}%` }}
+          />
+        ))}
+      </div>
+
+      <ul className="flex flex-wrap gap-base-md">
+        {l2.classes.map((cls, i) => (
+          <li
+            key={cls.name}
+            className="flex items-center gap-base-xs text-caption text-ink-secondary tabular-nums"
+          >
+            <span
+              aria-hidden="true"
+              className={cn("size-2.5 shrink-0 rounded-full", chartBgClass(i))}
+            />
+            {cls.name} {Math.round(cls.basis_points / 100)}%
+          </li>
+        ))}
+      </ul>
+
+      {l2.note ? <p className="text-caption text-ink-mute">{l2.note}</p> : null}
+      <p className="text-caption text-ink-mute">仅到大类资产,不涉及任何具体产品</p>
+    </PlanCard>
   );
 }
 
-/** 三、执行规则(L3 自动给出,产品 PRD §4.3.2 三 + §7.3 现金再平衡为默认)。 */
+/** 三、执行规则(L3 自动给出,产品 PRD §4.3.2 三 + §7.3 现金再平衡为默认;编号等宽,产物样式)。 */
 function ExecutionSection({ plan }: { plan: Plan }) {
+  const rules = [
+    "每月发薪日定投,金额按上表执行",
+    "投资账户偏离目标比例 5% 时触发再平衡",
+    "优先用新增资金补低配(现金再平衡,规避赎回费与择时)",
+  ];
   return (
-    <Section title="三、执行规则">
-      <div className="flex flex-col gap-base-sm rounded-lg bg-card p-base-lg text-body-md text-ink-secondary shadow-card">
-        <p>1. 每月发薪日定投,金额按上表执行</p>
-        <p>2. 投资账户偏离目标比例 5% 时触发再平衡</p>
-        <p>3. 优先用新增资金补低配(现金再平衡,规避赎回费与择时)</p>
-        {plan.emergency.is_met ? null : (
-          <p className="text-caption text-ink-mute">
-            应急金未达标期间,备用账户优先补应急(每月{" "}
-            {formatCurrency(plan.emergency.monthly_toward_emergency_cents)},约{" "}
-            {plan.emergency.months_to_fill ?? 0} 个月达标),达标后这部分份额转入投资账户。
+    <PlanCard label="三、执行规则">
+      <div className="flex flex-col gap-base-sm text-body-md text-ink-secondary">
+        {rules.map((rule, i) => (
+          <p key={rule} className="flex items-baseline gap-base-sm">
+            <span aria-hidden="true" className="font-mono text-ink-mute">
+              {i + 1}.
+            </span>
+            {rule}
           </p>
-        )}
+        ))}
       </div>
-    </Section>
+      {plan.emergency.is_met ? null : (
+        <p className="border-t border-dashed border-hairline pt-base-md text-caption text-ink-mute">
+          应急金未达标期间,备用账户优先补应急(每月{" "}
+          {formatCurrency(plan.emergency.monthly_toward_emergency_cents)},约{" "}
+          {plan.emergency.months_to_fill ?? 0} 个月达标),达标后这部分份额转入投资账户。
+        </p>
+      )}
+    </PlanCard>
   );
 }
 
@@ -209,14 +262,12 @@ function ExecutionSection({ plan }: { plan: Plan }) {
 function SuggestionSection({ plan }: { plan: Plan }) {
   const names = plan.buckets.map((b) => `${b.name}(${b.purpose})`).join(" / ");
   return (
-    <Section title="四、落地建议">
-      <div className="flex flex-col gap-base-sm rounded-lg bg-card p-base-lg shadow-card">
-        <p className="text-body-md text-ink-secondary">
-          建议开 2-3 张银行卡分别对应上表账户:{names}。资金到账后按上表金额分配。
-        </p>
-        <p className="text-caption text-ink-mute">仅为账户组织建议,不涉及任何划转操作</p>
-      </div>
-    </Section>
+    <PlanCard label="四、落地建议">
+      <p className="text-body-md text-ink-secondary">
+        建议开 2-3 张银行卡分别对应上表账户:{names}。资金到账后按上表金额分配。
+      </p>
+      <p className="text-caption text-ink-mute">仅为账户组织建议,不涉及任何划转操作</p>
+    </PlanCard>
   );
 }
 
@@ -224,9 +275,10 @@ export function PlanView({ plan }: { plan: Plan }) {
   return (
     <div className="flex flex-col gap-base-xxl">
       <header className="flex flex-col gap-base-xs">
-        <h1 className="text-display-md text-ink">你的方案</h1>
+        <h1 className="text-display-lg text-ink">你的方案</h1>
         <p className="text-caption text-ink-mute">
-          {plan.l1_mode_name} · 第 {plan.version} 版 · 生成于 {plan.created_date}
+          {plan.l1_mode_name} · 第 <span className="font-mono tabular-nums">{plan.version}</span> 版
+          · 生成于 <span className="font-mono tabular-nums">{plan.created_date}</span>
         </p>
       </header>
 

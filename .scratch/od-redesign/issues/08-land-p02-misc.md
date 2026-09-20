@@ -14,3 +14,6 @@ Labels: ready-for-agent
 ## DoD
 
 - P02 + loading/404 过 T2，check.sh 全绿，生成记录补一行
+## Comments
+
+- 2026-09-21 · 苑问 · 改批量授权:本页生成无需再打招呼;T1 人眼项与 T2 走查并入期末统一复核(ticket 09)。AI 连续推进:生成 → T1 自动项 → 固化 → 落地 → T2 代码级。

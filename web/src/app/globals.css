@@ -38,6 +38,7 @@
   --color-danger-strong: #cf222e; /* 危险按钮底(白字 5.35:1);暗色取亮档 */
   --color-danger-subtle: #ffebe9; /* Error banner surface */
   --color-danger-border: color-mix(in oklab, #cf222e 40%, transparent); /* 错误卡描边(§4.2) */
+  --color-attention-subtle: #fff8c5; /* Warning banner surface */
   --color-up: #cf222e; /* 涨红(中国习惯),取 Danger Red */
   --color-down: #1a7f37; /* 跌绿(中国习惯),取 Merge Green */
   --color-bg-overlay: rgba(31, 35, 40, 0.45);
@@ -168,6 +169,7 @@
   --dark-color-danger-strong: #da3633; /* 白字 4.58:1(§4.2 GitHub 实际暗色值) */
   --dark-color-danger-subtle: color-mix(in oklab, #cf222e 14%, #161b22);
   --dark-color-danger-border: color-mix(in oklab, #cf222e 40%, #161b22);
+  --dark-color-attention-subtle: color-mix(in oklab, #9a6700 16%, #161b22);
   --dark-color-up: color-mix(in oklab, #cf222e 55%, #ffffff);
   --dark-color-down: color-mix(in oklab, #1a7f37 55%, #ffffff);
   --dark-color-action: color-mix(in oklab, #0969da 58%, #ffffff);
@@ -214,6 +216,7 @@
     --color-danger-strong: var(--dark-color-danger-strong);
     --color-danger-subtle: var(--dark-color-danger-subtle);
     --color-danger-border: var(--dark-color-danger-border);
+    --color-attention-subtle: var(--dark-color-attention-subtle);
     --color-up: var(--dark-color-up);
     --color-down: var(--dark-color-down);
     --color-action: var(--dark-color-action);
@@ -255,6 +258,7 @@
   --color-danger-strong: var(--dark-color-danger-strong);
   --color-danger-subtle: var(--dark-color-danger-subtle);
   --color-danger-border: var(--dark-color-danger-border);
+  --color-attention-subtle: var(--dark-color-attention-subtle);
   --color-up: var(--dark-color-up);
   --color-down: var(--dark-color-down);
   --color-action: var(--dark-color-action);
@@ -366,6 +370,7 @@
   --color-danger-strong: var(--color-danger-strong);
   --color-danger-subtle: var(--color-danger-subtle);
   --color-danger-border: var(--color-danger-border);
+  --color-attention-subtle: var(--color-attention-subtle);
   --color-up: var(--color-up);
   --color-down: var(--color-down);
   --color-action: var(--color-action);
