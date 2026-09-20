@@ -4,21 +4,26 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * 参考件 `button-primary-pill` 体系(DESIGN.md「Buttons」):全部 pill 圆角,
- * 实心靛蓝每区块至多一个;hover deep / active press。
- * ghost variant 供文字按钮(重试/重新生成)使用;destructive 底用 danger-strong(白字达标)。
+ * GitHub DS「Buttons」体系(od-redesign 固化产物 .btn):6 像素圆角、44 像素触控目标。
+ * default = 实心绿主按钮(GitHub 绿,hover 深一档,白字,合同投影);
+ * secondary = Outline Blue(白底蓝字,hover 填充蓝);
+ * ghost = Default 灰(surface 底 + hairline 边,hover 按合同加深一档);
+ * destructive = 危险 outline(白底红字,hover 填充深红白字)。
  *
- * 移动断点抬到 h-11 保证触控目标不小于 44 像素(DESIGN.md「Touch Targets」,从严于参考)。
+ * 移动端 h-11 保证触控目标不小于 44 像素(customInstructions,从严于 GitHub 实际 32 像素)。
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-button-md transition-colors disabled:pointer-events-none disabled:text-ink-mute-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm border border-transparent text-button-md transition-colors disabled:pointer-events-none disabled:text-ink-mute-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-on-primary hover:bg-primary-deep active:bg-primary-press",
-        secondary: "border border-primary bg-canvas text-primary hover:bg-accent",
-        ghost: "text-action hover:bg-accent",
-        destructive: "bg-danger-strong text-on-primary hover:bg-danger/90",
+        default:
+          "border-btn-border bg-btn-primary text-on-primary shadow-btn-primary hover:bg-btn-primary-hover",
+        secondary:
+          "border-hairline bg-canvas text-primary hover:bg-btn-primary hover:text-on-primary",
+        ghost: "border-hairline bg-canvas-soft text-ink hover:bg-btn-ghost-hover",
+        destructive:
+          "border-hairline bg-canvas text-danger hover:border-btn-danger-hover hover:bg-btn-danger-hover hover:text-on-primary",
       },
       size: {
         default: "h-11 px-base-lg sm:h-10",

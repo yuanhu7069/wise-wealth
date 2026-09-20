@@ -36,13 +36,14 @@ export function SiteFooter({
         className,
       )}
     >
-      <div className="mx-auto flex max-w-7xl flex-col gap-base-xs">
+      <div className="mx-auto flex max-w-xl flex-col gap-base-xs">
         <p className="flex items-center gap-base-xs text-caption text-ink-mute">
           <span
             aria-hidden="true"
             className={cn("size-2 rounded-full", healthy ? "bg-success" : "bg-warning")}
           />
-          服务在线{version ? ` · v${version}` : ""}
+          服务在线
+          {version ? <span className="font-mono tabular-nums"> · v{version}</span> : null}
         </p>
 
         {hideLegal ? null : (

@@ -3,15 +3,15 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * 参考件 `card-feature-light`(DESIGN.md「Cards」):canvas-card 底、hairline 一像素边、
- * 12 像素圆角、可选 L1 蓝调阴影,产品卡内距取 dashboard 档。禁止卡片套卡片。
+ * GitHub DS「Cards / Boxes」(od-redesign 产物 .card):canvas-card 底、hairline 一像素边、
+ * 6 像素圆角、无投影(GitHub 卡面平,层次靠 hairline)。禁止卡片套卡片。
  */
 function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "rounded-lg border border-hairline bg-canvas-card text-ink-secondary shadow-card",
+        "rounded-sm border border-hairline bg-canvas-card text-ink-secondary",
         className,
       )}
       {...props}

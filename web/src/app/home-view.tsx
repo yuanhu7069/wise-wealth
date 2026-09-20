@@ -1,5 +1,5 @@
 /**
- * P01 产品首页的双形态(design-v2 §1.1 / §3.1;形态与文案对照原型 design-v1.html 的 P01)。
+ * P01 产品首页的三形态(od-redesign 固化产物 p01-home-github.html;形态与文案对照原型 design-v1.html 的 P01)。
  *
  * 三种形态来自同一份取数结果:
  * - **有方案**:摘要卡(模式名 + 每月可投资 + 应急金状态)与两个入口
@@ -10,7 +10,7 @@
  * 摘要数字全部来自方案**快照**(`/api/v1/plans/active`),与 P04 同源 ——
  * 首页与方案页显示同一个金额,是「同一份方案」这件事最直接的证据。
  */
-import { Compass, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Compass, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import type { PlanView } from "@/app/plan/state";
@@ -25,6 +25,7 @@ export type HomeState = { kind: "plan"; plan: PlanView } | { kind: "empty" } | {
 /**
  * 应急金状态句(design-v2 §3.1「应急状态句」):距离感文案,不显示百分比。
  * 达标是状态不是提示 —— 同一事实只在这里说一次,不加额外的告警条。
+ * 状态用圆点表达(产物 .status-dot):绿 = 达标,黄 = 有差距。
  */
 function emergencyLine(plan: PlanView): string {
   const coverage = formatMonthsTenths(plan.emergency.coverage_tenths);
@@ -32,31 +33,41 @@ function emergencyLine(plan: PlanView): string {
   return `应急金当前约 ${coverage} 个月,还差约 ${plan.emergency.months_to_fill ?? 0} 个月达标`;
 }
 
-/** 有方案:摘要卡 + [查看完整方案][重新生成]。 */
+/** 有方案:摘要卡 + [查看完整方案][重新生成](产物形态 A)。 */
 function PlanSummary({ plan }: { plan: PlanView }) {
   return (
-    <section className="flex flex-col gap-base-lg rounded-lg border border-hairline bg-canvas-card p-base-xl shadow-card">
-      <div className="flex flex-wrap items-center gap-base-sm">
+    <section
+      className="flex flex-col rounded-sm border border-hairline bg-canvas-card"
+      aria-label="当前方案摘要"
+    >
+      <div className="flex flex-wrap items-center gap-base-sm border-b border-hairline px-base-lg py-base-md">
         <Badge>{plan.l1_mode_name}</Badge>
         <span className="text-caption text-ink-mute">
-          第 {plan.version} 版 · 生成于 {plan.created_date}
+          第 <span className="font-mono tabular-nums">{plan.version}</span> 版 · 生成于{" "}
+          <span className="font-mono tabular-nums">{plan.created_date}</span>
         </span>
       </div>
 
-      <div className="flex flex-col gap-base-xs">
+      <div className="px-base-lg py-base-lg">
         <p className="text-caption text-ink-mute">每月可投资</p>
-        {/* 摘要里唯一的「大字」:用户扫一眼首页要拿到的就是这个数(display-lg 大字档) */}
-        <p className="text-display-lg text-primary tabular-nums">
+        {/* 摘要里唯一的「大字」:用户扫一眼首页要拿到的就是这个数(产物 28 像素等宽右对齐) */}
+        <p className="text-right font-mono text-display-xl text-ink tabular-nums">
           {formatCurrency(plan.investable_monthly_cents)}
         </p>
       </div>
 
-      <p className="flex items-start gap-base-sm rounded-md bg-canvas-soft px-base-lg py-base-md text-body-md text-ink-secondary">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+      <p className="flex items-start gap-base-sm border-t border-hairline px-base-lg py-base-md text-body-md text-ink">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mt-2 size-2 shrink-0 rounded-full",
+            plan.emergency.is_met ? "bg-success" : "bg-warning",
+          )}
+        />
         <span>{emergencyLine(plan)}</span>
       </p>
 
-      <div className="flex flex-wrap gap-base-md">
+      <div className="flex flex-wrap gap-base-md px-base-lg pb-base-lg">
         <Link href="/plan" className={buttonVariants({ size: "lg" })}>
           查看完整方案
         </Link>
@@ -73,18 +84,25 @@ function PlanSummary({ plan }: { plan: PlanView }) {
   );
 }
 
-/** 空态三要素(EMPTY-001):图标 + 一句人话说明 + 明确的引导操作。 */
+/** 空态三要素(EMPTY-001):图标 + 一句人话说明 + 明确的引导操作(产物形态 B)。 */
 function EmptyGuide() {
   return (
-    <section className="flex flex-col items-center gap-base-md rounded-lg border border-hairline bg-canvas-card p-base-xxl text-center shadow-card">
-      <span className="grid size-14 place-items-center rounded-full bg-primary-bg-subdued-hover text-primary">
-        <Compass className="size-7" aria-hidden="true" />
+    <section
+      className="flex flex-col items-center rounded-sm border border-hairline bg-canvas-card px-base-lg py-base-xxl text-center"
+      aria-label="还没有方案"
+    >
+      <span
+        aria-hidden="true"
+        className="grid size-12 place-items-center rounded-full bg-primary-bg-subdued-hover text-primary"
+      >
+        <Compass className="size-6" />
       </span>
-      <p className="text-body-lg text-ink">还没有方案</p>
-      <p className="text-caption text-ink-mute">
-        完成 6 步问卷(约 2 分钟),得到你的第一份可照做的方案
+      <h2 className="mt-base-lg text-heading-lg text-ink">还没有方案</h2>
+      <p className="mt-base-sm text-body-md text-ink-mute">
+        完成 <span className="font-mono tabular-nums">6</span> 步问卷(约{" "}
+        <span className="font-mono tabular-nums">2</span> 分钟),得到你的第一份可照做的方案
       </p>
-      <Link href="/questionnaire" className={cn(buttonVariants({ size: "lg" }), "mt-base-xs")}>
+      <Link href="/questionnaire" className={cn(buttonVariants({ size: "lg" }), "mt-base-xl")}>
         开始问卷
       </Link>
     </section>
@@ -92,23 +110,28 @@ function EmptyGuide() {
 }
 
 /**
- * 取数失败(局部):三要素「发生了什么 + 为什么 + 怎么办」,且给一个真的能重试的动作。
+ * 取数失败(局部):三要素「发生了什么 + 为什么 + 怎么办」,且给一个真的能重试的动作(产物形态 C)。
  * 用整页刷新而非客户端 refetch:首页没有客户端状态,重试就是重新取一次数。
  */
 function LoadError() {
   return (
     <section
       role="alert"
-      className="flex flex-col gap-base-md rounded-lg border border-hairline bg-canvas-card p-base-xl shadow-card"
+      aria-label="方案读取失败"
+      className="flex flex-col rounded-sm border border-danger-border bg-danger-subtle p-base-lg"
     >
-      <div className="flex flex-col gap-base-xs">
-        <p className="text-body-md text-ink">方案暂时读不出来</p>
-        <p className="text-caption text-ink-secondary">
-          服务端没有回应,可能是后端未启动或网络中断。你的问卷与方案都存在服务端,不会因此丢失。
-        </p>
+      <div className="flex items-start gap-base-md">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
+        <div>
+          <h2 className="text-heading-md text-ink">方案暂时读不出来</h2>
+          <p className="mt-base-xs text-body-md text-ink-secondary">
+            服务端没有回应,可能是后端未启动或网络中断。你的问卷与方案都存在服务端,不会因此丢失。
+          </p>
+        </div>
       </div>
       {/* 用 <a> 而非 <Link>:要的是「重新向服务端取一次数」,不是客户端路由跳转 */}
-      <a href="/" className={cn(buttonVariants({ variant: "secondary" }), "w-fit")}>
+      <a href="/" className={cn(buttonVariants({ variant: "destructive" }), "mt-base-lg w-fit")}>
+        <RefreshCw className="size-4" aria-hidden="true" />
         重试
       </a>
     </section>

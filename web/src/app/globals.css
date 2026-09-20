@@ -1,115 +1,123 @@
 @import "tailwindcss";
 
 /*
- * 智策理财 · 值来源:stripe-restyle 期产物(原根目录 DESIGN.md,已移入
- * docs/design-ref/DESIGN.stripe-restyle.md 作历史参考)。自 od-redesign 期起
- * 基线切换为 Open Design 生成型(docs/base_line/基线-design-OpenDesign-Web域.md):
- * 本文件将由固化产物(docs/design/)逐 Token 替换,期间 check-tokens 门禁照常生效。
+ * 智策理财 · 值来源:od-redesign 期固化产物(docs/design/od-redesign/p01-home-github.html,
+ * 生成记录见 docs/design/生成记录.md),design system = GitHub(od://design-systems/github)。
+ * 基线为 Open Design 生成型(docs/base_line/基线-design-OpenDesign-Web域.md):
+ * 调整清单外的项一律照产物执行(.scratch/od-redesign/spec.md §4);期间 check-tokens 门禁照常生效。
  * Tailwind v4:--color-X 自动生成 bg-X/text-X/border-X 等工具类;
  * --text-* 生成字号工具类(字重/行高/字距随三元组合并);--spacing-* / --radius-* / --shadow-* 同理。
  * 暗色:跟随系统(media)+ 手动切换(class 三态),暗色值在 --dark-* 组**单点定义**,
  * 两条生效路径只做机械映射,避免两份值漂移。
- * shadcn 默认 slate 色板全部映射到 stripe 期色板(主色靛蓝 #533AFD),禁留默认色。
+ * 中文四处授权调整(spec §4.1):正文 400→500、行高 1.75、标题零负字距、字体栈追加 CJK 回退。
  */
 
-/* class 策略的 dark 变体接线(值表唯一来源是文件头所述暗色表,此处只接变体) */
+/* class 策略的 dark 变体接线(值表唯一来源是文件头所述暗色值,此处只接变体) */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* ===== DESIGN.md colors · 亮色(照参考件,含本地语义色) ===== */
-  --color-primary: #533afd;
-  --color-primary-deep: #4434d4;
-  --color-primary-press: #2e2b8c;
-  --color-primary-soft: #665efd;
-  --color-primary-bg-subdued-hover: #b9b9f9;
-  --color-brand-dark-900: #1c1e54;
-  --color-ink: #0d253d;
-  --color-ink-secondary: #273951;
-  --color-ink-mute: #64748d;
-  --color-ink-mute-2: #61718a;
+  /* ===== GitHub design system colors · 亮色(照产物 tokens 合同,含本地语义色) ===== */
+  --color-primary: #0969da; /* Primer Blue:链接/主交互 */
+  --color-primary-deep: #0550ae; /* Primer Blue Hover */
+  --color-primary-press: color-mix(in oklab, #0550ae, black 14%); /* 按压档:机械派生(§4.2) */
+  --color-primary-soft: #ddf4ff; /* Accent Subtle */
+  --color-primary-bg-subdued-hover: #ddf4ff; /* 徽章/ subdued 底 = Accent Subtle */
+  --color-ink: #1f2328; /* Fg Default */
+  --color-ink-secondary: #1f2328; /* 产物将正文收敛为 fg 单层 */
+  --color-ink-mute: #656d76; /* Fg Muted */
+  --color-ink-mute-2: #656d76;
   --color-on-primary: #ffffff;
-  --color-canvas: #ffffff;
+  --color-canvas: #ffffff; /* Canvas Default */
   --color-canvas-card: #ffffff;
-  --color-canvas-soft: #f6f9fc;
-  --color-canvas-cream: #f5e9d4;
-  --color-hairline: #e3e8ee;
-  --color-hairline-input: #a8c3de;
-  --color-success: #357a5f;
-  --color-warning: #b3831f; /* 仅图标/边框/底(3.38:1);不作正文小字,文本提示用 ink/danger/success */
-  --color-danger: #c0553f;
-  --color-danger-strong: #c0553f; /* 危险按钮专用底(白字 4.55:1);暗色取深档 */
-  --color-up: #c7453c; /* 涨红(中国习惯) */
-  --color-down: #27835a; /* 跌绿(中国习惯;原 #2E8B57 对白底 4.25 不过线,调深) */
-  --color-bg-overlay: rgba(13, 37, 61, 0.45);
+  --color-canvas-soft: #f6f8fa; /* Canvas Subtle */
+  --color-hairline: #d0d7de; /* Border Default */
+  --color-hairline-input: #d0d7de; /* 输入边 = Border Default(GitHub inputs) */
+  --color-success: #1a7f37; /* Success / Merge Green */
+  --color-warning: #9a6700; /* Attention Yellow */
+  --color-danger: #cf222e; /* Danger Red */
+  --color-danger-strong: #cf222e; /* 危险按钮底(白字 5.35:1);暗色取亮档 */
+  --color-danger-subtle: #ffebe9; /* Error banner surface */
+  --color-danger-border: color-mix(in oklab, #cf222e 40%, transparent); /* 错误卡描边(§4.2) */
+  --color-up: #cf222e; /* 涨红(中国习惯),取 Danger Red */
+  --color-down: #1a7f37; /* 跌绿(中国习惯),取 Merge Green */
+  --color-bg-overlay: rgba(31, 35, 40, 0.45);
 
-  /* DESIGN.md「Chart」固定六色(禁止随机取色;首色即主色,顺序即取值顺序) */
-  --color-chart-1: #533afd;
-  --color-chart-2: #665efd;
-  --color-chart-3: #ea2261;
-  --color-chart-4: #9b6829;
-  --color-chart-5: #64748d;
-  --color-chart-6: #1c1e54;
+  /* 按钮专属值(产物 .btn 体系;底色/边/投影均出自 GitHub DS「Buttons」文档值) */
+  --color-btn-primary: #1f883d;
+  --color-btn-primary-hover: #1a7f37;
+  --color-btn-ghost-hover: #f3f4f6; /* DS「Buttons · Default」hover bg */
+  --color-btn-danger-hover: #a40e26;
+  --color-btn-border: rgba(31, 35, 40, 0.15);
+  --shadow-btn-primary: 0 1px 0 rgba(31, 35, 40, 0.1);
 
-  /* mesh 不设新色站:P01 hero 一律取下列已 token 化的参考件色板值,柔和感靠透明度+模糊,
-   * 组件层不得出现 mesh 专用的裸色值 —— canvas-cream / lemon / magenta / primary / ruby */
+  /* 图表六色:DS 未定义图表序列,按其语义色族机械映射(§4.2):蓝/绿/紫/黄/灰/红 */
+  --color-chart-1: #0969da;
+  --color-chart-2: #1a7f37;
+  --color-chart-3: #8250df;
+  --color-chart-4: #9a6700;
+  --color-chart-5: #656d76;
+  --color-chart-6: #cf222e;
 
-  /* ===== DESIGN.md typography(字阶档,中文调优:400/零负字距) ===== */
-  --text-display-xxl: 3.5rem; /* 56px */
-  --text-display-xxl--font-weight: 400;
-  --text-display-xxl--line-height: 1.03;
-  --text-display-xl: 3rem; /* 48px */
-  --text-display-xl--font-weight: 400;
-  --text-display-xl--line-height: 1.15;
-  --text-display-lg: 2rem; /* 32px */
-  --text-display-lg--font-weight: 400;
-  --text-display-lg--line-height: 1.1;
-  --text-display-md: 1.625rem; /* 26px */
-  --text-display-md--font-weight: 400;
-  --text-display-md--line-height: 1.12;
-  --text-heading-lg: 1.375rem; /* 22px */
-  --text-heading-lg--font-weight: 400;
-  --text-heading-lg--line-height: 1.1;
-  --text-heading-md: 1.25rem; /* 20px */
-  --text-heading-md--font-weight: 400;
-  --text-heading-md--line-height: 1.4;
-  --text-heading-sm: 1.125rem; /* 18px */
-  --text-heading-sm--font-weight: 400;
-  --text-heading-sm--line-height: 1.4;
+  /* ===== 字阶(GitHub Hierarchy + spec §4.1 中文调整:标题 600 零字距、正文 500/1.75) ===== */
+  --text-display-xxl: 2rem; /* 32px = GitHub Display */
+  --text-display-xxl--font-weight: 600;
+  --text-display-xxl--line-height: 1.3;
+  --text-display-xl: 1.75rem; /* 28px = 产物 tokens 合同 text-3xl(大数字档) */
+  --text-display-xl--font-weight: 600;
+  --text-display-xl--line-height: 1.3;
+  --text-display-lg: 1.5rem; /* 24px = H1 */
+  --text-display-lg--font-weight: 600;
+  --text-display-lg--line-height: 1.3;
+  --text-display-md: 1.25rem; /* 20px = H2 */
+  --text-display-md--font-weight: 600;
+  --text-display-md--line-height: 1.3;
+  --text-heading-lg: 1.25rem; /* 20px */
+  --text-heading-lg--font-weight: 600;
+  --text-heading-lg--line-height: 1.3;
+  --text-heading-md: 1rem; /* 16px = H3 */
+  --text-heading-md--font-weight: 600;
+  --text-heading-md--line-height: 1.3;
+  --text-heading-sm: 1rem; /* 16px */
+  --text-heading-sm--font-weight: 600;
+  --text-heading-sm--line-height: 1.3;
   --text-body-lg: 1rem; /* 16px */
-  --text-body-lg--font-weight: 400;
-  --text-body-lg--line-height: 1.4;
-  --text-body-md: 0.9375rem; /* 15px */
-  --text-body-md--font-weight: 400;
-  --text-body-md--line-height: 1.4;
-  /* 金额/数字档:负字距保留(拉丁数字),tnum 由下方 .text-body-tabular 增强规则自动附带 */
+  --text-body-lg--font-weight: 500;
+  --text-body-lg--line-height: 1.75;
+  --text-body-md: 0.875rem; /* 14px = GitHub Body */
+  --text-body-md--font-weight: 500;
+  --text-body-md--line-height: 1.75;
+  /* 金额/数字档:等宽由下方 .text-body-tabular 增强规则附带;字距不再用负档(§4.1#3 同源) */
   --text-body-tabular: 0.875rem; /* 14px */
-  --text-body-tabular--font-weight: 400;
-  --text-body-tabular--line-height: 1.4;
-  --text-body-tabular--letter-spacing: -0.0263rem; /* -0.42px */
-  --text-button-md: 1rem; /* 16px */
-  --text-button-md--font-weight: 400;
-  --text-button-md--line-height: 1;
-  --text-button-sm: 0.875rem; /* 14px */
-  --text-button-sm--font-weight: 400;
-  --text-button-sm--line-height: 1;
-  --text-caption: 0.8125rem; /* 13px */
+  --text-body-tabular--font-weight: 500;
+  --text-body-tabular--line-height: 1.5;
+  --text-button-md: 0.875rem; /* 14px = GitHub 按钮 */
+  --text-button-md--font-weight: 600;
+  --text-button-md--line-height: 1.25;
+  --text-button-md--letter-spacing: 0.02em; /* §4.1#5 按钮微字距 */
+  --text-button-sm: 0.875rem; /* 14px(与 md 同档:产物按钮单档) */
+  --text-button-sm--font-weight: 600;
+  --text-button-sm--line-height: 1.25;
+  --text-button-sm--letter-spacing: 0.02em;
+  --text-caption: 0.75rem; /* 12px = Body Small */
   --text-caption--font-weight: 400;
   --text-caption--line-height: 1.4;
-  /* 声明条档(11px):P03 固定操作栏 RULE-020 下限,不当通用小字档使用 */
-  --text-micro: 0.6875rem; /* 11px */
+  /* 声明条档:P03 固定操作栏 RULE-020 下限 11px,这里取 GitHub 12px 下限 */
+  --text-micro: 0.75rem; /* 12px */
   --text-micro--font-weight: 400;
   --text-micro--line-height: 1.4;
-  --text-micro-cap: 0.6875rem; /* 11px(参考 10px,中文可读性上调) */
+  --text-micro-cap: 0.75rem; /* 12px */
   --text-micro-cap--font-weight: 400;
-  --text-micro-cap--line-height: 1.15;
-  --text-micro-cap--letter-spacing: 0.00625rem; /* +0.1px */
+  --text-micro-cap--line-height: 1.25;
 
-  /* ===== DESIGN.md「Font Family」(Inter 由 next/font 注入 --font-inter) ===== */
+  /* ===== Font Family(system 栈,GitHub「System fonts always」;CJK 回退 = §4.1#4) ===== */
   --font-sans:
-    var(--font-inter), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
-  --font-mono: "SF Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "PingFang SC",
+    "Microsoft YaHei", monospace;
 
-  /* ===== DESIGN.md spacing(基准 8px 八档) ===== */
+  /* ===== spacing(沿用 8px 基八档;产物 20px 内距以 16/24 近似,§4.1) ===== */
   --spacing-xxs: 0.125rem; /* 2px */
   --spacing-xs: 0.25rem; /* 4px */
   --spacing-sm: 0.5rem; /* 8px */
@@ -119,7 +127,7 @@
   --spacing-xxl: 2rem; /* 32px */
   --spacing-huge: 4rem; /* 64px */
 
-  /* ===== DESIGN.md rounded ===== */
+  /* ===== rounded(GitHub 6px 主圆角 + pill 徽章) ===== */
   --radius-xs: 0.25rem; /* 4px */
   --radius-sm: 0.375rem; /* 6px */
   --radius-md: 0.5rem; /* 8px */
@@ -127,53 +135,63 @@
   --radius-xl: 1rem; /* 16px */
   --radius-full: 9999px;
 
-  /* ===== DESIGN.md「Elevation & Depth」(蓝调阴影 L1/L2 + modal 派生档) ===== */
-  --shadow-card: 0 1px 3px rgba(0, 55, 112, 0.08);
-  --shadow-float: 0 8px 24px rgba(0, 55, 112, 0.08), 0 2px 6px rgba(0, 55, 112, 0.04);
-  --shadow-modal: 0 16px 48px rgba(0, 55, 112, 0.16), 0 4px 12px rgba(0, 55, 112, 0.08);
+  /* ===== 阴影(GitHub:卡面平、hairline 描边;浮层取产物 elev-raised 派生,§4.2) ===== */
+  --shadow-card: 0 0 #0000;
+  --shadow-float: 0 1px 3px rgba(31, 35, 40, 0.12), 0 8px 24px rgba(66, 74, 83, 0.12);
+  --shadow-modal: 0 1px 3px rgba(31, 35, 40, 0.12), 0 16px 48px rgba(66, 74, 83, 0.2);
 
   /*
-   * 可点击文字色(语义别名):亮取 primary(白底 6.19:1),暗取 subdued(卡片底 ≥9:1)。
-   * 值都来自 DESIGN.md 色板,不是新色值。
+   * 可点击文字色(语义别名):亮取 primary(白底 4.6:1),暗取派生亮蓝(≥4.5:1)。
+   * 值都来自 GitHub DS / §4.2 派生,不是新色值。
    */
-  --color-action: #533afd;
+  --color-action: #0969da;
 
   /*
-   * ===== DESIGN.md 暗色派生值组(单点定义) =====
-   * 只在"暗色生效"时被下面两条路径**机械映射**回 --color-*;值本身不得在别处重复书写。
+   * ===== 暗色派生值组(单点定义) =====
+   * DS §2 Dark Theme 只文档化画布/表面/边框/前景 4 值;其余按 §4.2 派生规则:
+   * color-mix 从文档化亮色值机械派生;按钮三值取 GitHub 实际产品暗色值。
    * 两条路径:跟随系统走 media,手动走 .dark class。
    */
-  --dark-color-canvas: #0e1020;
-  --dark-color-canvas-card: #151832;
-  --dark-color-canvas-soft: #1b1f3b;
-  --dark-color-canvas-cream: #2a2440;
-  --dark-color-hairline: #262b4d;
-  --dark-color-hairline-input: #3f4670;
-  --dark-color-ink: #eef0fb;
-  --dark-color-ink-secondary: #c3c8de;
-  --dark-color-ink-mute: #848cad;
-  --dark-color-ink-mute-2: #6b7294;
-  --dark-color-bg-overlay: rgba(4, 6, 16, 0.6);
-  --dark-color-success: #4fa98a;
-  --dark-color-warning: #d9a952;
-  --dark-color-danger: #d4694f;
-  --dark-color-danger-strong: #b84e36; /* 白字 5.02:1(danger #d4694f 作按钮底只有 3.54) */
-  --dark-color-up: #dd5a50; /* 对卡片底 4.68(#d9564c 只有 4.46) */
-  --dark-color-down: #3ea46b;
-  --dark-color-action: #b9b9f9;
-  /* DESIGN.md 暗色图表顺序:亮色优先(primary-soft/subdued/magenta/ruby/lemon/ink-mute) */
-  --dark-color-chart-1: #665efd;
-  --dark-color-chart-2: #b9b9f9;
-  --dark-color-chart-3: #f96bee;
-  --dark-color-chart-4: #ea2261;
-  --dark-color-chart-5: #9b6829;
-  --dark-color-chart-6: #848cad;
-  /* DESIGN.md「Elevation」暗色规则:阴影一律换 hairline 边框表达 */
-  --dark-shadow-card: 0 0 0 1px #262b4d;
-  --dark-shadow-float: 0 0 0 1px #262b4d;
-  --dark-shadow-modal: 0 0 0 1px #262b4d;
-  /* shadcn 映射里只有这一项在暗色下取值不同(subdued 底上需要深前景,对 #1c1e54 9.1:1) */
-  --dark-accent-foreground: #1c1e54;
+  --dark-color-canvas: #0d1117; /* Dark Canvas */
+  --dark-color-canvas-card: #161b22; /* Dark Surface */
+  --dark-color-canvas-soft: #161b22;
+  --dark-color-hairline: #30363d; /* Dark Border */
+  --dark-color-hairline-input: #30363d;
+  --dark-color-ink: #e6edf3; /* Dark Fg */
+  --dark-color-ink-secondary: #e6edf3;
+  --dark-color-ink-mute: color-mix(in oklab, #e6edf3 62%, #0d1117); /* ≈6.6:1 */
+  --dark-color-ink-mute-2: color-mix(in oklab, #e6edf3 62%, #0d1117);
+  --dark-color-bg-overlay: rgba(1, 4, 9, 0.6);
+  --dark-color-success: color-mix(in oklab, #1a7f37 55%, #ffffff);
+  --dark-color-warning: color-mix(in oklab, #9a6700 52%, #ffffff);
+  --dark-color-danger: color-mix(in oklab, #cf222e 55%, #ffffff);
+  --dark-color-danger-strong: #da3633; /* 白字 4.58:1(§4.2 GitHub 实际暗色值) */
+  --dark-color-danger-subtle: color-mix(in oklab, #cf222e 14%, #161b22);
+  --dark-color-danger-border: color-mix(in oklab, #cf222e 40%, #161b22);
+  --dark-color-up: color-mix(in oklab, #cf222e 55%, #ffffff);
+  --dark-color-down: color-mix(in oklab, #1a7f37 55%, #ffffff);
+  --dark-color-action: color-mix(in oklab, #0969da 58%, #ffffff);
+  --dark-color-primary-bg-subdued-hover: color-mix(in oklab, #0969da 18%, #161b22);
+  --dark-color-btn-primary: #238636; /* §4.2 GitHub 实际暗色值 */
+  --dark-color-btn-primary-hover: #2ea043;
+  --dark-color-btn-ghost-hover: #21262d; /* §4.2 GitHub 实际暗色值 */
+  --dark-color-btn-danger-hover: #da3633;
+  --dark-color-btn-border: #30363d;
+  --dark-shadow-btn-primary: 0 0 #0000; /* 暗色按钮不带投影 */
+  --dark-color-primary-soft: color-mix(in oklab, #0969da 18%, #161b22);
+  /* 暗色图表顺序:蓝/绿/紫/黄/灰/红,同一 color-mix 派生规则 */
+  --dark-color-chart-1: color-mix(in oklab, #0969da 58%, #ffffff);
+  --dark-color-chart-2: color-mix(in oklab, #1a7f37 55%, #ffffff);
+  --dark-color-chart-3: color-mix(in oklab, #8250df 55%, #ffffff);
+  --dark-color-chart-4: color-mix(in oklab, #9a6700 52%, #ffffff);
+  --dark-color-chart-5: color-mix(in oklab, #e6edf3 62%, #0d1117);
+  --dark-color-chart-6: color-mix(in oklab, #cf222e 55%, #ffffff);
+  /* 暗色阴影一律换 hairline 边框表达(沿用既有规则) */
+  --dark-shadow-card: 0 0 0 1px #30363d;
+  --dark-shadow-float: 0 0 0 1px #30363d;
+  --dark-shadow-modal: 0 0 0 1px #30363d;
+  /* subdued 底上需要亮前景(对 blue-18% subtle 底 ≥4.5:1) */
+  --dark-accent-foreground: color-mix(in oklab, #0969da 58%, #ffffff);
 }
 
 /* ===== 暗色生效路径 ①:跟随系统(无手动偏好时不加 class) =====
@@ -183,7 +201,6 @@
     --color-canvas: var(--dark-color-canvas);
     --color-canvas-card: var(--dark-color-canvas-card);
     --color-canvas-soft: var(--dark-color-canvas-soft);
-    --color-canvas-cream: var(--dark-color-canvas-cream);
     --color-hairline: var(--dark-color-hairline);
     --color-hairline-input: var(--dark-color-hairline-input);
     --color-ink: var(--dark-color-ink);
@@ -195,9 +212,19 @@
     --color-warning: var(--dark-color-warning);
     --color-danger: var(--dark-color-danger);
     --color-danger-strong: var(--dark-color-danger-strong);
+    --color-danger-subtle: var(--dark-color-danger-subtle);
+    --color-danger-border: var(--dark-color-danger-border);
     --color-up: var(--dark-color-up);
     --color-down: var(--dark-color-down);
     --color-action: var(--dark-color-action);
+    --color-primary-bg-subdued-hover: var(--dark-color-primary-bg-subdued-hover);
+    --color-primary-soft: var(--dark-color-primary-soft);
+    --color-btn-primary: var(--dark-color-btn-primary);
+    --color-btn-primary-hover: var(--dark-color-btn-primary-hover);
+    --color-btn-ghost-hover: var(--dark-color-btn-ghost-hover);
+    --color-btn-danger-hover: var(--dark-color-btn-danger-hover);
+    --color-btn-border: var(--dark-color-btn-border);
+    --shadow-btn-primary: var(--dark-shadow-btn-primary);
     --color-chart-1: var(--dark-color-chart-1);
     --color-chart-2: var(--dark-color-chart-2);
     --color-chart-3: var(--dark-color-chart-3);
@@ -215,7 +242,6 @@
   --color-canvas: var(--dark-color-canvas);
   --color-canvas-card: var(--dark-color-canvas-card);
   --color-canvas-soft: var(--dark-color-canvas-soft);
-  --color-canvas-cream: var(--dark-color-canvas-cream);
   --color-hairline: var(--dark-color-hairline);
   --color-hairline-input: var(--dark-color-hairline-input);
   --color-ink: var(--dark-color-ink);
@@ -227,9 +253,19 @@
   --color-warning: var(--dark-color-warning);
   --color-danger: var(--dark-color-danger);
   --color-danger-strong: var(--dark-color-danger-strong);
+  --color-danger-subtle: var(--dark-color-danger-subtle);
+  --color-danger-border: var(--dark-color-danger-border);
   --color-up: var(--dark-color-up);
   --color-down: var(--dark-color-down);
   --color-action: var(--dark-color-action);
+  --color-primary-bg-subdued-hover: var(--dark-color-primary-bg-subdued-hover);
+  --color-primary-soft: var(--dark-color-primary-soft);
+  --color-btn-primary: var(--dark-color-btn-primary);
+  --color-btn-primary-hover: var(--dark-color-btn-primary-hover);
+  --color-btn-ghost-hover: var(--dark-color-btn-ghost-hover);
+  --color-btn-danger-hover: var(--dark-color-btn-danger-hover);
+  --color-btn-border: var(--dark-color-btn-border);
+  --shadow-btn-primary: var(--dark-shadow-btn-primary);
   --color-chart-1: var(--dark-color-chart-1);
   --color-chart-2: var(--dark-color-chart-2);
   --color-chart-3: var(--dark-color-chart-3);
@@ -252,7 +288,7 @@
   color-scheme: dark;
 }
 
-/* ===== shadcn CSS 变量 → 参考件色板映射(禁留 slate 默认色) ===== */
+/* ===== shadcn CSS 变量 → GitHub 色板映射(禁留 slate 默认色) ===== */
 :root {
   --background: var(--color-canvas);
   --foreground: var(--color-ink-secondary);
@@ -267,13 +303,13 @@
   --muted: var(--color-canvas-soft);
   --muted-foreground: var(--color-ink-mute);
   --accent: var(--color-primary-bg-subdued-hover);
-  /* subdued 底上的前景:亮取 press(6.17:1)、暗取深靛(9.1:1)——deep 只有 4.22:1,不过正文线 */
-  --accent-foreground: var(--color-primary-press);
+  /* subdued(Accent Subtle #ddf4ff)底上的前景:亮取 primary(4.58:1)、暗取派生亮蓝 */
+  --accent-foreground: var(--color-primary);
   --destructive: var(--color-danger);
   --border: var(--color-hairline);
   --input: var(--color-hairline-input);
   --ring: var(--color-primary);
-  --radius: var(--radius-md);
+  --radius: var(--radius-sm); /* GitHub 6px 主圆角 */
 }
 
 /* shadcn 暗色覆盖(两条路径同上)。其余项都是 var(--color-*) 引用,已随 ①② 自动跟随。 */
@@ -309,18 +345,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* DESIGN.md 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
+  /* 色板直接命名色(:root 已定义亮/暗双值,此处注册生成工具类) */
   --color-canvas: var(--color-canvas);
   --color-canvas-card: var(--color-canvas-card);
   --color-canvas-soft: var(--color-canvas-soft);
-  --color-canvas-cream: var(--color-canvas-cream);
   --color-hairline: var(--color-hairline);
   --color-hairline-input: var(--color-hairline-input);
   --color-primary-deep: var(--color-primary-deep);
   --color-primary-press: var(--color-primary-press);
   --color-primary-soft: var(--color-primary-soft);
   --color-primary-bg-subdued-hover: var(--color-primary-bg-subdued-hover);
-  --color-brand-dark-900: var(--color-brand-dark-900);
   --color-ink: var(--color-ink);
   --color-ink-secondary: var(--color-ink-secondary);
   --color-ink-mute: var(--color-ink-mute);
@@ -330,12 +364,19 @@
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
   --color-danger-strong: var(--color-danger-strong);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-danger-border: var(--color-danger-border);
   --color-up: var(--color-up);
   --color-down: var(--color-down);
   --color-action: var(--color-action);
   --color-bg-overlay: var(--color-bg-overlay);
+  --color-btn-primary: var(--color-btn-primary);
+  --color-btn-primary-hover: var(--color-btn-primary-hover);
+  --color-btn-ghost-hover: var(--color-btn-ghost-hover);
+  --color-btn-danger-hover: var(--color-btn-danger-hover);
+  --color-btn-border: var(--color-btn-border);
 
-  /* DESIGN.md「Chart」图表色板(分类色,顺序即取值顺序) */
+  /* 图表色板(分类色,顺序即取值顺序) */
   --color-chart-1: var(--color-chart-1);
   --color-chart-2: var(--color-chart-2);
   --color-chart-3: var(--color-chart-3);
@@ -343,8 +384,7 @@
   --color-chart-5: var(--color-chart-5);
   --color-chart-6: var(--color-chart-6);
 
-  /* DESIGN.md 字阶(:root 存字号/字重/行高/字距元组;主值 inline 引用,元组变量同步注册,
-   * Tailwind v4 将 --text-X--font-weight/--line-height/--letter-spacing 合并进字号工具类) */
+  /* 字阶(:root 存字号/字重/行高/字距元组;主值 inline 引用,元组变量同步注册) */
   --text-display-xxl: var(--text-display-xxl);
   --text-display-xxl--font-weight: var(--text-display-xxl--font-weight);
   --text-display-xxl--line-height: var(--text-display-xxl--line-height);
@@ -375,13 +415,14 @@
   --text-body-tabular: var(--text-body-tabular);
   --text-body-tabular--font-weight: var(--text-body-tabular--font-weight);
   --text-body-tabular--line-height: var(--text-body-tabular--line-height);
-  --text-body-tabular--letter-spacing: var(--text-body-tabular--letter-spacing);
   --text-button-md: var(--text-button-md);
   --text-button-md--font-weight: var(--text-button-md--font-weight);
   --text-button-md--line-height: var(--text-button-md--line-height);
+  --text-button-md--letter-spacing: var(--text-button-md--letter-spacing);
   --text-button-sm: var(--text-button-sm);
   --text-button-sm--font-weight: var(--text-button-sm--font-weight);
   --text-button-sm--line-height: var(--text-button-sm--line-height);
+  --text-button-sm--letter-spacing: var(--text-button-sm--letter-spacing);
   --text-caption: var(--text-caption);
   --text-caption--font-weight: var(--text-caption--font-weight);
   --text-caption--line-height: var(--text-caption--line-height);
@@ -391,9 +432,8 @@
   --text-micro-cap: var(--text-micro-cap);
   --text-micro-cap--font-weight: var(--text-micro-cap--font-weight);
   --text-micro-cap--line-height: var(--text-micro-cap--line-height);
-  --text-micro-cap--letter-spacing: var(--text-micro-cap--letter-spacing);
 
-  /* DESIGN.md spacing 八档(注册名加 base- 前缀:裸 xs/sm/…档名会撞 Tailwind 内置刻度——
+  /* spacing 八档(注册名加 base- 前缀:裸 xs/sm/…档名会撞 Tailwind 内置刻度——
    * 注册 --spacing-xl 后 v4 把 max-w-xl 从容器刻度 36rem 劫持成 24px。base- 前缀错开,
    * 工具类形态 gap-base-lg / p-base-xl / w-base-md 等) */
   --spacing-base-xxs: var(--spacing-xxs);
@@ -416,17 +456,20 @@
   --shadow-card: var(--shadow-card);
   --shadow-float: var(--shadow-float);
   --shadow-modal: var(--shadow-modal);
+  --shadow-btn-primary: var(--shadow-btn-primary);
 }
 
-/* ===== DESIGN.md 全局规则 ===== */
+/* ===== 全局规则(产物 body 契约) ===== */
 body {
   background: var(--color-canvas);
   color: var(--color-ink-secondary);
   font-family: var(--font-sans);
+  font-weight: 500; /* §4.1#1 中文正文加重一档 */
+  line-height: 1.75; /* §4.1#2 中文行高放宽 */
 }
 
-/* DESIGN.md「Typography · Principles」:金额/数字一律等宽——字号档自带,此处补 font-variant,
- * 使 text-body-tabular 单个类即满足「tnum + 负字距 + 14px」完整财务数字形态 */
+/* 金额/数字一律等宽——字号档自带,此处补 font-variant,
+ * 使 text-body-tabular 单个类即满足「tnum + 14px」完整财务数字形态 */
 .text-body-tabular {
   font-variant-numeric: tabular-nums;
 }

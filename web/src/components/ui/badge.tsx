@@ -4,14 +4,14 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * 参考件 `pill-tag-soft`(DESIGN.md「Pills, Tags, and Chips」):subdued 靛底 + press 靛字。
+ * GitHub DS「Labels」(od-redesign 产物 .badge):Accent Subtle 底 + Primary 字,pill 圆角,600 字重。
  *
- * 前景为什么走 `--accent-foreground` 而不是写死 primary-press:亮色取 press(对 subdued 底
- * 6.17:1)、暗色取深靛(9.1:1),由 globals.css 的 shadcn 映射层按模式切换,两态都过 4.5 线。
- * 字阶 `micro-cap`(参考件 10 像素上调一档,中文可读性,spec §2.2#5)。
+ * 前景为什么走 `--accent-foreground` 而不是写死 primary:亮色取 primary(对 Accent Subtle 底
+ * 4.58:1)、暗色取派生亮蓝,由 globals.css 的 shadcn 映射层按模式切换,两态都过 4.5 线。
+ * 字阶 `micro-cap`(12 像素,GitHub 12 像素下限,RULE-020 声明条 11 像素下限之上)。
  */
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-base-xs overflow-hidden rounded-full border border-transparent px-base-sm py-px text-micro-cap whitespace-nowrap",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-base-xs overflow-hidden rounded-full border border-transparent px-base-sm py-px text-micro-cap font-semibold whitespace-nowrap",
   {
     variants: {
       variant: {

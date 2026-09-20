@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 
 import { TopBar } from "@/components/top-bar";
 
@@ -7,13 +6,9 @@ import "./globals.css";
 
 /**
  * DESIGN.md「Font Family」:Inter 自托管(next/font 构建期内联,无运行时外部请求),
- * 可变字重覆盖 400/500/600;中文回退栈在 globals.css 的 --font-sans。
+ * 字体:GitHub DS「System fonts always」——system 栈 + CJK 回退,见 globals.css 的 --font-sans;
+ * 不加载任何 webfont(od-redesign 期起,原 Inter next/font 已随基线切换移除)。
  */
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "智策理财",
@@ -48,7 +43,7 @@ const THEME_INIT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t=
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="zh-CN" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="zh-CN" className="h-full antialiased" suppressHydrationWarning>
       <head>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: THEME_INIT 是构建期字面量常量,不含用户输入 */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />

@@ -1,11 +1,13 @@
 /**
- * P01 产品首页(B 期改造,design-v2 §1.1)。
+ * P01 产品首页(B 期改造,design-v2 §1.1;od-redesign 期按固化产物重排视觉)。
  *
  * 与 A 期的区别:这是一个**产品**首页,承载两种真实形态(有方案 / 没有方案)。
  * A 期为验证工程骨架放在这里的服务状态卡片与 Token 样例区**已移除** ——
  * 健康状态随页脚(RULE-020 的页脚承载),不再占用首页正文。
  *
  * 取数在此完成(server 组件),形态判断与渲染交给 `HomeView`;本页不做任何重算。
+ * 产物(od-redesign)的 hero 是素带:标题 + 副标题,无 mesh、无分隔线 —— 原
+ * MeshBackdrop 已随基线切换移除,hero 视觉全靠排版(产物即如此)。
  */
 import { cookies } from "next/headers";
 
@@ -15,7 +17,6 @@ import { apiGet } from "@/lib/api";
 import { requireSession, SESSION_COOKIE } from "@/lib/session";
 
 import { HomeView, type HomeState } from "./home-view";
-import { MeshBackdrop } from "./mesh-backdrop";
 import type { PlanView } from "./plan/state";
 
 /** 读当前方案:200 有方案 / 404 还没生成过 / 其它与网络失败都归「读不出来」。 */
@@ -47,15 +48,14 @@ export default async function Page() {
 
   return (
     <>
-      {/* hero 带:渐变 mesh 仅此一处(spec §2.2#11);标题叠在氛围色带上 */}
-      <section className="relative isolate overflow-hidden border-b border-hairline">
-        <MeshBackdrop />
-        <div className="relative mx-auto flex w-full max-w-xl flex-col gap-base-xs px-base-lg py-base-xxl">
-          <h1 className="text-display-lg text-ink">智策理财</h1>
-          <p className="text-body-lg text-ink-secondary">双层理财决策工具 · 免费层告诉你怎么做</p>
-        </div>
+      {/* hero 带(产物:素带,标题 + 副标题,下无分隔线) */}
+      <section className="mx-auto w-full max-w-xl px-base-lg pt-base-xxl pb-base-lg">
+        <h1 className="text-display-xxl text-ink">智策理财</h1>
+        <p className="mt-base-sm text-body-md text-ink-mute">
+          双层理财决策工具 · 免费层告诉你怎么做
+        </p>
       </section>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-base-lg px-base-lg py-base-xxl">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-base-xl px-base-lg py-base-lg">
         <HomeView state={state} />
       </main>
       {/* 首页页脚保留健康状态与一行免责声明(design-v2 v0.3 / RULE-020) */}
