@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 /*
- * 智策理财 · 视觉真源 = 根目录 DESIGN.md(改造件,参考设计型基线,已断源)。
- * 本文件逐 Token 抄入 DESIGN.md,禁止发明数值;与参考件的差异必须能在
- * .scratch/stripe-restyle/spec.md §2.2 与 DESIGN.md 文末 Local Adjustments 找到。
+ * 智策理财 · 值来源:stripe-restyle 期产物(原根目录 DESIGN.md,已移入
+ * docs/design-ref/DESIGN.stripe-restyle.md 作历史参考)。自 od-redesign 期起
+ * 基线切换为 Open Design 生成型(docs/base_line/基线-design-OpenDesign-Web域.md):
+ * 本文件将由固化产物(docs/design/)逐 Token 替换,期间 check-tokens 门禁照常生效。
  * Tailwind v4:--color-X 自动生成 bg-X/text-X/border-X 等工具类;
  * --text-* 生成字号工具类(字重/行高/字距随三元组合并);--spacing-* / --radius-* / --shadow-* 同理。
  * 暗色:跟随系统(media)+ 手动切换(class 三态),暗色值在 --dark-* 组**单点定义**,
- * 两条生效路径只做机械映射,避免两份值漂移。暗色派生依据 DESIGN.md「Colors §Dark mode」。
- * shadcn 默认 slate 色板全部映射到参考件色板(主色靛蓝 #533AFD),禁留默认色。
+ * 两条生效路径只做机械映射,避免两份值漂移。
+ * shadcn 默认 slate 色板全部映射到 stripe 期色板(主色靛蓝 #533AFD),禁留默认色。
  */
 
-/* class 策略的 dark 变体接线(值表唯一来源仍是 DESIGN.md 暗色表,此处只接变体) */
+/* class 策略的 dark 变体接线(值表唯一来源是文件头所述暗色表,此处只接变体) */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
