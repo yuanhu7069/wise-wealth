@@ -61,10 +61,10 @@ function Choice<T extends string>({
             onClick={() => onSelect(opt.value)}
             aria-pressed={selected}
             className={cn(
-              "flex min-h-11 items-center gap-base-md rounded-md border px-base-lg py-base-md text-left text-body-md",
+              "flex min-h-11 items-center gap-base-md rounded-sm border px-base-lg py-base-md text-left text-body-md",
               selected
                 ? "border-2 border-primary bg-primary/10 text-ink"
-                : "border-hairline bg-canvas-card text-ink-secondary hover:border-text-caption",
+                : "border-hairline bg-canvas-card text-ink-secondary hover:border-ink-mute",
             )}
           >
             <span
@@ -246,7 +246,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
             aria-hidden="true"
             className={cn(
               "h-1 flex-1 rounded-full",
-              n < step ? "bg-primary-soft" : n === step ? "bg-primary" : "bg-hairline",
+              n < step ? "bg-primary" : n === step ? "bg-primary" : "bg-hairline",
             )}
           />
         ))}
@@ -395,10 +395,10 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
                     aria-pressed={chosen === c.id}
                     onClick={() => setChosen(c.id)}
                     className={cn(
-                      "flex flex-col gap-base-sm rounded-lg border p-base-lg text-left",
+                      "flex flex-col gap-base-sm rounded-sm border p-base-lg text-left",
                       chosen === c.id
                         ? "border-2 border-primary bg-primary/10"
-                        : "border-hairline bg-canvas-card hover:border-text-caption",
+                        : "border-hairline bg-canvas-card hover:border-ink-mute",
                     )}
                   >
                     <span className="flex flex-wrap items-center gap-base-xs">
@@ -434,7 +434,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
           {planError ? (
             <div
               role="alert"
-              className="flex flex-col gap-base-xs rounded-md border border-hairline bg-canvas-card px-base-lg py-base-md shadow-card"
+              className="flex flex-col gap-base-xs rounded-sm border border-hairline bg-canvas-card px-base-lg py-base-md"
             >
               <p className="text-body-md text-danger">方案没能生成</p>
               <p className="text-caption text-ink-secondary">{planError}</p>
@@ -451,7 +451,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
       {error ? (
         <p
           role="alert"
-          className="rounded-sm bg-canvas-card px-base-md py-base-sm text-caption text-danger shadow-card"
+          className="rounded-sm bg-canvas-card px-base-md py-base-sm text-caption text-danger"
         >
           {error}
         </p>
@@ -466,7 +466,7 @@ export function Wizard({ initialStep, initialAnswers }: WizardProps) {
         <div className="flex gap-base-md bg-canvas py-base-md">
           {step > 1 ? (
             <Button
-              variant="secondary"
+              variant="ghost"
               type="button"
               onClick={() => setStep(step - 1)}
               disabled={pending}
