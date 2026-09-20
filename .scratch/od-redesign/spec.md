@@ -41,7 +41,25 @@ T0 参数闸门（AI 自查） → 生成（BYOK 真实调用） → T1 草稿�
 
 > 起草：AI（草稿过闸后）；拍板：苑问。清单外一律照产物执行。
 
-（待填）
+### 4.1 胜者产物（GitHub 风 · P01）调整清单初稿
+
+| # | 调整项 | 生成原值 | 本项目值 | 理由 |
+|---|--------|---------|---------|------|
+| 1 | 正文字重 | 400（GitHub 二值制 400/600） | 500 | 中文细体在 Windows 偏糊，加重一档（customInstructions） |
+| 2 | 正文行高 | 1.5 | 1.75 | 中文正文行高放宽（customInstructions） |
+| 3 | 标题字距 | Display −0.01em | 0 | 中文标题不用负字距（customInstructions） |
+| 4 | 字体栈 | 纯 system-ui | 追加 PingFang SC / Hiragino Sans GB / Microsoft YaHei | 中文回退（customInstructions） |
+| 5 | 按钮字距 | normal | 0.02em | 产物为 14px 小字按钮加的微字距；倾向保留，苑问可收回 |
+
+### 4.2 派生规则记录（DS 未覆盖区，非偏离，固化时随生成记录存档）
+
+- 暗色 accent/success/warn/danger：DS §2 Dark Theme 只文档化 4 值（画布/表面/边框/前景），产物以 `color-mix` 从文档化亮色值机械派生
+- 暗色主按钮 `#238636` / hover `#2ea043`、danger hover `#da3633`：GitHub 实际产品暗色值，DS 文档未载，产物直接采用
+
+### 4.3 产物静态值 → 落地时接动态（落地说明，非视觉偏离）
+
+- 页脚版本号 `v1.2.0` → 接真实构建版本
+- 页脚「服务正常」健康点 → 接 `/api/v1/health` 动态探测（沿用 SiteFooterShell 降级黄点机制）
 
 ## 5 人工环节分布
 

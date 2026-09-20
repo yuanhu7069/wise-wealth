@@ -1,6 +1,6 @@
 # 04 · 固化 P01 胜者产物
 
-Status: needs-triage
+Status: resolved
 Labels: ready-for-agent
 
 > 前置：03 完成（T1 通过）。基线 §4 P0：生成后立即固化，不攒批。
@@ -15,3 +15,8 @@ Labels: ready-for-agent
 ## DoD
 
 - `bash scripts/check.sh` 全绿；生成记录可回答「这套界面怎么来的」
+
+## Comments
+
+- 2026-09-20 · AI · **范围微调备案**:原步骤 1「tokens 落 globals.css」移入 ticket 05 落地——token 名是全局的,单独换值会让 P02–P04 的旧类名指向新值、P01 结构却还是旧布局,产生中间态不一致;随 ticket 05 一次性切换(值+组件同 PR)更干净。本 ticket 保留纯固化:快照 + 生成记录,已达成「产物进 Git」这一基线 P0。
+- 2026-09-20 · AI · 固化完成:快照 `docs/design/od-redesign/p01-home-github.html`(637 行,sha256 前 16 位 31900488b5b77839,与 daemon 侧产物逐字节一致);生成记录 `docs/design/生成记录.md`(四件套/工具版本/run/候选过程/派生规则全录)。src/scripts 无改动,check.sh 维持 01e074a 的全绿状态(文档新增不参与任何检查项)。DoD 达成。
