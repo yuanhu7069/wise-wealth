@@ -21,3 +21,4 @@ Labels: ready-for-agent
 - 2026-09-21 · AI · 生成完成(4.0 min,`p02-login.html` 507 行,stable-prompt 缓存命中,四页齐)。T1 自动项 ✅(10/10 token、自包含、焦点×3、44px×6、autocomplete×3、aria-describedby、reduced-motion)。
 - 2026-09-21 · AI · 固化 `docs/design/od-redesign/p02-login-github.html` + 生成记录补行。落地为轻触式:登录卡结构经换肤已与产物同构(6px 平面卡/44px 输入/通栏绿主按钮/role=alert 错误关联),仅过期提示条对齐产物(attention-subtle 底 + warning 图标 + role=status)。loading.tsx(P01 时已随产物形状)/ not-found.tsx(纯 token 类,自动换肤)无需再改。check.sh 全绿 → T2 代码级通过。
 - 2026-09-21 · AI · P04/P03/P02 全部生成+落地完成,发出统一复核邀请(预览链接 + 复核清单),人眼验收全部集中在复核环节。
+- 2026-09-21 · 苑问 · 统一复核通过("页面没问题")。ticket 关闭。

@@ -1,6 +1,6 @@
 # 06 · P04 方案页（铺开第 1 页）
 
-Status: claimed
+Status: resolved
 Labels: ready-for-agent
 
 > 前置：05 完成。正式生成前向苑问打招呼（授权节奏，spec §2）。在胜者 project 内迭代，不新建 project。
@@ -22,3 +22,4 @@ Labels: ready-for-agent
 - 2026-09-21 · 苑问 · 改批量授权:本页生成无需再打招呼;T1 人眼项与 T2 走查并入期末统一复核(ticket 09)。AI 连续推进:生成 → T1 自动项 → 固化 → 落地 → T2 代码级。
 - 2026-09-21 · AI · 生成完成(9.4 min,`p04-plan.html` 810 行,与 P01 同会话延续,风格一致性由产物自证:同 token 契约/顶栏/按钮/主题键)。T1 自动项 ✅(11/11 token、零外链、tabular×4、焦点环×3、44px×6、role=status/alert×4、reduced-motion);人眼项并入统一复核。
 - 2026-09-21 · AI · 固化:`docs/design/od-redesign/p04-plan-github.html` + 生成记录补行。落地:globals 增 `attention-subtle` token(提醒条底,DS 文档值 #fff8c5 / 暗色 mix 派生);plan-view 重写——五段改分区卡(Canvas Subtle 头条 + 平面卡体),提示条双变体(严重 danger-subtle / 提醒 attention-subtle + 图标),应急金面板加状态圆点,执行规则等宽编号 + 虚线分隔补充段,比例条加 role=img 中文播报,页头元信息等宽化。偏离:风险提示保持 h2 正文段(产物同),骨架/极端核验区为产物展示件不落地(app 状态由路由与真实数据驱动)。check.sh 全绿 → T2 代码级通过。 ticket DoD 待统一复核,先转 P03。
+- 2026-09-21 · 苑问 · 统一复核通过("页面没问题")。ticket 关闭。

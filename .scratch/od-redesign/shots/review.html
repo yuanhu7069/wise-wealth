@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>od-redesign · 统一复核(四页产物)</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; }
+  header { padding: 12px 16px; font-size: 14px; }
+  header a { color: #7dd3fc; margin-right: 14px; }
+  nav { padding: 0 16px 10px; font-size: 12px; color: #aaa; }
+  .row { display: flex; height: calc(100vh - 76px); }
+  .col { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #333; min-width: 0; }
+  .col h2 { margin: 0; padding: 8px 12px; font-size: 13px; font-weight: 600; background: #16213e; }
+  .col:last-child { border-right: none; }
+  iframe { flex: 1; border: 0; width: 100%; background: #fff; }
+</style>
+</head>
+<body>
+<header>
+  od-redesign · 统一复核 · 四页产物(daemon 7456,2026-09-21)
+  <a href="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p01-home.html" target="_blank">P01 单开</a>
+  <a href="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p02-login.html" target="_blank">P02 单开</a>
+  <a href="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p03-quiz.html" target="_blank">P03 单开</a>
+  <a href="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p04-plan.html" target="_blank">P04 单开</a>
+</header>
+<nav>实机走查:http://localhost:3000/(dev server 已在跑)。T1 人眼项 + T2 走查单见 .scratch/od-redesign/ 各 ticket。</nav>
+<div class="row">
+  <div class="col"><h2>P01 首页</h2><iframe src="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p01-home.html"></iframe></div>
+  <div class="col"><h2>P02 登录</h2><iframe src="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p02-login.html"></iframe></div>
+  <div class="col"><h2>P03 问卷(步 1/4/5/6)</h2><iframe src="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p03-quiz.html"></iframe></div>
+  <div class="col"><h2>P04 方案(五段)</h2><iframe src="http://127.0.0.1:7456/api/projects/ww-redesign-github/raw/p04-plan.html"></iframe></div>
+</div>
+</body>
+</html>

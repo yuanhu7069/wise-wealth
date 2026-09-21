@@ -1,6 +1,6 @@
 # 09 · 期验收与收口
 
-Status: needs-triage
+Status: resolved
 Labels: ready-for-agent
 
 > 前置：08 完成。
@@ -15,3 +15,8 @@ Labels: ready-for-agent
 ## DoD
 
 - 全部闸门留痕，期文档完整，苑问终验通过
+
+## Comments
+
+- 2026-09-21 · AI · 期文档落 `docs/d/`:design-d.md(结果/决策/闸门记录/工件索引)+ test-report-d.md(自动门禁/T1 自动项/T1+T2 走查/已知偏离);prd/arch 注明沿用。生成记录四页齐全 ✅。视觉终验 = 统一复核(苑问「页面没问题」)✅。
+- 2026-09-21 · 苑问 · 终验通过,期收口。
