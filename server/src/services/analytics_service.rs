@@ -15,14 +15,18 @@ use sqlx::PgPool;
 
 use crate::repos;
 
-/// 事件名(wire 字符串,与 prd-v1 §9.5 表一致)。
+/// 事件名(wire 字符串,与 prd-v1 §9.5 / prd-e §9.5 表一致)。
 pub const PAGE_VIEW: &str = "page_view";
 pub const QUESTIONNAIRE_START: &str = "questionnaire_start";
 pub const QUESTIONNAIRE_STEP_COMPLETED: &str = "questionnaire_step_completed";
 pub const QUESTIONNAIRE_COMPLETED: &str = "questionnaire_completed";
 pub const PLAN_GENERATED: &str = "plan_generated";
+pub const SNAPSHOT_SUBMIT: &str = "snapshot_submit";
+pub const SNAPSHOT_DELETE: &str = "snapshot_delete";
+pub const SNAPSHOT_SKIP: &str = "snapshot_skip";
+pub const EXPORT_CSV: &str = "export_csv";
 
-/// 页面 id(埋点只认这三张页面,白名单而非自由字符串)。
+/// 页面 id(埋点只认这几张页面,白名单而非自由字符串)。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PageId {
     /// P01 产品首页
@@ -31,6 +35,8 @@ pub enum PageId {
     P03,
     /// P04 方案页
     P04,
+    /// P05 追踪页(E 期)
+    P05,
 }
 
 impl PageId {
@@ -39,6 +45,7 @@ impl PageId {
             PageId::P01 => "p01",
             PageId::P03 => "p03",
             PageId::P04 => "p04",
+            PageId::P05 => "p05",
         }
     }
 
@@ -49,7 +56,26 @@ impl PageId {
             "p01" => Some(PageId::P01),
             "p03" => Some(PageId::P03),
             "p04" => Some(PageId::P04),
+            "p05" => Some(PageId::P05),
             _ => None,
+        }
+    }
+}
+
+/// 导出内容类型(ExportCsv 事件的载荷;枚举而非自由字符串,写错在编译期暴露)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportKind {
+    /// 快照长表
+    Snapshot,
+    /// active 方案明细
+    Plan,
+}
+
+impl ExportKind {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            ExportKind::Snapshot => "snapshot",
+            ExportKind::Plan => "plan",
         }
     }
 }
@@ -57,7 +83,7 @@ impl PageId {
 /// 一条待记录的事件。变体即白名单,字段即 payload 的全部可能内容。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Event {
-    /// P01/P03/P04 服务端渲染时触达
+    /// P01/P03/P04/P05 服务端渲染时触达
     PageView { page_id: PageId },
     /// P03 首次进入(尚无草稿)
     QuestionnaireStart,
@@ -67,6 +93,14 @@ pub enum Event {
     QuestionnaireCompleted,
     /// 方案生成成功
     PlanGenerated { l1_mode: String, plan_version: i32 },
+    /// 快照落库成功(含覆盖);是否覆盖与是否本月特殊由 service 判定后传入
+    SnapshotSubmit { is_overwrite: bool, is_special: bool },
+    /// 快照删除成功(RULE-029 录错恢复口)
+    SnapshotDelete,
+    /// 用户主动跳过本月(RULE-023:不落任何数据,客户端上报是唯一观测口)
+    SnapshotSkip,
+    /// 快照 CSV 导出成功响应
+    ExportCsv { export_type: ExportKind },
 }
 
 impl Event {
@@ -78,6 +112,10 @@ impl Event {
             Event::QuestionnaireStepCompleted { .. } => QUESTIONNAIRE_STEP_COMPLETED,
             Event::QuestionnaireCompleted => QUESTIONNAIRE_COMPLETED,
             Event::PlanGenerated { .. } => PLAN_GENERATED,
+            Event::SnapshotSubmit { .. } => SNAPSHOT_SUBMIT,
+            Event::SnapshotDelete => SNAPSHOT_DELETE,
+            Event::SnapshotSkip => SNAPSHOT_SKIP,
+            Event::ExportCsv { .. } => EXPORT_CSV,
         }
     }
 
@@ -92,6 +130,13 @@ impl Event {
                 l1_mode,
                 plan_version,
             } => json!({ "l1_mode": l1_mode, "plan_version": plan_version }),
+            Event::SnapshotSubmit {
+                is_overwrite,
+                is_special,
+            } => json!({ "is_overwrite": is_overwrite, "is_special": is_special }),
+            Event::SnapshotDelete => json!({}),
+            Event::SnapshotSkip => json!({}),
+            Event::ExportCsv { export_type } => json!({ "export_type": export_type.as_str() }),
         }
     }
 }
@@ -114,10 +159,11 @@ pub enum EventError {
 }
 
 impl Event {
-    /// 客户端上报的两种事件 → [`Event`]。
+    /// 客户端可上报的事件 → [`Event`]。
     ///
-    /// 白名单只有 `page_view` 与 `questionnaire_start`:其余三类事件后端自己就知道,
-    /// 放行它们等于给同一个事实开两个来源(前端多报一次,完成率就超过 100%)。
+    /// 白名单只有 `page_view`、`questionnaire_start` 与 `snapshot_skip`(E 期):
+    /// 「跳过本月」不落任何数据,是**只有前端知道**的事实,不从白名单放行就永远观测不到;
+    /// 其余事件后端自己就知道,放行它们等于给同一个事实开两个来源。
     pub fn from_client(name: &str, page_id: Option<&str>) -> Result<Event, EventError> {
         match name {
             PAGE_VIEW => {
@@ -126,9 +172,10 @@ impl Event {
                     PageId::parse(raw).ok_or_else(|| EventError::UnknownPageId(raw.to_string()))?;
                 Ok(Event::PageView { page_id })
             }
-            QUESTIONNAIRE_START => match page_id {
+            QUESTIONNAIRE_START | SNAPSHOT_SKIP => match page_id {
                 Some(_) => Err(EventError::PageIdNotAllowed(name.to_string())),
-                None => Ok(Event::QuestionnaireStart),
+                None if name == QUESTIONNAIRE_START => Ok(Event::QuestionnaireStart),
+                None => Ok(Event::SnapshotSkip),
             },
             other => Err(EventError::UnknownEvent(other.to_string())),
         }
@@ -175,7 +222,7 @@ mod tests {
                 page_id: PageId::P03,
             },
             Event::PageView {
-                page_id: PageId::P04,
+                page_id: PageId::P05,
             },
             Event::QuestionnaireStart,
             Event::QuestionnaireStepCompleted { step: 1 },
@@ -183,6 +230,15 @@ mod tests {
             Event::PlanGenerated {
                 l1_mode: "four_accounts".into(),
                 plan_version: 2,
+            },
+            Event::SnapshotSubmit {
+                is_overwrite: true,
+                is_special: false,
+            },
+            Event::SnapshotDelete,
+            Event::SnapshotSkip,
+            Event::ExportCsv {
+                export_type: ExportKind::Snapshot,
             },
         ]
     }
@@ -222,6 +278,27 @@ mod tests {
                 "plan_generated",
                 json!({"l1_mode": "fifty_30_20", "plan_version": 3}),
             ),
+            (
+                Event::SnapshotSubmit {
+                    is_overwrite: true,
+                    is_special: false,
+                },
+                "snapshot_submit",
+                json!({"is_overwrite": true, "is_special": false}),
+            ),
+            (
+                Event::SnapshotDelete,
+                "snapshot_delete",
+                json!({}),
+            ),
+            (Event::SnapshotSkip, "snapshot_skip", json!({})),
+            (
+                Event::ExportCsv {
+                    export_type: ExportKind::Plan,
+                },
+                "export_csv",
+                json!({"export_type": "plan"}),
+            ),
         ];
         for (event, name, payload) in cases {
             assert_eq!(event.name(), name);
@@ -233,7 +310,14 @@ mod tests {
     fn 载荷键只有白名单里的那几个() {
         // 金额永不入埋点(arch §8):把「能出现的键」钉死在这几个上 ——
         // 将来有人给某个变体加字段,这条测试会逼他先回答「这是不是敏感数值」。
-        const ALLOWED: [&str; 3] = ["page_id", "step", "l1_mode"];
+        const ALLOWED: [&str; 6] = [
+            "page_id",
+            "step",
+            "l1_mode",
+            "is_overwrite",
+            "is_special",
+            "export_type",
+        ];
         for event in all_events() {
             let Some(obj) = event.payload().as_object().cloned() else {
                 panic!("载荷必须是对象");
@@ -251,7 +335,7 @@ mod tests {
     }
 
     #[test]
-    fn 客户端只能上报页面触达与问卷开始() {
+    fn 客户端只能上报页面触达问卷开始与跳过() {
         assert_eq!(
             Event::from_client("page_view", Some("p01")).unwrap(),
             Event::PageView {
@@ -261,6 +345,15 @@ mod tests {
         assert_eq!(
             Event::from_client("questionnaire_start", None).unwrap(),
             Event::QuestionnaireStart
+        );
+        assert_eq!(
+            Event::from_client("snapshot_skip", None).unwrap(),
+            Event::SnapshotSkip
+        );
+        // P05 已入页面白名单(E 期追踪页)
+        assert_eq!(
+            Event::from_client("page_view", Some("p05")).unwrap(),
+            Event::PageView { page_id: PageId::P05 }
         );
     }
 

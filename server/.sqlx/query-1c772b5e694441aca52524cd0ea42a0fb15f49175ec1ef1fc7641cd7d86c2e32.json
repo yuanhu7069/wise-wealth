@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO snapshots (id, user_id, plan_id, month, balances, special_month)\n            VALUES ($1, $2, $3, to_date($4 || '-01', 'YYYY-MM-DD'), $5, $6)\n            RETURNING id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "month!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "plan_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "plan_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "balances",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "balances"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "special_month",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "special_month"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1c772b5e694441aca52524cd0ea42a0fb15f49175ec1ef1fc7641cd7d86c2e32"
+}

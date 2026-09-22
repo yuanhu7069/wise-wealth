@@ -45,6 +45,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/modes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 列出 L1 模式并给出基于当前档案的推荐 */
+        get: operations["list_modes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 生成方案(重新生成会新增版本,旧版本保留) */
+        post: operations["generate_plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取当前方案 */
+        get: operations["active_plan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/active/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 导出当前方案与各桶明细(CSV;UTF-8 带 BOM) */
+        get: operations["export_plan_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profiles/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取问卷档案与草稿进度 */
+        get: operations["get_profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profiles/me/step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 保存问卷某一步答案并推进草稿步号 */
+        put: operations["save_step"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 历史快照与追踪摘要(已坚持月数 / 应急缺口 / 最新偏离) */
+        get: operations["list_snapshots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snapshots/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 导出全部快照(CSV 长表:月 × 桶一行;UTF-8 带 BOM) */
+        get: operations["export_snapshots_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/snapshots/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 录入/覆盖某自然月快照(全桶必填;同月再提交为覆盖) */
+        put: operations["upsert_snapshot"];
+        post?: never;
+        /** 删除某月快照(仅限最新月;删除后该月回到跳过月) */
+        delete: operations["delete_snapshot"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -69,12 +223,136 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description 方案里的一个桶。 */
+        BucketView: {
+            /**
+             * Format: int64
+             * @description 每月转入(分)。展示层转元并加千分位(ADR-004)
+             */
+            amount_monthly_cents: number;
+            /** @description 桶 id */
+            bucket_id: string;
+            /** @description 展示名(如「工资账户」) */
+            name: string;
+            /** @description 用途一句话 */
+            purpose: string;
+            /**
+             * Format: int64
+             * @description 目标金额(分,仅规则桶且未达标时有值)
+             */
+            target_cents?: number | null;
+        };
         /** @description 客户端上报一条埋点事件(仅页面触达与问卷开始;其余三类后端自己记)。 */
         ClientEventRequest: {
             /** @description 事件名:`page_view` / `questionnaire_start` */
             event: string;
             /** @description 页面 id:`p01` / `p03` / `p04`(page_view 必填,其余不得携带) */
             page_id?: string | null;
+        };
+        /**
+         * @description 出处可信度(产品 PRD §4.1.2)。用枚举而非字符串:写错成 "vrefied" 应在解析期被拒,
+         *     而不是静默加载成一个没人认识的档位。
+         * @enum {string}
+         */
+        Credibility: "verified" | "disputed" | "caution";
+        /** @description 一个桶的偏离结论。 */
+        DeviationView: {
+            bucket_id: string;
+            /**
+             * Format: int64
+             * @description 本月值(分)
+             */
+            current_cents: number;
+            /**
+             * Format: int64
+             * @description 偏离幅度(万分比)
+             */
+            deviation_bp: number;
+            /** @description 方向:up / down */
+            direction: string;
+            /**
+             * Format: int64
+             * @description 基准值(分)
+             */
+            prev_cents: number;
+        };
+        /**
+         * @description 回撤反应(问卷第 2 题):行为指标,比风险偏好自评有效一个数量级(产品 PRD §4.2.1)。
+         * @enum {string}
+         */
+        DrawdownResponse: "liquidate" | "reduce" | "hold" | "add";
+        /** @description 距离感进度里的应急金结论(RULE-026;`gap_months_tenths` = 缺口月数 ×10,如 32 = 3.2)。 */
+        EmergencyGapView: {
+            /**
+             * Format: int64
+             * @description 最新快照应急桶余额(分)
+             */
+            balance_cents: number;
+            /**
+             * Format: int64
+             * @description 缺口(分);达标为 0
+             */
+            gap_cents: number;
+            /**
+             * Format: int64
+             * @description 缺口月数 ×10;达标为 0
+             */
+            gap_months_tenths: number;
+            /** @description 是否达标 */
+            met: boolean;
+            /**
+             * Format: int64
+             * @description 应急目标(分,方案快照冻结值)
+             */
+            target_cents: number;
+        };
+        /** @description 应急金状态(RULE-009 ~ RULE-013)。两种模式都有 —— 无规则桶的模式同样需要达标标注。 */
+        EmergencyStatus: {
+            /**
+             * Format: int32
+             * @description 当前覆盖月数 × 10(如 30 表示「约 3.0 个月」),整数运算避免浮点
+             */
+            coverage_tenths: number;
+            /**
+             * Format: int64
+             * @description 缺口(分);为 0 即达标
+             */
+            gap_cents: number;
+            /**
+             * @description 是否已达标。**达标不是 Notice** —— 它是状态而非告警,与 `surplus_cents` 一起
+             *     构成方案页的达标文案;若再往 notices 里塞一条,同一事实就有了两个来源。
+             */
+            is_met: boolean;
+            /**
+             * Format: int64
+             * @description 每月用于补应急的金额(分)
+             */
+            monthly_toward_emergency_cents: number;
+            /**
+             * Format: int32
+             * @description 应急目标月数
+             */
+            months: number;
+            /**
+             * Format: int32
+             * @description 按当前节奏还差几个月达标;已达标为 None
+             */
+            months_to_fill?: number | null;
+            /**
+             * Format: int64
+             * @description 必要月支出(分)
+             */
+            necessary_monthly_cents: number;
+            /**
+             * Format: int64
+             * @description 超出应急目标的部分(分),仅作展示,不参与分配
+             */
+            surplus_cents: number;
+            /**
+             * Format: int64
+             * @description 应急目标(分)
+             */
+            target_cents: number;
         };
         /**
          * @description 统一响应信封。
@@ -117,6 +395,174 @@ export interface components {
             success: boolean;
         };
         /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_ModesView: {
+            /** @description GET /api/v1/modes 的响应。 */
+            data?: {
+                /** @description 全部 L1 模式(顺序与配置目录一致) */
+                items: components["schemas"]["ModeCardView"][];
+                /** @description L2 预览 */
+                l2: components["schemas"]["L2PreviewView"];
+                /** @description 主推理由(一句人话) */
+                recommendation_reason: string;
+                /** @description 主推模式 id;档案不足以推荐时为 null */
+                recommended_id?: string | null;
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_PlanView: {
+            /** @description 一份方案(五段式方案页的全部数据)。 */
+            data?: {
+                /** @description 各桶金额 */
+                buckets: components["schemas"]["BucketView"][];
+                /** @description 生成日期 YYYY-MM-DD */
+                created_date: string;
+                /** @description 应急金状态(快照回读) */
+                emergency: components["schemas"]["EmergencyStatus"];
+                /**
+                 * Format: uuid
+                 * @description 方案 id
+                 */
+                id: string;
+                /**
+                 * Format: int64
+                 * @description 投资桶的每月转入(分,生成当时冻结):首页摘要的「每月可投资」
+                 */
+                investable_monthly_cents: number;
+                /** @description L1 模式 id */
+                l1_mode: string;
+                /** @description L1 模式展示名 */
+                l1_mode_name: string;
+                /** @description 投资桶的大类配置(快照回读) */
+                l2: components["schemas"]["L2Allocation"];
+                /** @description 提示(缺口 / 固定支出超额 / 短久期) */
+                notices: components["schemas"]["Notice"][];
+                /**
+                 * Format: int32
+                 * @description 版本号(重新生成会 +1)
+                 */
+                version: number;
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_ProfileView: {
+            /** @description 档案回读(供问卷页恢复草稿与后续推荐/方案使用)。 */
+            data?: {
+                /**
+                 * Format: int32
+                 * @description 步 4
+                 */
+                dependents?: number | null;
+                /**
+                 * Format: int32
+                 * @description 下一步该答的步号
+                 */
+                draft_step: number;
+                drawdown_response?: null | components["schemas"]["DrawdownResponse"];
+                /**
+                 * Format: int64
+                 * @description 步 5
+                 */
+                expense_fixed_monthly_cents?: number | null;
+                goal?: null | components["schemas"]["Goal"];
+                /** @description 步 4 */
+                has_commercial_insurance?: boolean | null;
+                /** @description 步 4 */
+                has_social_security?: boolean | null;
+                horizon?: null | components["schemas"]["Horizon"];
+                income_stability?: null | components["schemas"]["IncomeStability"];
+                /**
+                 * Format: int64
+                 * @description 步 5
+                 */
+                inflow_cents?: number | null;
+                /**
+                 * Format: int64
+                 * @description 步 4
+                 */
+                mortgage_balance_cents?: number | null;
+                /** @description 问卷是否已完成 */
+                questionnaire_completed: boolean;
+                /**
+                 * Format: int64
+                 * @description 步 5
+                 */
+                savings_cents?: number | null;
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_SnapshotDeleted: {
+            /** @description DELETE /snapshots/{month} 回执(成功也要有 data,基线 §6.1)。 */
+            data?: {
+                deleted: boolean;
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_SnapshotMutationResponse: {
+            /** @description PUT /snapshots/{month} 响应:落库后的快照 + 它的偏离结论。 */
+            data?: {
+                /** @description null = 没得比;空数组 = 一切如常 */
+                deviations?: components["schemas"]["DeviationView"][] | null;
+                snapshot: components["schemas"]["SnapshotView"];
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_SnapshotsResponse: {
+            /** @description GET /snapshots 响应。 */
+            data?: {
+                /** @description 历史快照,按月倒序 */
+                items: components["schemas"]["SnapshotView"][];
+                summary: components["schemas"]["TrackingSummaryView"];
+            };
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: string | null;
+            success: boolean;
+        };
+        /**
          * @description 集中错误码表(arch 基线 §6.2)。A 期实际可能出现的仅 INTERNAL_ERROR;
          *     其余码随各期业务引入,RULE-003 要求 errorCode 只能取自本枚举。
          *     wire 格式为 SCREAMING_SNAKE(前端按字符串映射文案),故保留全大写命名。
@@ -132,6 +578,17 @@ export interface components {
             /** @description 固定 true:请求合法且已交给埋点服务 */
             accepted: boolean;
         };
+        /** @description 生成方案的请求。 */
+        GeneratePlanRequest: {
+            /** @description 用户在步 6 选定的 L1 模式 id */
+            l1_mode: string;
+        };
+        /**
+         * @description 理财目标(问卷第 5 题):本期**采集、入库、在方案页展示,但不参与任何计算**
+         *     (为追踪期的「距离感进度条」与将来的达成概率预留)。
+         * @enum {string}
+         */
+        Goal: "house" | "education" | "retirement" | "wealth";
         /** @description 健康数据(RULE-001 白名单:恰好三个字段,不含连接串/主机名/内部路径)。 */
         HealthData: {
             /** @description "ok" | "error" — 数据库可用性 */
@@ -140,6 +597,282 @@ export interface components {
             status: string;
             /** @description 后端版本号 */
             version: string;
+        };
+        /**
+         * @description 资金久期(问卷第 1 题):唯一直接决定这笔钱能不能进权益类的变量(产品 PRD §4.2.2 Q1)。
+         *
+         *     变体名带数字,serde 的自动 snake_case 转换在数字边界上不可预期,故**逐个显式 rename**:
+         *     这些字符串会写进数据库文本列与 API 载荷,改动即数据迁移。
+         * @enum {string}
+         */
+        Horizon: "within_1y" | "y1_3" | "y3_5" | "y5_10" | "over_10";
+        /**
+         * @description 收入稳定性(问卷第 3 题):决定应急金要留几个月。
+         * @enum {string}
+         */
+        IncomeStability: "stable" | "normal" | "volatile" | "freelance";
+        /** @description 匹配结果:既供页面渲染,也整体进方案快照(方案一旦生成,配置再改也不影响历史)。 */
+        L2Allocation: {
+            /** @description 大类与占比(万分比,**只到大类**) */
+            classes: components["schemas"]["L2Class"][];
+            /** @description 配置 id */
+            id: string;
+            /** @description 展示名 */
+            name: string;
+            /** @description 配置附注(可为空) */
+            note?: string | null;
+            /** @description 匹配理由(展示在方案页「投资账户内部配置」段) */
+            reason: string;
+        };
+        /**
+         * @description L2 里的一个资产大类。**只到大类**,不出现任何具体产品(合规红线,产品 PRD §九)。
+         *
+         *     同时实现 `Serialize`:匹配结果要随方案快照一起冻结进库,配置日后改动不影响历史方案。
+         */
+        L2Class: {
+            /**
+             * Format: int64
+             * @description 万分比
+             */
+            basis_points: number;
+            /** @description 大类名(权益类/债券类/黄金/现金类…) */
+            name: string;
+        };
+        /** @description 投资桶的一个大类(只到大类,不出现任何具体产品) */
+        L2ClassView: {
+            /**
+             * Format: int64
+             * @description 万分比
+             */
+            basis_points: number;
+            /** @description 大类名 */
+            name: string;
+        };
+        /** @description L2 预览:选定模式后投资部分会怎么配。 */
+        L2PreviewView: {
+            /** @description 大类与占比 */
+            classes: components["schemas"]["L2ClassView"][];
+            /** @description 配置名(如「60/40」) */
+            name: string;
+            /** @description 匹配理由 */
+            reason: string;
+        };
+        /**
+         * @description 最新快照的偏离结论。`deviations` 为 null = 没得比(首条/历史全特殊/本月特殊),
+         *     空数组 = 有基准且一切如常 —— 两种文案不同(prd-e §8.3)。
+         */
+        LatestDeviationsView: {
+            deviations?: components["schemas"]["DeviationView"][] | null;
+            month: string;
+        };
+        /**
+         * @description 一张模式卡。**全部字段来自 TOML 配置** —— 页面不硬编码任何模式信息,
+         *     加模式只加一个配置文件。
+         */
+        ModeCardView: {
+            /** @description 出处可信度 */
+            credibility: components["schemas"]["Credibility"];
+            /** @description 适合人群标签 */
+            fit_for: string[];
+            /** @description 模式 id */
+            id: string;
+            /** @description 是否是本次的主推模式 */
+            is_recommended: boolean;
+            /** @description 展示名 */
+            name: string;
+            /** @description 一句话理念 */
+            tagline: string;
+        };
+        /** @description GET /api/v1/modes 的响应。 */
+        ModesView: {
+            /** @description 全部 L1 模式(顺序与配置目录一致) */
+            items: components["schemas"]["ModeCardView"][];
+            /** @description L2 预览 */
+            l2: components["schemas"]["L2PreviewView"];
+            /** @description 主推理由(一句人话) */
+            recommendation_reason: string;
+            /** @description 主推模式 id;档案不足以推荐时为 null */
+            recommended_id?: string | null;
+        };
+        /**
+         * @description 方案提示。UI 按此渲染警示条,引擎只给事实不给文案。
+         * @enum {string}
+         */
+        Notice: "insufficient_income" | "fixed_exceeds_necessary" | "short_horizon_cash_only";
+        /** @description 一份方案(五段式方案页的全部数据)。 */
+        PlanView: {
+            /** @description 各桶金额 */
+            buckets: components["schemas"]["BucketView"][];
+            /** @description 生成日期 YYYY-MM-DD */
+            created_date: string;
+            /** @description 应急金状态(快照回读) */
+            emergency: components["schemas"]["EmergencyStatus"];
+            /**
+             * Format: uuid
+             * @description 方案 id
+             */
+            id: string;
+            /**
+             * Format: int64
+             * @description 投资桶的每月转入(分,生成当时冻结):首页摘要的「每月可投资」
+             */
+            investable_monthly_cents: number;
+            /** @description L1 模式 id */
+            l1_mode: string;
+            /** @description L1 模式展示名 */
+            l1_mode_name: string;
+            /** @description 投资桶的大类配置(快照回读) */
+            l2: components["schemas"]["L2Allocation"];
+            /** @description 提示(缺口 / 固定支出超额 / 短久期) */
+            notices: components["schemas"]["Notice"][];
+            /**
+             * Format: int32
+             * @description 版本号(重新生成会 +1)
+             */
+            version: number;
+        };
+        /** @description 档案回读(供问卷页恢复草稿与后续推荐/方案使用)。 */
+        ProfileView: {
+            /**
+             * Format: int32
+             * @description 步 4
+             */
+            dependents?: number | null;
+            /**
+             * Format: int32
+             * @description 下一步该答的步号
+             */
+            draft_step: number;
+            drawdown_response?: null | components["schemas"]["DrawdownResponse"];
+            /**
+             * Format: int64
+             * @description 步 5
+             */
+            expense_fixed_monthly_cents?: number | null;
+            goal?: null | components["schemas"]["Goal"];
+            /** @description 步 4 */
+            has_commercial_insurance?: boolean | null;
+            /** @description 步 4 */
+            has_social_security?: boolean | null;
+            horizon?: null | components["schemas"]["Horizon"];
+            income_stability?: null | components["schemas"]["IncomeStability"];
+            /**
+             * Format: int64
+             * @description 步 5
+             */
+            inflow_cents?: number | null;
+            /**
+             * Format: int64
+             * @description 步 4
+             */
+            mortgage_balance_cents?: number | null;
+            /** @description 问卷是否已完成 */
+            questionnaire_completed: boolean;
+            /**
+             * Format: int64
+             * @description 步 5
+             */
+            savings_cents?: number | null;
+        };
+        /** @description DELETE /snapshots/{month} 回执(成功也要有 data,基线 §6.1)。 */
+        SnapshotDeleted: {
+            deleted: boolean;
+        };
+        /** @description PUT /snapshots/{month} 响应:落库后的快照 + 它的偏离结论。 */
+        SnapshotMutationResponse: {
+            /** @description null = 没得比;空数组 = 一切如常 */
+            deviations?: components["schemas"]["DeviationView"][] | null;
+            snapshot: components["schemas"]["SnapshotView"];
+        };
+        /** @description 一条快照(读路径)。 */
+        SnapshotView: {
+            /** @description 各桶余额(分;展示层转元加千分位) */
+            balances: {
+                [key: string]: number;
+            };
+            /**
+             * Format: uuid
+             * @description 快照 id
+             */
+            id: string;
+            /** @description 自然月(YYYY-MM) */
+            month: string;
+            /**
+             * Format: int32
+             * @description 提交时的方案版本号(展示「这个月的数是哪版方案下录的」)
+             */
+            plan_version: number;
+            /** @description 本月特殊 */
+            special_month: boolean;
+        };
+        /** @description GET /snapshots 响应。 */
+        SnapshotsResponse: {
+            /** @description 历史快照,按月倒序 */
+            items: components["schemas"]["SnapshotView"][];
+            summary: components["schemas"]["TrackingSummaryView"];
+        };
+        /** @description 保存某一步答案的请求。 */
+        StepRequest: {
+            /**
+             * Format: int32
+             * @description 步 4:需赡养人数(0-20)
+             */
+            dependents?: number | null;
+            drawdown_response?: null | components["schemas"]["DrawdownResponse"];
+            /**
+             * Format: int64
+             * @description 步 5:月固定支出(分)
+             */
+            expense_fixed_monthly_cents?: number | null;
+            goal?: null | components["schemas"]["Goal"];
+            /** @description 步 4:商业保险 */
+            has_commercial_insurance?: boolean | null;
+            /** @description 步 4:社保 */
+            has_social_security?: boolean | null;
+            horizon?: null | components["schemas"]["Horizon"];
+            income_stability?: null | components["schemas"]["IncomeStability"];
+            /**
+             * Format: int64
+             * @description 步 5:税后月收入(分)
+             */
+            inflow_cents?: number | null;
+            /**
+             * Format: int64
+             * @description 步 4:房贷余额(分,选填;本期仅记录)
+             */
+            mortgage_balance_cents?: number | null;
+            /**
+             * Format: int64
+             * @description 步 5:现有存款(分,选填;缺省视为 0)
+             */
+            savings_cents?: number | null;
+            /**
+             * Format: int32
+             * @description 步号 1-6(1 久期 / 2 回撤反应 / 3 收入稳定性 / 4 保障与负债 / 5 财务数字 / 6 推荐)
+             */
+            step: number;
+        };
+        /** @description 追踪摘要(summary 段;P01 追踪卡与 P05 同源)。 */
+        TrackingSummaryView: {
+            emergency?: null | components["schemas"]["EmergencyGapView"];
+            latest?: null | components["schemas"]["LatestDeviationsView"];
+            /**
+             * Format: int64
+             * @description 已坚持月数
+             */
+            persisted_months: number;
+        };
+        /**
+         * @description 录入/覆盖快照的请求。余额是**元字符串**(如 "3150.50"),键 = 桶 id;
+         *     单独一个桶缺了或多了解释权在 service(对照当前方案桶集,422)。
+         */
+        UpsertSnapshotRequest: {
+            /** @description 各桶余额(元字符串,允许负数表示透支,最多两位小数) */
+            balances: {
+                [key: string]: string;
+            };
+            /** @description 本月特殊(RULE-024:豁免偏离且不作基准) */
+            special_month?: boolean;
         };
     };
     responses: never;
@@ -205,6 +938,348 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope_HealthData"];
                 };
+            };
+        };
+    };
+    list_modes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 模式列表与推荐 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ModesView"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 问卷尚未完成,无法给出推荐 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    generate_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePlanRequest"];
+            };
+        };
+        responses: {
+            /** @description 生成的方案 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_PlanView"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 问卷未完成或模式不存在 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    active_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 当前方案 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_PlanView"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 还没有生成过方案 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_plan_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV 文件下载 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 还没有生成过方案 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 档案(未答过则返回全空 + draft_step=1) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ProfileView"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    save_step: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepRequest"];
+            };
+        };
+        responses: {
+            /** @description 保存后的档案 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_ProfileView"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 字段校验失败(缺必填项或取值越界) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_snapshots: {
+        parameters: {
+            query?: {
+                /** @description 每页条数,缺省 24 */
+                limit?: number;
+                /** @description 偏移 */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 快照列表与摘要 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_SnapshotsResponse"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_snapshots_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV 文件下载 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upsert_snapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 自然月 YYYY-MM,不可为未来月 */
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertSnapshotRequest"];
+            };
+        };
+        responses: {
+            /** @description 落库后的快照与偏离结论 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_SnapshotMutationResponse"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 金额/月份/桶集合校验失败,或还没有方案 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_snapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 自然月 YYYY-MM */
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 已删除 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_SnapshotDeleted"];
+                };
+            };
+            /** @description 未登录或会话过期 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 目标不是最新月(历史月不可删) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

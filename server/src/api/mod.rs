@@ -8,6 +8,7 @@ pub mod v1 {
     pub mod modes;
     pub mod plans;
     pub mod profiles;
+    pub mod snapshots;
 }
 
 use axum::response::IntoResponse;
@@ -46,6 +47,23 @@ pub fn routes(state: AppState) -> Router {
         .route("/modes", get(crate::api::v1::modes::list_modes))
         .route("/plans", post(crate::api::v1::plans::generate_plan))
         .route("/plans/active", get(crate::api::v1::plans::active_plan))
+        .route(
+            "/plans/active/export",
+            get(crate::api::v1::snapshots::export_plan_csv),
+        )
+        .route(
+            "/snapshots",
+            get(crate::api::v1::snapshots::list_snapshots),
+        )
+        .route(
+            "/snapshots/export",
+            get(crate::api::v1::snapshots::export_snapshots_csv),
+        )
+        .route(
+            "/snapshots/{month}",
+            axum::routing::put(crate::api::v1::snapshots::upsert_snapshot)
+                .delete(crate::api::v1::snapshots::delete_snapshot),
+        )
         .route(
             "/analytics/events",
             post(crate::api::v1::analytics::record_event),

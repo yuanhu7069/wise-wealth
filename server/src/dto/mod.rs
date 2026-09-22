@@ -7,3 +7,4 @@ pub mod auth;
 pub mod mode;
 pub mod plan;
 pub mod profile;
+pub mod snapshot;

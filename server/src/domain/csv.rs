@@ -43,6 +43,48 @@ pub fn yuan_string(cents: i64) -> String {
     format!("{sign}{}.{:02}", abs / 100, abs % 100)
 }
 
+/// 是否为「纯数字」单元格(可选负号 + 数字 + 至多一位小数点)。
+/// 这类值写进 Excel 也只会是数字,不存在公式执行 —— 绕过转义,
+/// 保住 Excel 里的数值类型(否则 `-123.45` 会变 `'-123.45` 文本,破坏二次分析)。
+fn is_plain_number(s: &str) -> bool {
+    let digits = s.strip_prefix('-').unwrap_or(s);
+    if digits.is_empty() {
+        return false;
+    }
+    let (int_part, frac_part) = match digits.split_once('.') {
+        Some((i, f)) => (i, Some(f)),
+        None => (digits, None),
+    };
+    !int_part.is_empty()
+        && int_part.chars().all(|c| c.is_ascii_digit())
+        && frac_part.is_none_or(|f| !f.is_empty() && f.chars().all(|c| c.is_ascii_digit()))
+}
+
+/// 单元格出口:纯数字原样,其余走 [`escape_field`]。
+fn emit_cell(s: &str) -> String {
+    if is_plain_number(s) {
+        s.to_string()
+    } else {
+        escape_field(s)
+    }
+}
+
+/// 整表渲染(RULE-030):UTF-8 BOM 打头(Excel 中文兼容),行以 CRLF 结尾
+/// (RFC 4180),非数字字段一律走 [`escape_field`]。
+pub fn render_csv(header: &[&str], rows: &[Vec<String>]) -> String {
+    let mut out = String::from("\u{feff}");
+    let mut emit_line = |fields: Vec<String>| {
+        let cells: Vec<String> = fields.into_iter().map(|f| emit_cell(&f)).collect();
+        out.push_str(&cells.join(","));
+        out.push_str("\r\n");
+    };
+    emit_line(header.iter().map(|h| h.to_string()).collect());
+    for row in rows {
+        emit_line(row.clone());
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,5 +127,49 @@ mod tests {
         assert_eq!(yuan_string(-5), "-0.05");
         assert_eq!(yuan_string(-12345), "-123.45");
         assert_eq!(yuan_string(-100), "-1.00");
+    }
+
+    #[test]
+    fn 整表渲染带_bom_与_crlf_且文本字段全转义() {
+        let csv = render_csv(
+            &["月份", "桶名", "余额(元)"],
+            &[vec![
+                "2026-09".into(),
+                "=危险".into(),
+                yuan_string(-12345),
+            ]],
+        );
+        assert!(csv.starts_with('\u{feff}'), "必须以 BOM 打头");
+        assert!(csv.ends_with("\r\n"), "行尾必须是 CRLF");
+        assert!(
+            csv.contains(",'=危险,"),
+            "公式前缀文本必须被拦截: {csv}"
+        );
+        assert!(
+            csv.contains(",-123.45\r\n"),
+            "纯数字保持数值类型,不加转义前缀: {csv}"
+        );
+        assert_eq!(csv.lines().count(), 2, "表头 + 一行数据");
+    }
+
+    #[test]
+    fn 纯数字判定不放过冒牌货() {
+        assert!(is_plain_number("0"));
+        assert!(is_plain_number("-123.45"));
+        assert!(is_plain_number("123"));
+        assert!(is_plain_number("0.05"));
+        assert!(!is_plain_number("-12.3.4"));
+        assert!(!is_plain_number("12."));
+        assert!(!is_plain_number("2026-09"), "日期不是纯数字");
+        assert!(!is_plain_number(""));
+        assert!(!is_plain_number("-"));
+        assert!(!is_plain_number("12a"));
+        assert!(!is_plain_number("=1"));
+    }
+
+    #[test]
+    fn 空表只剩表头一行() {
+        let csv = render_csv(&["月份"], &[]);
+        assert_eq!(csv, "\u{feff}月份\r\n");
     }
 }

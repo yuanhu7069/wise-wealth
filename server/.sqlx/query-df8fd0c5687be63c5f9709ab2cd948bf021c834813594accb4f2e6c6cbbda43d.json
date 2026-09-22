@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month\n        FROM snapshots WHERE user_id = $1\n        ORDER BY month DESC LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "month!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "plan_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "plan_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "balances",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "balances"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "special_month",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "special_month"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "df8fd0c5687be63c5f9709ab2cd948bf021c834813594accb4f2e6c6cbbda43d"
+}

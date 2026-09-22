@@ -8,10 +8,20 @@ use crate::api::v1::plans::__path_active_plan;
 use crate::api::v1::plans::__path_generate_plan;
 use crate::api::v1::profiles::__path_get_profile;
 use crate::api::v1::profiles::__path_save_step;
+use crate::api::v1::snapshots::__path_delete_snapshot;
+use crate::api::v1::snapshots::__path_export_plan_csv;
+use crate::api::v1::snapshots::__path_export_snapshots_csv;
+use crate::api::v1::snapshots::__path_list_snapshots;
+use crate::api::v1::snapshots::__path_upsert_snapshot;
 use crate::dto::analytics::{ClientEventRequest, EventAck};
 use crate::dto::mode::{L2ClassView, L2PreviewView, ModeCardView, ModesView};
 use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanView};
 use crate::dto::profile::{ProfileView, StepRequest};
+use crate::dto::snapshot::{
+    DeviationView, EmergencyGapView, LatestDeviationsView, SnapshotDeleted,
+    SnapshotMutationResponse, SnapshotView, SnapshotsResponse, TrackingSummaryView,
+    UpsertSnapshotRequest,
+};
 use crate::domain::l2::L2Allocation;
 use crate::domain::mode::{Credibility, L2Class};
 use crate::domain::profile::{DrawdownResponse, Goal, Horizon, IncomeStability};
@@ -31,7 +41,12 @@ use utoipa::OpenApi;
         save_step,
         generate_plan,
         active_plan,
-        list_modes
+        list_modes,
+        list_snapshots,
+        upsert_snapshot,
+        delete_snapshot,
+        export_snapshots_csv,
+        export_plan_csv
     ),
     components(
         schemas(
@@ -55,7 +70,16 @@ use utoipa::OpenApi;
             DrawdownResponse,
             IncomeStability,
             Goal,
-            Credibility
+            Credibility,
+            SnapshotsResponse,
+            SnapshotView,
+            UpsertSnapshotRequest,
+            SnapshotMutationResponse,
+            SnapshotDeleted,
+            LatestDeviationsView,
+            DeviationView,
+            TrackingSummaryView,
+            EmergencyGapView
         )
     )
 )]
