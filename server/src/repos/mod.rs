@@ -3,4 +3,5 @@
 pub mod analytics;
 pub mod plans;
 pub mod profiles;
+pub mod snapshots;
 pub mod users;

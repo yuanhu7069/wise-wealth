@@ -20,6 +20,9 @@ dotenvy = "0.15"
 uuid = { version = "1", features = ["serde", "v7"] }
 tower-http = { version = "0.6", features = ["trace", "set-header"] }
 toml = "1.1.5"
+# 时间处理:ADR-B-001 同批批准(「业务表 timestamptz 映射与 ISO 8601 序列化」);
+# E 期首次真正引入,仅用于「当前自然月」的服务端判定(RULE-022 未来月份校验)
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 argon2 = "0.5"
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 rand_core = { version = "0.6", features = ["getrandom"] }

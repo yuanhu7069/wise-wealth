@@ -26,6 +26,9 @@ pub struct Config {
     pub seed_username: Option<String>,
     /// 种子账号口令(可选:同上;只进 argon2 哈希,禁入日志)
     pub seed_password: Option<String>,
+    /// 偏离提醒阈值(万分比,2000 = 20%;ADR-E-003)。缺省 2000,
+    /// 非法值按配置错误拒绝启动 —— 显式写错的配置不该被静默吞成默认值。
+    pub snapshot_deviation_threshold_bp: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,6 +88,29 @@ impl Config {
             .unwrap_or(30);
         let seed_username = get("SEED_USERNAME");
         let seed_password = get("SEED_PASSWORD");
+
+        // E 期(ADR-E-003):偏离阈值,万分比整数,缺省 2000 = 20%。
+        // 上限 10000(= 100%):超过它的阈值在语义上等于「永不提醒」,
+        // 与其当成合法配置,不如启动期就拦下。
+        let snapshot_deviation_threshold_bp = match get("SNAPSHOT_DEVIATION_THRESHOLD_BP") {
+            Some(raw) => match raw.parse::<i64>() {
+                Ok(bp) if (1..=10_000).contains(&bp) => bp,
+                Ok(bp) => {
+                    problems.push(format!(
+                        "SNAPSHOT_DEVIATION_THRESHOLD_BP(必须在 1..=10000 内,实为 {bp})"
+                    ));
+                    2_000
+                }
+                Err(_) => {
+                    problems.push(
+                        "SNAPSHOT_DEVIATION_THRESHOLD_BP(必须是整数万分比,如 2000 = 20%)"
+                            .to_string(),
+                    );
+                    2_000
+                }
+            },
+            None => 2_000,
+        };
 
         // 1. APP_ENV
         let app_env = match app_env_str.as_deref() {
@@ -218,6 +244,7 @@ impl Config {
             session_ttl_days,
             seed_username,
             seed_password,
+            snapshot_deviation_threshold_bp,
         })
     }
 
@@ -344,5 +371,35 @@ mod tests {
             "postgres://u:p@db.example.com:5432/wise_wealth_dev",
             "postgres://u:p@db.example.com:5432/wise_wealth_prod"
         ));
+    }
+
+    // ── E 期:偏离阈值(ADR-E-003)──
+
+    #[test]
+    fn 偏离阈值缺省两千() {
+        let cfg = Config::from_env(base_vars()).expect("应通过");
+        assert_eq!(cfg.snapshot_deviation_threshold_bp, 2_000);
+    }
+
+    #[test]
+    fn 偏离阈值合法自定义生效() {
+        let mut vars = base_vars();
+        vars.insert("SNAPSHOT_DEVIATION_THRESHOLD_BP".to_string(), "1000".to_string());
+        let cfg = Config::from_env(vars).expect("应通过");
+        assert_eq!(cfg.snapshot_deviation_threshold_bp, 1_000);
+    }
+
+    #[test]
+    fn 偏离阈值越界被拒且列出键名() {
+        for bad in ["0", "10001", "-500", "twenty"] {
+            let mut vars = base_vars();
+            vars.insert("SNAPSHOT_DEVIATION_THRESHOLD_BP".to_string(), bad.to_string());
+            let err = Config::from_env(vars).unwrap_err();
+            assert!(
+                err.problems.iter().any(|p| p.contains("SNAPSHOT_DEVIATION_THRESHOLD_BP")),
+                "非法值 {bad} 应被列出: {:?}",
+                err.problems
+            );
+        }
     }
 }

@@ -3,18 +3,61 @@
 
 use crate::api::v1::analytics::__path_record_event;
 use crate::api::v1::health::__path_health_handler;
+use crate::api::v1::modes::__path_list_modes;
+use crate::api::v1::plans::__path_active_plan;
+use crate::api::v1::plans::__path_generate_plan;
+use crate::api::v1::profiles::__path_get_profile;
+use crate::api::v1::profiles::__path_save_step;
 use crate::dto::analytics::{ClientEventRequest, EventAck};
+use crate::dto::mode::{L2ClassView, L2PreviewView, ModeCardView, ModesView};
+use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanView};
+use crate::dto::profile::{ProfileView, StepRequest};
+use crate::domain::l2::L2Allocation;
+use crate::domain::mode::{Credibility, L2Class};
+use crate::domain::profile::{DrawdownResponse, Goal, Horizon, IncomeStability};
+use crate::domain::{EmergencyStatus, Notice};
 use crate::services::health_service::HealthData;
 use utoipa::OpenApi;
 
-// 注册面按本文件顶部的规则逐个补:本 ticket 新增的埋点端点挂上,
-// 04-06 落地的业务端点(profiles / plans / modes)尚未注册,是已知的存量缺口
-// (见 ticket 07 完成记录的「遗留」),不在这里顺带补 —— 那是另一件事。
+// 注册面按本文件顶部的规则逐个补。B 期遗留的存量缺口(profiles / plans / modes
+// 五个端点已注解未注册)经 E 期 arch-e §3 议定在本期补挂 —— codegen 链路自此完整。
 #[derive(OpenApi)]
 #[openapi(
     info(title = "wise-wealth API", version = "0.1.0"),
-    paths(health_handler, record_event),
-    components(schemas(HealthData, ClientEventRequest, EventAck))
+    paths(
+        health_handler,
+        record_event,
+        get_profile,
+        save_step,
+        generate_plan,
+        active_plan,
+        list_modes
+    ),
+    components(
+        schemas(
+            HealthData,
+            ClientEventRequest,
+            EventAck,
+            ProfileView,
+            StepRequest,
+            GeneratePlanRequest,
+            PlanView,
+            BucketView,
+            ModesView,
+            ModeCardView,
+            L2PreviewView,
+            L2ClassView,
+            L2Allocation,
+            L2Class,
+            EmergencyStatus,
+            Notice,
+            Horizon,
+            DrawdownResponse,
+            IncomeStability,
+            Goal,
+            Credibility
+        )
+    )
 )]
 struct ApiDoc;
 

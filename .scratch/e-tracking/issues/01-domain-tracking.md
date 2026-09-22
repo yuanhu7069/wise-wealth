@@ -1,6 +1,6 @@
 # 01 · 域层与数据层：tracking 纯函数 + 迁移 0007 + snapshot_service
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T1。规格：arch-e.md §0 ADR-E-001/002/003、§2、§3；RULE-021～029 口径以 prd-e.md §6 为准。
@@ -22,4 +22,5 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-22 · AI · 完成。domain/tracking.rs(deviations/emergency_gap/persisted_months)+ domain/csv.rs(escape_field/yuan_string)金例先行,新增 23 用例;迁移 0007 已 up→down→up 试跑并应用 dev 库;repos/snapshots.rs(7 查询,含 export 长表)+ services/snapshot_service.rs(桶集校验/未来月拒绝/仅最新月可删/summary 组装)+ config 偏离阈值键 + ApiDoc 补挂五端点(含 schema 闭包 20 项)。全库 125 测试绿;clippy 余 1 条 `threshold_bp is never read`——票 02 接线 handler 后自然消失。
+- 2026-09-22 · AI · 两处执行中的口径决定(均已回填文档):① RULE-026 的「向上保留 1 位小数」与示例 3.2 矛盾(3.214 向上是 3.3),实现取**四舍五入半量进位**(与引擎 div_round_half_away 同族),prd-e RULE-026 已改写;② 应急桶选择:有规则桶用规则桶(四账户=备用),无规则桶回落投资桶(50/30/20=储蓄,其 TOML 桶注释即此语义),单测锁定。③ chrono 首次进 Cargo.toml——ADR-B-001 早已批准该依赖,仅用于服务端「当前月」判定。

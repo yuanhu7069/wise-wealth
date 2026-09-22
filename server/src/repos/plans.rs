@@ -190,6 +190,38 @@ pub async fn active_for_user(
     }))
 }
 
+/// 按 id 读方案(E 期:快照回溯所属版本用;快照里只存了 plan_id,RULE-028)。
+pub async fn by_id(pool: &PgPool, id: Uuid) -> Result<Option<PlanRecord>, sqlx::Error> {
+    let row = sqlx::query!(
+        r#"
+        SELECT id, l1_mode, l2_mode, version, is_active, investable_monthly_cents,
+               to_char(created_at, 'YYYY-MM-DD') AS "created_date!",
+               profile_snapshot_json, l2_allocation_json, emergency_json,
+               notices_json, traces_json
+        FROM plans
+        WHERE id = $1
+        "#,
+        id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.map(|r| PlanRecord {
+        id: r.id,
+        l1_mode: r.l1_mode,
+        l2_mode: r.l2_mode,
+        version: r.version,
+        is_active: r.is_active,
+        investable_monthly_cents: r.investable_monthly_cents,
+        created_date: r.created_date,
+        profile_snapshot: r.profile_snapshot_json,
+        l2_allocation: r.l2_allocation_json,
+        emergency: r.emergency_json,
+        notices: r.notices_json,
+        traces: r.traces_json,
+    }))
+}
+
 /// 读一份方案的全部桶(按写入顺序)。
 pub async fn buckets_of(pool: &PgPool, plan_id: Uuid) -> Result<Vec<BucketRow>, sqlx::Error> {
     let rows = sqlx::query!(
