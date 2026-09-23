@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month\n        FROM snapshots\n        WHERE user_id = $1\n          AND month < to_date($2 || '-01', 'YYYY-MM-DD')\n          AND NOT special_month\n        ORDER BY month DESC LIMIT 1\n        ",
+  "query": "\n            INSERT INTO snapshots (id, user_id, plan_id, month, balances, special_month)\n            VALUES ($1, $2, $3, to_date($4 || '-01', 'YYYY-MM-DD'), $5, $6)\n            ON CONFLICT (user_id, month) DO UPDATE\n            SET plan_id = EXCLUDED.plan_id,\n                balances = EXCLUDED.balances,\n                special_month = EXCLUDED.special_month,\n                updated_at = now()\n            RETURNING id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month,\n                      (xmax = 0) AS \"inserted!\"\n            ",
   "describe": {
     "columns": [
       {
@@ -52,12 +52,22 @@
             "name": "special_month"
           }
         }
+      },
+      {
+        "ordinal": 5,
+        "name": "inserted!",
+        "type_info": "Bool",
+        "origin": "Expression"
       }
     ],
     "parameters": {
       "Left": [
         "Uuid",
-        "Text"
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Jsonb",
+        "Bool"
       ]
     },
     "nullable": [
@@ -65,8 +75,9 @@
       null,
       false,
       false,
-      false
+      false,
+      null
     ]
   },
-  "hash": "15274c4153f918e5d6dbe6e2e49970b6d2652042435056892e9dea23c379a537"
+  "hash": "13c3eaaf833ec706b821fb50b11c3371f8539008638fdafe6e0c8ea3ad7a5e67"
 }

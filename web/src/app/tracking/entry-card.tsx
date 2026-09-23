@@ -18,21 +18,27 @@ import { submitSnapshotAction, skipMonthAction } from "./actions";
 import { SNAPSHOT_NETWORK_ERROR } from "./state";
 
 interface EntryCardProps {
-  /** 当前自然月(YYYY-MM,服务端给) */
+  /** 当前自然月(YYYY-MM,后端权威值随 GET /snapshots 下发) */
   month: string;
   /** 桶列表(id + 展示名),来自当前 active 方案 */
   buckets: { id: string; name: string }[];
   /** 当月已录时的预填值(元字符串;null = 首录) */
   initial: Record<string, string> | null;
+  /** 当月已录时的「本月特殊」标记(评审发现 #2:覆盖预填必须还原豁免标记) */
+  initialSpecial: boolean;
   /** 当月是否已有快照(决定按钮文案与覆盖确认) */
   recorded: boolean;
 }
 
-/** 元输入的展示格式化(纯字符串,不走 float):「3200.5」→「¥3,200.5」。解析不了返回 null。 */
+/**
+ * 元输入的展示格式化(纯字符串,不走 float):「3200.5」→「¥3,200.5」。
+ * 严格度与后端 `parse_yuan_to_cents` 对齐:小数点后必须有 1-2 位
+ * —— 「3200.」在预览里就是「—」且按钮判定不通过(评审发现 #7:两边规则必须同一套)。
+ */
 function formatYuanPreview(raw: string): string | null {
   const s = raw.trim();
   if (!s) return null;
-  const m = /^(-?)(\d{1,10})(?:\.(\d{0,2}))?$/.exec(s);
+  const m = /^(-?)(\d{1,10})(?:\.(\d{1,2}))?$/.exec(s);
   if (!m) return null;
   const [, sign, intPart, frac] = m;
   let grouped = "";
@@ -43,18 +49,32 @@ function formatYuanPreview(raw: string): string | null {
   return `${sign}¥${grouped}${frac === undefined ? "" : `.${frac}`}`;
 }
 
-export function EntryCard({ month, buckets, initial, recorded }: EntryCardProps) {
+export function EntryCard({ month, buckets, initial, initialSpecial, recorded }: EntryCardProps) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>(() => {
     const seed: Record<string, string> = {};
     for (const b of buckets) seed[b.id] = initial?.[b.id] ?? "";
     return seed;
   });
-  const [special, setSpecial] = useState(false);
+  const [special, setSpecial] = useState(initialSpecial);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // 删除 / 覆盖引发的 refresh 会改变 initial:表单跟随重置(评审发现 #3 ——
+  // 否则「删掉错误数字」后旧值还躺在表单里,一点提交又原样写回)。
+  // 用 React 官方「渲染期调整状态」模式:比较序列化基准,变了就在本次渲染内重置 ——
+  // 值相同不重置(提交后的 refresh 不会清掉成功条),不走 effect(无依赖数组争讼)。
+  const initialKey = JSON.stringify(initial ?? null);
+  const [lastKey, setLastKey] = useState(initialKey);
+  if (lastKey !== initialKey) {
+    setLastKey(initialKey);
+    const next: Record<string, string> = {};
+    for (const b of buckets) next[b.id] = initial?.[b.id] ?? "";
+    setValues(next);
+    setSpecial(initialSpecial);
+  }
 
   const allFilled = buckets.every((b) => formatYuanPreview(values[b.id] ?? "") !== null);
 

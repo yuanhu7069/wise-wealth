@@ -43,29 +43,27 @@ async function loadHomeState(): Promise<HomeState> {
 /**
  * 读追踪摘要(E 期追踪卡):**失败返回 null,卡片整块隐藏** —— 追踪卡是首页的
  * 附属信息,它的失败不该污染方案摘要的成败(prd-e §8.3:追踪卡错误态 = 隐藏)。
+ * 当月一并取后端权威值(评审发现 #4):卡片「本月还没打卡」的判定不自算月份。
  */
-async function loadTrackingSummary(): Promise<TrackingSummaryView | null> {
+async function loadTrackingSummary(): Promise<{
+  summary: TrackingSummaryView;
+  currentMonth: string;
+} | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value ?? "";
 
   try {
-    const { status, envelope } = await apiGet<{ summary: TrackingSummaryView }>(
-      "/api/v1/snapshots?limit=1",
-      { cookie: `${SESSION_COOKIE}=${token}` },
-    );
+    const { status, envelope } = await apiGet<{
+      summary: TrackingSummaryView;
+      current_month: string;
+    }>("/api/v1/snapshots?limit=1", { cookie: `${SESSION_COOKIE}=${token}` });
     if (status === 200 && envelope.success && envelope.data) {
-      return envelope.data.summary;
+      return { summary: envelope.data.summary, currentMonth: envelope.data.current_month };
     }
     return null;
   } catch {
     return null;
   }
-}
-
-/** 服务端认定的当前自然月(与 P05 同一口径;卡片「本月还没打卡」的判定基准)。 */
-function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 export default async function Page() {
@@ -86,7 +84,11 @@ export default async function Page() {
         </p>
       </section>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-base-xl px-base-lg py-base-lg">
-        <HomeView state={state} tracking={tracking} currentMonth={currentMonth()} />
+        <HomeView
+          state={state}
+          tracking={tracking?.summary ?? null}
+          currentMonth={tracking?.currentMonth}
+        />
       </main>
       {/* 首页页脚保留健康状态与一行免责声明(design-v2 v0.3 / RULE-020) */}
       <SiteFooterShell />

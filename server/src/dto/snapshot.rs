@@ -175,6 +175,9 @@ pub struct SnapshotsResponse {
     /// 历史快照,按月倒序
     pub items: Vec<SnapshotView>,
     pub summary: TrackingSummaryView,
+    /// 服务器当前自然月(YYYY-MM):打卡目标月与「本月还没打卡」的**唯一权威依据**,
+    /// 前端不得自行取本地时间判断(跨机时区漂移会让月界前后几分钟互相矛盾)
+    pub current_month: String,
 }
 
 /// PUT /snapshots/{month} 响应:落库后的快照 + 它的偏离结论。

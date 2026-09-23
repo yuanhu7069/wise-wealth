@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO snapshots (id, user_id, plan_id, month, balances, special_month)\n            VALUES ($1, $2, $3, to_date($4 || '-01', 'YYYY-MM-DD'), $5, $6)\n            RETURNING id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month\n            ",
+  "query": "\n        SELECT s.id, to_char(s.month, 'YYYY-MM') AS \"month!\", s.plan_id, s.balances,\n               s.special_month AS \"special_month!\", p.version AS \"plan_version!\"\n        FROM snapshots s JOIN plans p ON p.id = s.plan_id\n        WHERE s.user_id = $1\n        ORDER BY s.month DESC LIMIT 1\n        ",
   "describe": {
     "columns": [
       {
@@ -44,7 +44,7 @@
       },
       {
         "ordinal": 4,
-        "name": "special_month",
+        "name": "special_month!",
         "type_info": "Bool",
         "origin": {
           "Table": {
@@ -52,16 +52,22 @@
             "name": "special_month"
           }
         }
+      },
+      {
+        "ordinal": 5,
+        "name": "plan_version!",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "version"
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid",
-        "Uuid",
-        "Text",
-        "Jsonb",
-        "Bool"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -69,8 +75,9 @@
       null,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "1c772b5e694441aca52524cd0ea42a0fb15f49175ec1ef1fc7641cd7d86c2e32"
+  "hash": "c679f883dcc19786c3bf9895f84bb0eb33b00b21fe1ba3270fa11ae8dcc9572f"
 }

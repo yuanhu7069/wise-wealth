@@ -10,7 +10,6 @@ use serde_json::Value as Json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::domain::csv::escape_field;
 use crate::domain::engine::EmergencyStatus;
 use crate::domain::tracking::{
     self, Deviation, EmergencyGap, SnapshotPoint,
@@ -28,9 +27,9 @@ pub enum SnapshotError {
     /// 提交的桶集合与当前方案不一致(多桶 / 少桶 / 未知桶)
     #[error("提交的账户与当前方案不一致: {0}")]
     BucketSetMismatch(String),
-    /// 快照月份不允许为未来月
-    #[error("快照月份 {month} 尚未到来(当前 {current})")]
-    FutureMonth {
+    /// 只允许写当月:未来月不存在,历史月不可变(RULE-021/028)
+    #[error("快照只能记录当月({current}),{month} 无法提交")]
+    MonthNotAllowed {
         /// 被拒绝的月份
         month: String,
         /// 服务器当前月
@@ -51,7 +50,8 @@ pub enum SnapshotError {
 ///
 /// 单独成函数:时间不是域层的东西(纯函数不认识时钟),但**决策**要用它 ——
 /// 隔出来才好在代码里一眼看到「这里有一条与真实时间有关的边界」。
-fn current_month() -> String {
+/// 当前月是**后端权威值**(API 随响应下发,前端不自己算 —— 评审发现 #4)。
+pub fn current_month() -> String {
     chrono::Local::now().format("%Y-%m").to_string()
 }
 
@@ -121,6 +121,9 @@ fn deviations_for(
 }
 
 /// 提交(或覆盖)当月快照,返回落库结果与新快照的偏离结论。
+///
+/// **只允许当月**(RULE-021/028):未来月不存在;历史月不可变 —— 覆盖过去会
+/// 连带改写 plan_id 冻结与偏离基准,是历史被篡改的入口(评审发现 #1,原实现漏检)。
 pub async fn upsert(
     pool: &PgPool,
     threshold_bp: i64,
@@ -129,10 +132,10 @@ pub async fn upsert(
     balances: BTreeMap<String, i64>,
     special_month: bool,
 ) -> Result<(SnapshotRow, bool, Option<Vec<Deviation>>), SnapshotError> {
-    // 1. 未来月份拒绝(格式由 DTO 层校验,基线 §4.5)
+    // 1. 月份门槛(格式由 DTO 层校验,基线 §4.5)
     let current = current_month();
-    if month > current.as_str() {
-        return Err(SnapshotError::FutureMonth {
+    if month != current.as_str() {
+        return Err(SnapshotError::MonthNotAllowed {
             month: month.to_string(),
             current,
         });
@@ -146,10 +149,18 @@ pub async fn upsert(
     let expected: Vec<String> = buckets.iter().map(|b| b.bucket_id.clone()).collect();
     validate_bucket_set(&expected, &balances)?;
 
-    // 3. 落库(同月覆盖)
+    // 3. 落库(同月覆盖;方案版本号随行冻结)
     let json: Json = serde_json::to_value(&balances).unwrap_or(Json::Null);
-    let (row, inserted) =
-        repos::snapshots::upsert(pool, user_id, plan.id, month, &json, special_month).await?;
+    let (row, inserted) = repos::snapshots::upsert(
+        pool,
+        user_id,
+        plan.id,
+        plan.version,
+        month,
+        &json,
+        special_month,
+    )
+    .await?;
 
     // 4. 本次快照的偏离结论(基准 = 之前最近一条非特殊快照,RULE-024/025)
     let baseline = repos::snapshots::prev_non_special_before(pool, user_id, month).await?;
@@ -271,8 +282,8 @@ pub async fn delete_month(
     }
 }
 
-/// CSV 导出长表( RULE-030):月 × 桶一行,文本列全走转义,金额走数值格式。
-/// 返回 (表头, 行);拼接与响应头归 handler(ticket 02)。
+/// CSV 导出长表( RULE-030):月 × 桶一行。此处返回**原始字段**,
+/// 转义统一由 `render_csv`(emit_cell)执行 —— 两层各转一次会把引号翻倍(评审发现 #6)。
 pub async fn export_csv_rows(
     pool: &PgPool,
     user_id: Uuid,
@@ -284,8 +295,8 @@ pub async fn export_csv_rows(
             vec![
                 r.month,
                 r.version.to_string(),
-                escape_field(&r.bucket_id),
-                escape_field(r.bucket_name.as_deref().unwrap_or(r.bucket_id.as_str())),
+                r.bucket_id.clone(),
+                r.bucket_name.unwrap_or(r.bucket_id),
                 crate::domain::csv::yuan_string(r.cents),
                 if r.special_month { "是" } else { "" }.to_string(),
             ]

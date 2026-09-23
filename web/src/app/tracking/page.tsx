@@ -20,7 +20,7 @@ import type { PlanView as Plan } from "../plan/state";
 import type { SnapshotsData, TrackingState } from "./state";
 import { TrackingView } from "./tracking-view";
 
-/** 服务端认定的当前自然月(YYYY-MM)。录入卡的目标月份,快照按月唯一。 */
+/** 服务端认定的当前自然月(YYYY-MM)——仅整页空态的占位数据用;正常路径一律以后端下发的 current_month 为准。 */
 function currentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -100,15 +100,10 @@ export default async function TrackingPage() {
         {state.kind === "no-plan" || planBuckets === null ? (
           <TrackingView
             plan={null}
-            data={{ items: [], summary: EMPTY_SUMMARY }}
-            currentMonth={currentMonth()}
+            data={{ items: [], summary: EMPTY_SUMMARY, current_month: currentMonth() }}
           />
         ) : (
-          <TrackingView
-            plan={{ buckets: planBuckets }}
-            data={state.data}
-            currentMonth={currentMonth()}
-          />
+          <TrackingView plan={{ buckets: planBuckets }} data={state.data} />
         )}
       </main>
       {/* P05 页脚沿 RULE-020/031:一行简述 + 完整声明展开 */}

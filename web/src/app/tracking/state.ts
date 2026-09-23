@@ -17,6 +17,8 @@ export type TrackingSummaryView = components["schemas"]["TrackingSummaryView"];
 export interface SnapshotsData {
   items: SnapshotItem[];
   summary: TrackingSummaryView;
+  /** 服务器当前自然月(YYYY-MM)——打卡目标月的唯一权威依据,前端不自算 */
+  current_month: string;
 }
 
 /** 页面级取数结果:三态在 server 壳里定型,视图只认这三种。 */

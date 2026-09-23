@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, to_char(month, 'YYYY-MM') AS \"month!\", plan_id, balances, special_month\n        FROM snapshots WHERE user_id = $1\n        ORDER BY month DESC LIMIT 1\n        ",
+  "query": "\n        SELECT s.id, to_char(s.month, 'YYYY-MM') AS \"month!\", s.plan_id, s.balances,\n               s.special_month AS \"special_month!\", p.version AS \"plan_version!\"\n        FROM snapshots s JOIN plans p ON p.id = s.plan_id\n        WHERE s.user_id = $1\n          AND s.month < to_date($2 || '-01', 'YYYY-MM-DD')\n          AND NOT s.special_month\n        ORDER BY s.month DESC LIMIT 1\n        ",
   "describe": {
     "columns": [
       {
@@ -44,7 +44,7 @@
       },
       {
         "ordinal": 4,
-        "name": "special_month",
+        "name": "special_month!",
         "type_info": "Bool",
         "origin": {
           "Table": {
@@ -52,11 +52,23 @@
             "name": "special_month"
           }
         }
+      },
+      {
+        "ordinal": 5,
+        "name": "plan_version!",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "version"
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Text"
       ]
     },
     "nullable": [
@@ -64,8 +76,9 @@
       null,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "df8fd0c5687be63c5f9709ab2cd948bf021c834813594accb4f2e6c6cbbda43d"
+  "hash": "369a75d65c70d96909da002c5e63ec970b227139cfc2dfd6cdcff659565e913f"
 }

@@ -189,7 +189,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 录入/覆盖某自然月快照(全桶必填;同月再提交为覆盖) */
+        /** 录入/覆盖当月快照(仅限当前自然月;全桶必填;同月再提交为覆盖) */
         put: operations["upsert_snapshot"];
         post?: never;
         /** 删除某月快照(仅限最新月;删除后该月回到跳过月) */
@@ -554,6 +554,11 @@ export interface components {
         Envelope_SnapshotsResponse: {
             /** @description GET /snapshots 响应。 */
             data?: {
+                /**
+                 * @description 服务器当前自然月(YYYY-MM):打卡目标月与「本月还没打卡」的**唯一权威依据**,
+                 *     前端不得自行取本地时间判断(跨机时区漂移会让月界前后几分钟互相矛盾)
+                 */
+                current_month: string;
                 /** @description 历史快照,按月倒序 */
                 items: components["schemas"]["SnapshotView"][];
                 summary: components["schemas"]["TrackingSummaryView"];
@@ -807,6 +812,11 @@ export interface components {
         };
         /** @description GET /snapshots 响应。 */
         SnapshotsResponse: {
+            /**
+             * @description 服务器当前自然月(YYYY-MM):打卡目标月与「本月还没打卡」的**唯一权威依据**,
+             *     前端不得自行取本地时间判断(跨机时区漂移会让月界前后几分钟互相矛盾)
+             */
+            current_month: string;
             /** @description 历史快照,按月倒序 */
             items: components["schemas"]["SnapshotView"][];
             summary: components["schemas"]["TrackingSummaryView"];
@@ -1210,7 +1220,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 自然月 YYYY-MM,不可为未来月 */
+                /** @description 自然月 YYYY-MM,必须等于服务器当前月 */
                 month: string;
             };
             cookie?: never;

@@ -30,7 +30,7 @@ impl From<SnapshotError> for AppError {
             // 用户能自己修的:422,文案照实给
             SnapshotError::NoActivePlan
             | SnapshotError::BucketSetMismatch(_)
-            | SnapshotError::FutureMonth { .. }
+            | SnapshotError::MonthNotAllowed { .. }
             | SnapshotError::NotLatestMonth => AppError::Validation(e.to_string()),
             SnapshotError::CorruptedSnapshot(_) => {
                 AppError::Internal(anyhow::anyhow!("{e}"))
@@ -40,18 +40,15 @@ impl From<SnapshotError> for AppError {
     }
 }
 
-/// repo 行 → 视图(方案版本号随行回显,展示「这个月的数是哪版方案下录的」)。
-async fn to_view(pool: &sqlx::PgPool, row: &SnapshotRow) -> Result<SnapshotView, AppError> {
+/// repo 行 → 视图。版本号随行携带(list/upsert 查询已 JOIN 或冻结),
+/// 不再逐行 by_id —— 每页 24 行 × 12 列方案的 N+1(评审发现 #9)。
+fn to_view(row: &SnapshotRow) -> Result<SnapshotView, AppError> {
     let balances: BTreeMap<String, i64> = serde_json::from_value(row.balances.clone())
         .map_err(|e| AppError::Internal(anyhow::anyhow!("快照余额对象损坏: {e}")))?;
-    let plan_version = repos::plans::by_id(pool, row.plan_id)
-        .await?
-        .map(|p| p.version)
-        .unwrap_or(0);
     Ok(SnapshotView {
         id: row.id,
         month: row.month.clone(),
-        plan_version,
+        plan_version: row.plan_version,
         balances,
         special_month: row.special_month,
     })
@@ -106,10 +103,7 @@ pub async fn list_snapshots(
     let offset = q.offset.unwrap_or(0).max(0);
 
     let rows = repos::snapshots::list_desc(&state.pool, user_id, limit, offset).await?;
-    let mut items = Vec::with_capacity(rows.len());
-    for row in &rows {
-        items.push(to_view(&state.pool, row).await?);
-    }
+    let items: Vec<SnapshotView> = rows.iter().map(to_view).collect::<Result<_, _>>()?;
     let summary = snapshot_service::summary(
         &state.pool,
         &state.library,
@@ -121,16 +115,19 @@ pub async fn list_snapshots(
     Ok(ApiOk(SnapshotsResponse {
         items,
         summary: to_summary_view(summary),
+        // 当前自然月的**后端权威值**(评审发现 #4):前端不再各算各的月份,
+        // 打卡目标月与「本月还没打卡」判定以此为准
+        current_month: snapshot_service::current_month(),
     }))
 }
 
-/// PUT /api/v1/snapshots/{month} —— 录入或覆盖当月快照(RULE-021;覆盖需前端确认,此处幂等)。
+/// PUT /api/v1/snapshots/{month} —— 录入或覆盖**当月**快照(RULE-021/028:历史月不可变)。
 #[utoipa::path(
     put,
     path = "/api/v1/snapshots/{month}",
     tag = "snapshots",
-    summary = "录入/覆盖某自然月快照(全桶必填;同月再提交为覆盖)",
-    params(("month" = String, Path, description = "自然月 YYYY-MM,不可为未来月")),
+    summary = "录入/覆盖当月快照(仅限当前自然月;全桶必填;同月再提交为覆盖)",
+    params(("month" = String, Path, description = "自然月 YYYY-MM,必须等于服务器当前月")),
     request_body = UpsertSnapshotRequest,
     responses(
         (status = 200, description = "落库后的快照与偏离结论", body = crate::error::Envelope<SnapshotMutationResponse>),
@@ -182,7 +179,7 @@ pub async fn upsert_snapshot(
     );
 
     Ok(ApiOk(SnapshotMutationResponse {
-        snapshot: to_view(&state.pool, &row).await?,
+        snapshot: to_view(&row)?,
         deviations: deviations.map(|ds| ds.iter().map(Into::into).collect()),
     }))
 }

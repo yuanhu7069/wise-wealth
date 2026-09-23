@@ -17,6 +17,8 @@ pub struct SnapshotRow {
     pub month: String,
     /// 提交时的方案版本 id(RULE-028:冻结;方案版本本身永存)
     pub plan_id: Uuid,
+    /// 提交时的方案版本号(JOIN plans 取;列表展示与 API 回读用,免去逐行 by_id)
+    pub plan_version: i32,
     /// 各桶余额(JSONB:键 = 桶 id,值 = 分)
     pub balances: Json,
     /// 本月特殊(RULE-024)
@@ -27,10 +29,13 @@ pub struct SnapshotRow {
 ///
 /// **事务 + 先查后写**,而不是 `ON CONFLICT` 单语句:覆盖与否是上报给埋点的
 /// 业务事实,必须来自明确的判断,不能押在 `xmax` 这类实现细节上。
+/// 并发同月首插的兜底:两路同时判定「不存在」时,输家撞 UNIQUE 索引 ——
+/// 捕获后转覆盖路径(评审发现 #5:让合法输入拿到 200,而不是 500)。
 pub async fn upsert(
     pool: &PgPool,
     user_id: Uuid,
     plan_id: Uuid,
+    plan_version: i32,
     month: &str,
     balances: &Json,
     special_month: bool,
@@ -50,9 +55,9 @@ pub async fn upsert(
     .fetch_one(&mut *tx)
     .await?;
 
-    // 两个 `query!` 各生成独立的匿名行类型,分支内立即映射成 [`SnapshotRow`],
+    // 两个 `query!` 各生成独立的匿名行类型,分支内立即映射成 (SnapshotRow, bool inserted),
     // 不让它们在 if/else 两侧相遇。
-    let row = if exists {
+    let (row, inserted) = if exists {
         let r = sqlx::query!(
             r#"
             UPDATE snapshots
@@ -68,19 +73,29 @@ pub async fn upsert(
         )
         .fetch_one(&mut *tx)
         .await?;
-        SnapshotRow {
-            id: r.id,
-            month: r.month,
-            plan_id: r.plan_id,
-            balances: r.balances,
-            special_month: r.special_month,
-        }
+        (
+            SnapshotRow {
+                id: r.id,
+                month: r.month,
+                plan_id: r.plan_id,
+                plan_version,
+                balances: r.balances,
+                special_month: r.special_month,
+            },
+            false,
+        )
     } else {
         let r = sqlx::query!(
             r#"
             INSERT INTO snapshots (id, user_id, plan_id, month, balances, special_month)
             VALUES ($1, $2, $3, to_date($4 || '-01', 'YYYY-MM-DD'), $5, $6)
-            RETURNING id, to_char(month, 'YYYY-MM') AS "month!", plan_id, balances, special_month
+            ON CONFLICT (user_id, month) DO UPDATE
+            SET plan_id = EXCLUDED.plan_id,
+                balances = EXCLUDED.balances,
+                special_month = EXCLUDED.special_month,
+                updated_at = now()
+            RETURNING id, to_char(month, 'YYYY-MM') AS "month!", plan_id, balances, special_month,
+                      (xmax = 0) AS "inserted!"
             "#,
             Uuid::now_v7(),
             user_id,
@@ -91,26 +106,34 @@ pub async fn upsert(
         )
         .fetch_one(&mut *tx)
         .await?;
-        SnapshotRow {
-            id: r.id,
-            month: r.month,
-            plan_id: r.plan_id,
-            balances: r.balances,
-            special_month: r.special_month,
-        }
+        // xmax 判断的唯一容身处:并发下「先查说不存在、插入时却撞了索引」,
+        // 输家的 DO UPDATE 其实是覆盖,埋点的 is_overwrite 必须如实为 true。
+        (
+            SnapshotRow {
+                id: r.id,
+                month: r.month,
+                plan_id: r.plan_id,
+                plan_version,
+                balances: r.balances,
+                special_month: r.special_month,
+            },
+            r.inserted,
+        )
     };
 
     tx.commit().await?;
-    Ok((row, !exists))
+    Ok((row, inserted))
 }
 
 /// 最新一条快照(没有则 None)。
 pub async fn latest(pool: &PgPool, user_id: Uuid) -> Result<Option<SnapshotRow>, sqlx::Error> {
     let row = sqlx::query!(
         r#"
-        SELECT id, to_char(month, 'YYYY-MM') AS "month!", plan_id, balances, special_month
-        FROM snapshots WHERE user_id = $1
-        ORDER BY month DESC LIMIT 1
+        SELECT s.id, to_char(s.month, 'YYYY-MM') AS "month!", s.plan_id, s.balances,
+               s.special_month AS "special_month!", p.version AS "plan_version!"
+        FROM snapshots s JOIN plans p ON p.id = s.plan_id
+        WHERE s.user_id = $1
+        ORDER BY s.month DESC LIMIT 1
         "#,
         user_id
     )
@@ -120,6 +143,7 @@ pub async fn latest(pool: &PgPool, user_id: Uuid) -> Result<Option<SnapshotRow>,
         id: r.id,
         month: r.month,
         plan_id: r.plan_id,
+        plan_version: r.plan_version,
         balances: r.balances,
         special_month: r.special_month,
     }))
@@ -136,12 +160,13 @@ pub async fn prev_non_special_before(
 ) -> Result<Option<SnapshotRow>, sqlx::Error> {
     let row = sqlx::query!(
         r#"
-        SELECT id, to_char(month, 'YYYY-MM') AS "month!", plan_id, balances, special_month
-        FROM snapshots
-        WHERE user_id = $1
-          AND month < to_date($2 || '-01', 'YYYY-MM-DD')
-          AND NOT special_month
-        ORDER BY month DESC LIMIT 1
+        SELECT s.id, to_char(s.month, 'YYYY-MM') AS "month!", s.plan_id, s.balances,
+               s.special_month AS "special_month!", p.version AS "plan_version!"
+        FROM snapshots s JOIN plans p ON p.id = s.plan_id
+        WHERE s.user_id = $1
+          AND s.month < to_date($2 || '-01', 'YYYY-MM-DD')
+          AND NOT s.special_month
+        ORDER BY s.month DESC LIMIT 1
         "#,
         user_id,
         month
@@ -152,6 +177,7 @@ pub async fn prev_non_special_before(
         id: r.id,
         month: r.month,
         plan_id: r.plan_id,
+        plan_version: r.plan_version,
         balances: r.balances,
         special_month: r.special_month,
     }))
@@ -177,9 +203,11 @@ pub async fn list_desc(
 ) -> Result<Vec<SnapshotRow>, sqlx::Error> {
     let rows = sqlx::query!(
         r#"
-        SELECT id, to_char(month, 'YYYY-MM') AS "month!", plan_id, balances, special_month
-        FROM snapshots WHERE user_id = $1
-        ORDER BY month DESC
+        SELECT s.id, to_char(s.month, 'YYYY-MM') AS "month!", s.plan_id, s.balances,
+               s.special_month AS "special_month!", p.version AS "plan_version!"
+        FROM snapshots s JOIN plans p ON p.id = s.plan_id
+        WHERE s.user_id = $1
+        ORDER BY s.month DESC
         LIMIT $2 OFFSET $3
         "#,
         user_id,
@@ -194,6 +222,7 @@ pub async fn list_desc(
             id: r.id,
             month: r.month,
             plan_id: r.plan_id,
+            plan_version: r.plan_version,
             balances: r.balances,
             special_month: r.special_month,
         })

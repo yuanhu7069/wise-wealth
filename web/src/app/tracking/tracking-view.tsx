@@ -85,12 +85,18 @@ function ProgressPanel({
 function DeviationBars({
   summary,
   bucketNames,
+  currentMonth,
 }: {
   summary: TrackingSummaryView;
   bucketNames: Map<string, string>;
+  currentMonth: string;
 }) {
   const deviations = summary.latest?.deviations;
   if (!deviations || deviations.length === 0) return null; // null = 没得比;空 = 一切如常 —— 两者都不占位
+  // 结论挂在「哪条快照」上就说哪个月:最新快照不是当月(如跳过当月)时,
+  // 「本月」二字会变成对用户数字的误述(评审发现 #8)
+  const labelMonth =
+    summary.latest?.month === currentMonth ? "本月" : (summary.latest?.month ?? "");
   return (
     <div className="flex flex-col gap-base-sm">
       {deviations.map((d) => {
@@ -124,7 +130,8 @@ function DeviationBars({
               />
             </svg>
             <span>
-              本月{name}比上月{up ? "多" : "少"}了{" "}
+              {labelMonth}
+              {name}比上月{up ? "多" : "少"}了{" "}
               <span className={cn("font-mono tabular-nums", up ? "text-success" : "text-danger")}>
                 {percent}%
               </span>
@@ -231,15 +238,15 @@ function HistoryList({
 export function TrackingView({
   plan,
   data,
-  currentMonth,
 }: {
   plan: PlanInfo | null;
   data: {
     items: SnapshotItem[];
     summary: TrackingSummaryView;
+    current_month: string;
   };
-  currentMonth: string;
 }) {
+  const currentMonth = data.current_month; // 后端权威当月(评审发现 #4):前端不自算
   // EMPTY-E-01:无 active 方案 → 整页空态引导(prd-e §7.3)
   if (!plan) {
     return (
@@ -298,6 +305,7 @@ export function TrackingView({
         month={currentMonth}
         buckets={plan.buckets}
         initial={initial}
+        initialSpecial={recorded ? (latest?.special_month ?? false) : false}
         recorded={recorded}
       />
 
@@ -309,14 +317,25 @@ export function TrackingView({
 
       {/* 段 3 · 偏离提示(触发时才占位) */}
       <section className="flex flex-col">
-        <SectionTag>本月偏离</SectionTag>
-        <DeviationBars summary={data.summary} bucketNames={bucketNames} />
+        <SectionTag>偏离提醒</SectionTag>
+        <DeviationBars
+          summary={data.summary}
+          bucketNames={bucketNames}
+          currentMonth={currentMonth}
+        />
       </section>
 
-      {/* 段 4 · 历史快照 */}
+      {/* 段 4 · 历史快照(首屏近 24 个月;更早的走 CSV 导出 —— 评审发现 #10 的如实说明) */}
       <section className="flex flex-col">
         <SectionTag>历史快照</SectionTag>
         <HistoryList items={data.items} bucketNames={bucketNames} currentMonth={currentMonth} />
+        {data.summary.persisted_months > data.items.length ? (
+          <p className="mt-base-xs text-caption text-ink-mute">
+            共 <span className="font-mono tabular-nums">{data.summary.persisted_months}</span>{" "}
+            个月,这里显示最近 <span className="font-mono tabular-nums">{data.items.length}</span>{" "}
+            个月;更早的请用上方 CSV 导出查看。
+          </p>
+        ) : null}
       </section>
 
       {/* 段 5 · 导出(下载走 Route Handler 代理,红线 16) */}
