@@ -143,6 +143,8 @@ QUERIES=(
   "plans|select count(*) from plans"
   "plan_buckets|select count(*) from plan_buckets"
   "analytics_events|select count(*) from analytics_events"
+  "snapshots|select count(*) from snapshots"
+  "snapshots.余额合计|select coalesce(sum((e.value)::bigint),0) from snapshots s cross join lateral jsonb_each_text(s.balances) e"
   "profiles.金额合计(收入/固定支出/存款)|select coalesce(sum(inflow_cents),0)||'/'||coalesce(sum(expense_fixed_monthly_cents),0)||'/'||coalesce(sum(savings_cents),0) from profiles"
   "plan_buckets.金额合计(月转入/目标)|select coalesce(sum(amount_monthly_cents),0)||'/'||coalesce(sum(coalesce(target_cents,0)),0) from plan_buckets"
   "plans.版本与可投资额|select coalesce(max(version),0)||'/'||coalesce(sum(investable_monthly_cents),0) from plans"
