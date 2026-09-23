@@ -10,10 +10,11 @@
  * 摘要数字全部来自方案**快照**(`/api/v1/plans/active`),与 P04 同源 ——
  * 首页与方案页显示同一个金额,是「同一份方案」这件事最直接的证据。
  */
-import { AlertTriangle, Compass, RefreshCw } from "lucide-react";
+import { AlertTriangle, Compass, PencilLine, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import type { PlanView } from "@/app/plan/state";
+import type { TrackingSummaryView } from "@/app/tracking/state";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatCurrency, formatMonthsTenths } from "@/lib/format-currency";
@@ -138,8 +139,91 @@ function LoadError() {
   );
 }
 
-export function HomeView({ state }: { state: HomeState }) {
-  if (state.kind === "plan") return <PlanSummary plan={state.plan} />;
+/**
+ * E 期追踪卡(仅「有方案」形态下出现;RISK-E-4 的常驻提醒位):
+ * - 当月未打卡 → 「本月还没打卡」+ 去打卡主按钮(空态行动提示,prd-e §8.3)
+ * - 当月已打卡 → 已记录月份 + 应急金缺口一行摘要 + 去追踪
+ * 卡片取数失败时 tracking 为 null,整块隐藏(不阻塞首页主体)。
+ */
+function TrackingCard({
+  summary,
+  currentMonth,
+}: {
+  summary: TrackingSummaryView;
+  currentMonth: string;
+}) {
+  const recorded = summary.latest?.month === currentMonth;
+  const emergency = summary.emergency;
+  return (
+    <section
+      className="flex flex-col rounded-sm border border-hairline bg-canvas-card"
+      aria-label="月度追踪"
+    >
+      <div className="border-b border-hairline bg-canvas-soft px-base-lg py-base-md text-caption font-semibold text-ink">
+        月度追踪
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-base-md px-base-lg py-base-md">
+        <p className="flex items-center gap-base-sm text-body-md text-ink">
+          <span
+            aria-hidden="true"
+            className={cn("size-2 shrink-0 rounded-full", recorded ? "bg-success" : "bg-warning")}
+          />
+          {recorded ? (
+            <>
+              本月已打卡(
+              <span className="font-mono tabular-nums">{summary.latest?.month}</span>)
+            </>
+          ) : (
+            <>
+              本月还没打卡
+              {summary.persisted_months > 0 ? (
+                <>
+                  · 已坚持{" "}
+                  <span className="font-mono tabular-nums">{summary.persisted_months}</span> 个月
+                </>
+              ) : null}
+            </>
+          )}
+        </p>
+        {recorded && emergency ? (
+          <p className="text-caption text-ink-mute">
+            {emergency.met
+              ? "应急金已达标"
+              : `应急金还差 ${formatMonthsTenths(emergency.gap_months_tenths)} 个月`}
+          </p>
+        ) : null}
+        <Link
+          href="/tracking"
+          className={buttonVariants(recorded ? { variant: "ghost" } : { variant: "default" })}
+        >
+          <PencilLine className="size-4" aria-hidden="true" />
+          {recorded ? "去追踪" : "去打卡"}
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export function HomeView({
+  state,
+  tracking,
+  currentMonth,
+}: {
+  state: HomeState;
+  /** 追踪摘要;null(取数失败或无快照数据)时卡片整块隐藏 */
+  tracking?: TrackingSummaryView | null;
+  currentMonth?: string;
+}) {
+  if (state.kind === "plan") {
+    return (
+      <div className="flex flex-col gap-base-xl">
+        <PlanSummary plan={state.plan} />
+        {tracking && currentMonth ? (
+          <TrackingCard summary={tracking} currentMonth={currentMonth} />
+        ) : null}
+      </div>
+    );
+  }
   if (state.kind === "empty") return <EmptyGuide />;
   return <LoadError />;
 }

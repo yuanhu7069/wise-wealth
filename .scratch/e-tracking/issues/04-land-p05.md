@@ -1,6 +1,6 @@
 # 04 · P05 落地：`/tracking` 页实现 + T2 验收
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T4。前置：03 固化完成。规格：arch-e.md §1/§3；prd-e §8（五态矩阵/错误清单）。
@@ -23,4 +23,6 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-23 · AI · 完成。server 壳三态(ready/no-plan/error,无方案不重定向、自承载整页空态)+ 五段视图(server)+ 录入卡客户端岛(实时千分位预览纯字符串运算、覆盖确认、跳过月)+ 删除按钮(仅首行)+ CSV 下载代理 `/api/export/[kind]`(Route Handler,红线 16)。T2 核对:清单外零偏离,6 项偏离/扩展全录 spec §4(删除/跳过为产品要求的功能扩展;`--color-success-subtle` 系产物合同既有值补注册)。
+- 2026-09-23 · AI · **实机冒烟(只读+可回滚)**:登录 → P05 渲染五段(真实方案桶名,首月形态,导出置灰)→ PUT 2026-09(元转分正确,plan_version 冻结,首条 deviations=null,缺口 5.6 个月自洽)→ DELETE 回空态 → 历史月删除 422「只能删除最新一个月的快照」→ 残留 0。CSV 代理:attachment 文件名 + text/csv + BOM 首三字节 ✓。未登录 200 软重定向壳零内容泄漏(Next 16 机制,与既有四页一致)。
+- 2026-09-23 · AI · 过程修两处:① page.tsx 三态判定被「默认 error 初始化」吃掉 ready 分支(有方案用户全落错误页)——重构为 flags 判定;② 手工 psql 建表未登记 `_sqlx_migrations` 导致启动迁移冲突——DROP 后 `sqlx migrate run` 正规应用(版本 7 已登记)。教训入账:迁移一律走 `sqlx migrate run`,不手工 psql。失败过的 `cargo sqlx prepare` 会清缓存,check.sh 离线门禁依赖它,已在建表后重新生成并补提交(`f5c0743`)。

@@ -1,6 +1,6 @@
 # 05 · P01 追踪卡：摘要形态改造 + 打卡入口
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T5。前置：04 完成。**代码级改动，不回炉生成**（基线：落地后真源 = 代码库）。
@@ -21,4 +21,5 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-23 · AI · 完成。page.tsx 并行追加追踪摘要取数(失败 → null → 卡片整块隐藏,不污染方案摘要);home-view.tsx 增 TrackingCard(未打卡 = 警戒点 + 已坚持月数 + 主按钮「去打卡」;已打卡 = 绿点 + 月份 + 应急金缺口一行 + ghost「去追踪」);空态/错误形态不变。实机两态验证:未打卡(本月还没打卡/去打卡)→ PUT → 已打卡(本月已打卡 2026-09 + 还差 5.6 个月 + 去追踪,且 P05 联动预填「覆盖本月」)→ DELETE 回未打卡。零 OpenDesign 调用。check.sh 全绿。
+- 2026-09-23 · AI · 调试插曲备案:跨 Bash 调用的环境变量不驻留导致多次启动失败(/tmp/ww-start-server.sh 助手脚本解决);curl cookie jar 按 host 域绑定,`127.0.0.1` 与 `localhost` 不互通(验证脚本统一走 127.0.0.1)。
