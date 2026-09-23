@@ -1,0 +1,73 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT to_char(s.month, 'YYYY-MM') AS \"month!\",\n               p.version,\n               e.key AS \"bucket_id!\",\n               pb.name AS \"bucket_name: Option<String>\",\n               (e.value)::bigint AS \"cents!\",\n               s.special_month AS \"special_month!\"\n        FROM snapshots s\n        JOIN plans p ON p.id = s.plan_id\n        CROSS JOIN LATERAL jsonb_each_text(s.balances) AS e(key, value)\n        LEFT JOIN plan_buckets pb ON pb.plan_id = s.plan_id AND pb.bucket_id = e.key\n        WHERE s.user_id = $1\n        ORDER BY s.month, pb.sort_order\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "month!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plans",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bucket_id!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "bucket_name: Option<String>",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plan_buckets",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "cents!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "special_month!",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "snapshots",
+            "name": "special_month"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      null,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "c7ee2ad5433205bc66b63cc8ef6ee55ef5b774bc1568e5f3a93b52269d83bb79"
+}
