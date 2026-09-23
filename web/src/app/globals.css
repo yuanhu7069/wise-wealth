@@ -37,6 +37,7 @@
   --color-danger: #cf222e; /* Danger Red */
   --color-danger-strong: #cf222e; /* 危险按钮底(白字 5.35:1);暗色取亮档 */
   --color-danger-subtle: #ffebe9; /* Error banner surface */
+  --color-success-subtle: #dafbe1; /* Success banner surface(E 期 P05 产物 tokens 合同既有值) */
   --color-danger-border: color-mix(in oklab, #cf222e 40%, transparent); /* 错误卡描边(§4.2) */
   --color-attention-subtle: #fff8c5; /* Warning banner surface */
   --color-up: #cf222e; /* 涨红(中国习惯),取 Danger Red */
@@ -168,6 +169,7 @@
   --dark-color-danger: color-mix(in oklab, #cf222e 55%, #ffffff);
   --dark-color-danger-strong: #da3633; /* 白字 4.58:1(§4.2 GitHub 实际暗色值) */
   --dark-color-danger-subtle: color-mix(in oklab, #cf222e 14%, #161b22);
+  --dark-color-success-subtle: color-mix(in oklab, #1a7f37 16%, #161b22);
   --dark-color-danger-border: color-mix(in oklab, #cf222e 40%, #161b22);
   --dark-color-attention-subtle: color-mix(in oklab, #9a6700 16%, #161b22);
   --dark-color-up: color-mix(in oklab, #cf222e 55%, #ffffff);
@@ -215,6 +217,7 @@
     --color-danger: var(--dark-color-danger);
     --color-danger-strong: var(--dark-color-danger-strong);
     --color-danger-subtle: var(--dark-color-danger-subtle);
+    --color-success-subtle: var(--dark-color-success-subtle);
     --color-danger-border: var(--dark-color-danger-border);
     --color-attention-subtle: var(--dark-color-attention-subtle);
     --color-up: var(--dark-color-up);
@@ -257,6 +260,7 @@
   --color-danger: var(--dark-color-danger);
   --color-danger-strong: var(--dark-color-danger-strong);
   --color-danger-subtle: var(--dark-color-danger-subtle);
+  --color-success-subtle: var(--dark-color-success-subtle);
   --color-danger-border: var(--dark-color-danger-border);
   --color-attention-subtle: var(--dark-color-attention-subtle);
   --color-up: var(--dark-color-up);
@@ -369,6 +373,7 @@
   --color-danger: var(--color-danger);
   --color-danger-strong: var(--color-danger-strong);
   --color-danger-subtle: var(--color-danger-subtle);
+  --color-success-subtle: var(--color-success-subtle);
   --color-danger-border: var(--color-danger-border);
   --color-attention-subtle: var(--color-attention-subtle);
   --color-up: var(--color-up);

@@ -20,8 +20,8 @@ import { after } from "next/server";
 import { apiPost } from "./api";
 import { SESSION_COOKIE } from "./session";
 
-/** 埋点只认这三张页面(design-v2 §1 页面表)。 */
-export type PageId = "p01" | "p03" | "p04";
+/** 埋点只认这几张页面(design-v2 §1 页面表 + E 期 P05,与后端 PageId 枚举一致)。 */
+export type PageId = "p01" | "p03" | "p04" | "p05";
 
 /**
  * 上报一条事件。**调用方拿不到结果**是刻意的:埋点是旁路观测,
@@ -51,7 +51,7 @@ async function track(event: string, pageId?: PageId): Promise<void> {
   });
 }
 
-/** 页面触达(P01/P03/P04 服务端渲染时调用)。 */
+/** 页面触达(P01/P03/P04/P05 服务端渲染时调用)。 */
 export async function trackPageView(pageId: PageId): Promise<void> {
   await track("page_view", pageId);
 }
@@ -59,4 +59,12 @@ export async function trackPageView(pageId: PageId): Promise<void> {
 /** 问卷开始(P03 首次进入且尚无草稿时调用;重复进入由后端去重)。 */
 export async function trackQuestionnaireStart(): Promise<void> {
   await track("questionnaire_start");
+}
+
+/**
+ * 跳过本月(E 期,prd-e §9.5):用户主动选择本月不录入。
+ * 跳过月不落任何业务数据 —— 这是「跳过」行为唯一的观测口,只能由前端上报。
+ */
+export async function trackSnapshotSkip(): Promise<void> {
+  await track("snapshot_skip");
 }

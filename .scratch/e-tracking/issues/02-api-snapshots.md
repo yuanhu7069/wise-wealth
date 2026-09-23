@@ -1,6 +1,6 @@
 # 02 · API 层：snapshots ×5 端点 + DTO 校验 + 埋点扩展
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T2。规格：arch-e.md §4/§5/§8；ADR-E-004（CSV 直出 text/csv，信封显式例外）。
@@ -23,4 +23,5 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-22 · AI · 完成。×5 端点 + 路由 + openapi 注册(全文档 12 路径);`parse_yuan_to_cents` 手写十进制(0.29 金例防 float 路线),`render_csv` BOM+CRLF+公式前缀拦截且**纯数字单元格绕过转义**(保住 Excel 数值类型);埋点 +4 事件(snapshot_submit/delete/skip/export_csv)+ PageId::P05;新查询 10 条 `cargo sqlx prepare` 落离线缓存。无 Cookie 401 ×5、未来月 422(不触库)、非法月份 422 均有路由级测试;check.sh 全绿(134 测试 + clippy -D warnings)。删除非最新月的 422 依赖真库,留待票 06 端到端(C 核 AC-10)。
+- 2026-09-22 · AI · **工具链坑(备案)**:web/node_modules 的 typescript 已被升到 7.0.2(TS7 Go 版无 `ts.factory` JS API),`gen-types.sh` 里的 `npx openapi-typescript` 直接崩(TypeError: createKeywordTypeNode)——上次成功生成是 B 期(ts5 时代)。解法:用隔离环境 + A 期 vendor 的 ts5 包(`web/vendor/ts5/typescript-5.9.3.tgz`)临时 pnpm add openapi-typescript + ts5 → 用其 bin 生成。本次产物已入 Git;**gen-types.sh 的长期修法待苑问拍板**(候选:vendor ts5 常驻隔离脚本 / openapi-typescript 降级 / 换生成器),本期不改脚本。

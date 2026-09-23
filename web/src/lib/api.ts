@@ -149,3 +149,49 @@ export async function apiPut<T>(
   }
   return { status: res.status, envelope };
 }
+
+/** DELETE 请求后端(快照删除,E 期)。Cookie 转发理由同 apiPut。 */
+export async function apiDelete<T>(
+  path: string,
+  cookie?: string,
+): Promise<{ status: number; envelope: ApiEnvelope<T> }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: cookie ? { cookie } : undefined,
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+
+  const text = await res.text();
+  let envelope: ApiEnvelope<T>;
+  try {
+    envelope = text
+      ? (JSON.parse(text) as ApiEnvelope<T>)
+      : ({ success: res.ok } as ApiEnvelope<T>);
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+  return { status: res.status, envelope };
+}
+
+/**
+ * 原始响应透传(E 期 CSV 导出专用,ADR-E-004):导出端点直出 `text/csv`,
+ * 不是统一信封,不能走 apiGet 的 JSON 解包。调用方是 Route Handler(下载代理),
+ * 后端地址仍然只在本模块出现(红线 16)。
+ */
+export async function apiProxy(path: string, cookie?: string): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE_URL}${path}`, {
+      headers: cookie ? { cookie } : undefined,
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (e) {
+    throw new BackendUnreachableError(e);
+  }
+}

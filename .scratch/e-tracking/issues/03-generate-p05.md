@@ -1,6 +1,6 @@
 # 03 · P05 生成与固化：T0 自查 → 生成 → T1 → 固化
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T3。规格：design-e.md 全文；customInstructions：本目录 `custom-instructions.md`（已在库）。
@@ -23,4 +23,6 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-23 · AI · 苑问授权后一次生成(run `0c16a225`,7.7 min,对话式续接四页会话,迭代轮次 0)。T1·A:绑定契约 56 项逐值全中,全文档 hex 超出冻结契约 **0 个**(无任何新值);T1·B 自动项全过(自包含/tabular×5/焦点环/44px×10/role×5/reduced-motion/aria-busy)。红涨绿涨语义核对:delta-up=success 绿、delta-down=danger 红,与 customInstructions 既定规则一致;负数红字 ✓。固化:快照 `docs/design/e-tracking/p05-tracking-github.html`(sha256 前 16 位 `a8b1142185d252f5`)+ 生成记录补行,已提交 `335b3c8`。
+- 2026-09-23 · AI · **待苑问**:① T1 人眼项(亮/暗 × 375px 逐态)按 design-e §4 清单勾选;② 产物把偏离上涨文案定调为「多花了 X%」(增长绿)——语义上「多花钱」用绿是否合意,人眼走查时一并定;③ 主题切换为三态循环(与前四页行为一致,非偏离)。
+- 2026-09-23 · AI · T1 人眼项未勾前不落地(红线 9)。两个走法待苑问选:① 现在走查(亮/暗 × 375px 逐态,清单见 design-e §4);② 沿 D 期「批量授权」先例——落地后期末统一复核(该节奏是 D 期专批,本期沿用需苑问再次确认)。
