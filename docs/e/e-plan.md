@@ -47,8 +47,8 @@
 
 ## 3. 期收口清单
 
-- [ ] test-report-e.md 产出（红线逐项 ✅ + AC 回链 + 审计）
-- [ ] prd-e.md 状态 → 已完成；本计划与工单状态回填
-- [ ] `docs/design/e-tracking/` 快照 + 生成记录行齐备
-- [ ] `.env.example` 增键核对（SNAPSHOT_DEVIATION_THRESHOLD_BP）
-- [ ] 期收口提交
+- [x] test-report-e.md 产出（红线逐项 ✅ + AC 回链 + 审计 + 评审 10 项修复记录）
+- [x] prd-e.md 状态 → 已完成；本计划与工单状态回填
+- [x] `docs/design/e-tracking/` 快照 + 生成记录行齐备
+- [x] `.env.example` 增键核对（SNAPSHOT_DEVIATION_THRESHOLD_BP）
+- [x] 期收口提交（苑问走查通过 2026-09-23;真实打卡 2026-09 一条已落,次月复访为跨月自然验证）

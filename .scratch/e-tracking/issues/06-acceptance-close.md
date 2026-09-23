@@ -1,6 +1,6 @@
 # 06 · 验收收尾与期收口
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > e-plan T6。前置：05 完成。DoD 以 prd-e.md 元信息块为准。
@@ -22,4 +22,6 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-23 · AI · 走查记录:苑问人工走查**通过**(P01 卡两态 → P05 五段 × 亮/暗 × 375px → 录入/覆盖/特殊/删除/导出)。DoD 验收动作:真实打卡 2026-09 一条已落(04:11),次月复访为跨月自然验证。
+- 2026-09-23 · AI · restore-drill 增项复跑 12 项全一致;埋点 SQL 查验 8 类事件齐(金额零入载荷);cargo audit 离线仅已知 rsa medium,npm audit 网络受限未跑(零新增前端依赖)。代码评审 10 项发现全修复(`a7df41c`),明细 test-report-e §9。
+- 2026-09-23 · AI · 期收口:test-report-e 终稿 + prd-e「已完成」+ e-plan 收口清单全勾。工具链待拍板遗留:gen-types.sh TS7 修法;RISK-E-1 TLS 维持对外前挂账。
