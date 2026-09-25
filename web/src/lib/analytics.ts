@@ -20,8 +20,8 @@ import { after } from "next/server";
 import { apiPost } from "./api";
 import { SESSION_COOKIE } from "./session";
 
-/** 埋点只认这几张页面(design-v2 §1 页面表 + E 期 P05,与后端 PageId 枚举一致)。 */
-export type PageId = "p01" | "p03" | "p04" | "p05";
+/** 埋点只认这几张页面(design-v2 §1 页面表 + E 期 P05 + F 期 P06,与后端 PageId 枚举一致)。 */
+export type PageId = "p01" | "p03" | "p04" | "p05" | "p06";
 
 /**
  * 上报一条事件。**调用方拿不到结果**是刻意的:埋点是旁路观测,

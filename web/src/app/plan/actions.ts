@@ -29,7 +29,13 @@ export type GeneratePlanResult =
       expired?: boolean;
     };
 
-export async function generatePlanAction(l1Mode: string): Promise<GeneratePlanResult> {
+/** 生成入口(F 期 prd-f §9.5):区分问卷路径与模式库手动路径,仅进埋点口径。 */
+export type PlanEntry = "questionnaire" | "mode_lib";
+
+export async function generatePlanAction(
+  l1Mode: string,
+  entry: PlanEntry = "questionnaire",
+): Promise<GeneratePlanResult> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) {
@@ -39,7 +45,7 @@ export async function generatePlanAction(l1Mode: string): Promise<GeneratePlanRe
   try {
     const { status, envelope } = await apiPost<PlanView>(
       "/api/v1/plans",
-      { l1_mode: l1Mode },
+      { l1_mode: l1Mode, entry },
       `${SESSION_COOKIE}=${token}`,
     );
 

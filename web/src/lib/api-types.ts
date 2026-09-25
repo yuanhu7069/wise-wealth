@@ -752,6 +752,12 @@ export interface components {
             l1_mode: string;
             /** @description L1 模式展示名 */
             l1_mode_name: string;
+            /**
+             * @description 模式可信度(读取时解析,ADR-F-002;模式已下架 → null,前端不渲染提示条)
+             */
+            l1_credibility?: components["schemas"]["Credibility"] | null;
+            /** @description 模式出处(读取时解析,ADR-F-002;disputed 方案页警示条文案用) */
+            l1_source?: string | null;
             /** @description 投资桶的大类配置(快照回读) */
             l2: components["schemas"]["L2Allocation"];
             /** @description 提示(缺口 / 固定支出超额 / 短久期) */
