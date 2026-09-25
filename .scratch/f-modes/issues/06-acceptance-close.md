@@ -1,6 +1,6 @@
 # 06 · 验收收尾与期收口
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > f-plan T6。前置：05 完成。DoD 以 prd-f.md 元信息块为准。
@@ -20,3 +20,10 @@ Labels: ready-for-agent
 - AC-1～13 全绿或挂账有据；check.sh 最终状态全绿
 - test-report-f 落盘；生成记录/快照/调整清单三件齐备
 - 苑问人工走查通过 + DoD 验收动作完成，期收口
+
+## Comments
+
+- 2026-09-25 · AI · AC 全量走查收口(截图存 shots/,生产模式):AC-1/2/3/4/5/6/7/8/9/12/13 ✅;**AC-10 验证缺口**(库内无 caution 模式,纯函数映射代码审读,首个 caution 模式入库时覆盖);**AC-11 架构说明**(后端整体不可达 → requireSession 统一落登录重定向,B 期既定;「后端活但取数失败」组件与 E 期 AC-16 同构,实机模拟方式待苑问商定)。prd-f AC-6/7 措辞按实机呈现回填(卡内错误条 / 内联过期错误,沿 P03 先例)。
+- 2026-09-25 · AI · 埋点 SQL:page_view p06 ×4、plan_generated entry=mode_lib ×2;金额零入载荷正则复核 0 条。restore-drill 复跑 12 项全一致(含 plans 指纹,佐证零迁移)。审计:cargo rsa medium(既有挂账)+ npm js-yaml high ×2(存量传递依赖,零新增;是否 npm audit fix 留苑问拍板)。check.sh 终态 5/5 全绿(144 测试)。
+- 2026-09-25 · AI · test-report-f.md 终稿落 docs/f/;prd-f 状态 → **已实现(待苑问走查)**;f-plan 收口清单 5/6 勾(期收口提交留待苑问两项完成后);前端已恢复 dev 模式驻留 3000,后端 target/debug 驻留 8080。
+- 2026-09-25 · AI · **待苑问两项** :① 人工走查(照 test-report-f §4 截图或实机:桌面+375px × 亮/暗,重点存疑链路);② DoD 验收动作——P06 用四笔钱真实生成一份方案 + 标准普尔存疑链路完整走查。完成后 prd-f →「已完成」,做期收口提交闭期。
