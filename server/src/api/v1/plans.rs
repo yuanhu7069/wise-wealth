@@ -8,7 +8,7 @@ use crate::api::middleware::CurrentUser;
 use crate::api::v1::profiles::to_domain_profile;
 use crate::domain::engine::{EmergencyStatus, Notice};
 use crate::domain::l2::L2Allocation;
-use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanView};
+use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanEntry, PlanView};
 use crate::error::{ApiOk, AppError};
 use crate::repos;
 use crate::repos::plans::{BucketRow, PlanRecord};
@@ -48,12 +48,20 @@ fn to_view(
         .map(|m| m.name.clone())
         .unwrap_or_else(|| plan.l1_mode.clone());
 
+    // 可信度/出处按读取时解析(ADR-F-002):评级描述模式的知识状态,随配置更新;
+    // 模式已下架 → None,前端不渲染提示条(降级安全)
+    let mode_config = state.library.mode(&plan.l1_mode);
+    let l1_credibility = mode_config.map(|m| m.credibility);
+    let l1_source = mode_config.and_then(|m| m.source.clone());
+
     Ok(PlanView {
         id: plan.id,
         version: plan.version,
         created_date: plan.created_date.clone(),
         l1_mode: plan.l1_mode.clone(),
         l1_mode_name,
+        l1_credibility,
+        l1_source,
         investable_monthly_cents: plan.investable_monthly_cents,
         buckets: buckets
             .into_iter()
@@ -111,12 +119,14 @@ pub async fn generate_plan(
         "方案已生成"
     );
 
-    // 埋点(prd-v1 §9.5):生成率与模式偏好。载荷只带模式 id 与版本号,金额不入埋点。
+    // 埋点(prd-v1 §9.5 / prd-f §9.5):生成率、模式偏好与入口分布。
+    // 载荷只带模式 id、版本号与入口枚举,金额不入埋点。
     analytics_service::record(
         &state.pool,
         &Event::PlanGenerated {
             l1_mode: generated.plan.l1_mode.clone(),
             plan_version: generated.plan.version,
+            entry: req.entry.unwrap_or(PlanEntry::Questionnaire),
         },
     )
     .await;

@@ -130,6 +130,29 @@ pub struct ModeConfig {
     pub emergency_fund: EmergencyFundRule,
 }
 
+impl BucketSpec {
+    /// 桶份额的人类可读口径(arch-f ADR-F-004:P06 桶概览展示用)。
+    /// 服务端字符串化,前端零解读 share 结构(ADR-B-004 前端零计算立场)。
+    pub fn share_desc(&self) -> String {
+        match &self.share {
+            ShareType::FixedExpenses => "按月固定支出划入".into(),
+            ShareType::Pct { basis_points } => {
+                // 万分比 → 百分比;现有配置均为整百分点,小数档兜底一位小数(1250bp → 12.5%)
+                let tenths = basis_points / 10;
+                if basis_points % 100 == 0 {
+                    format!("每月收入的 {}%", tenths / 10)
+                } else {
+                    format!("每月收入的 {}.{}%", tenths / 10, tenths % 10)
+                }
+            }
+            ShareType::Rule {
+                rule: RuleKind::EmergencyFund,
+            } => "按应急金节奏划入".into(),
+            ShareType::Remainder => "收入结余全部划入".into(),
+        }
+    }
+}
+
 impl ModeConfig {
     /// 该模式的余量桶(至多一个,已在装载期校验)。
     pub fn remainder_bucket(&self) -> Option<&BucketSpec> {
@@ -469,8 +492,46 @@ mod tests {
     }
 
     #[test]
-    fn 缺出处或空出处被拒绝() {
-        let no_source = r#"
+    fn 桶份额口径描述_四种类型() {
+        // ADR-F-004:share_desc 服务端字符串化,P06 前端零解读
+        let d = |share: ShareType| BucketSpec {
+            id: "x".into(),
+            name: "X".into(),
+            purpose: String::new(),
+            share,
+            is_necessary: false,
+            is_investable: false,
+        };
+        assert_eq!(
+            d(ShareType::FixedExpenses).share_desc(),
+            "按月固定支出划入"
+        );
+        assert_eq!(
+            d(ShareType::Pct {
+                basis_points: 3000
+            })
+            .share_desc(),
+            "每月收入的 30%"
+        );
+        assert_eq!(
+            d(ShareType::Pct {
+                basis_points: 1250
+            })
+            .share_desc(),
+            "每月收入的 12.5%"
+        );
+        assert_eq!(
+            d(ShareType::Rule {
+                rule: RuleKind::EmergencyFund
+            })
+            .share_desc(),
+            "按应急金节奏划入"
+        );
+        assert_eq!(d(ShareType::Remainder).share_desc(), "收入结余全部划入");
+    }
+
+    #[test]
+    fn 缺出处或空出处被拒绝() {        let no_source = r#"
 id = "anonymous"
 name = "无出处模式"
 credibility = "verified"

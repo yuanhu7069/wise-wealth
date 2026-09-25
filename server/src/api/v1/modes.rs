@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::api::middleware::CurrentUser;
 use crate::api::v1::profiles::to_domain_profile;
 use crate::domain::l2;
-use crate::dto::mode::{L2ClassView, L2PreviewView, ModeCardView, ModesView};
+use crate::dto::mode::{BucketOverviewView, L2ClassView, L2PreviewView, ModeCardView, ModesView};
 use crate::error::{ApiOk, AppError};
 use crate::repos;
 use crate::services::recommend_service;
@@ -50,13 +50,31 @@ pub async fn list_modes(
 
     let items = recommend_service::list_modes(&state.library)
         .into_iter()
-        .map(|c| ModeCardView {
-            is_recommended: recommended_id.as_deref() == Some(c.id.as_str()),
-            id: c.id,
-            name: c.name,
-            tagline: c.tagline,
-            credibility: c.credibility,
-            fit_for: c.fit_for,
+        .map(|c| {
+            // 桶概览与出处直接取自配置(Arch-f ADR-F-004:详情展开零额外请求)
+            let mode = state.library.mode(&c.id);
+            let buckets = mode
+                .map(|m| {
+                    m.buckets
+                        .iter()
+                        .map(|b| BucketOverviewView {
+                            name: b.name.clone(),
+                            purpose: b.purpose.clone(),
+                            share_desc: b.share_desc(),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            ModeCardView {
+                is_recommended: recommended_id.as_deref() == Some(c.id.as_str()),
+                id: c.id,
+                name: c.name,
+                tagline: c.tagline,
+                credibility: c.credibility,
+                source: mode.and_then(|m| m.source.clone()),
+                fit_for: c.fit_for,
+                buckets,
+            }
         })
         .collect();
 

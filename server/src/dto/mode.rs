@@ -17,10 +17,26 @@ pub struct ModeCardView {
     pub tagline: String,
     /// 出处可信度
     pub credibility: Credibility,
+    /// 出处说明(RULE-037;disputed 模式含辟谣表述)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
     /// 适合人群标签
     pub fit_for: Vec<String>,
     /// 是否是本次的主推模式
     pub is_recommended: bool,
+    /// 桶概览(arch-f ADR-F-004:详情展开零额外请求,数据随列表一次返回)
+    pub buckets: Vec<BucketOverviewView>,
+}
+
+/// 模式桶概览的一行:P06 详情展开用,份额口径已服务端字符串化(前端零解读)。
+#[derive(Debug, Serialize, ToSchema)]
+pub struct BucketOverviewView {
+    /// 展示名
+    pub name: String,
+    /// 用途一句话
+    pub purpose: String,
+    /// 月转入口径(如「每月收入的 30%」「按应急金节奏划入」)
+    pub share_desc: String,
 }
 
 /// 投资桶的一个大类(只到大类,不出现任何具体产品)

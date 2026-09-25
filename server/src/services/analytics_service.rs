@@ -37,6 +37,8 @@ pub enum PageId {
     P04,
     /// P05 追踪页(E 期)
     P05,
+    /// P06 模式库页(F 期)
+    P06,
 }
 
 impl PageId {
@@ -46,6 +48,7 @@ impl PageId {
             PageId::P03 => "p03",
             PageId::P04 => "p04",
             PageId::P05 => "p05",
+            PageId::P06 => "p06",
         }
     }
 
@@ -57,6 +60,7 @@ impl PageId {
             "p03" => Some(PageId::P03),
             "p04" => Some(PageId::P04),
             "p05" => Some(PageId::P05),
+            "p06" => Some(PageId::P06),
             _ => None,
         }
     }
@@ -91,8 +95,12 @@ pub enum Event {
     QuestionnaireStepCompleted { step: i16 },
     /// 问卷答全(步 5 保存后由「未完成 → 完成」的那一刻触发)
     QuestionnaireCompleted,
-    /// 方案生成成功
-    PlanGenerated { l1_mode: String, plan_version: i32 },
+    /// 方案生成成功(F 期起带入口:问卷路径 vs 模式库手动路径,prd-f §9.5)
+    PlanGenerated {
+        l1_mode: String,
+        plan_version: i32,
+        entry: crate::dto::plan::PlanEntry,
+    },
     /// 快照落库成功(含覆盖);是否覆盖与是否本月特殊由 service 判定后传入
     SnapshotSubmit { is_overwrite: bool, is_special: bool },
     /// 快照删除成功(RULE-029 录错恢复口)
@@ -129,7 +137,15 @@ impl Event {
             Event::PlanGenerated {
                 l1_mode,
                 plan_version,
-            } => json!({ "l1_mode": l1_mode, "plan_version": plan_version }),
+                entry,
+            } => json!({
+                "l1_mode": l1_mode,
+                "plan_version": plan_version,
+                "entry": match entry {
+                    crate::dto::plan::PlanEntry::Questionnaire => "questionnaire",
+                    crate::dto::plan::PlanEntry::ModeLib => "mode_lib",
+                }
+            }),
             Event::SnapshotSubmit {
                 is_overwrite,
                 is_special,
@@ -224,12 +240,16 @@ mod tests {
             Event::PageView {
                 page_id: PageId::P05,
             },
+            Event::PageView {
+                page_id: PageId::P06,
+            },
             Event::QuestionnaireStart,
             Event::QuestionnaireStepCompleted { step: 1 },
             Event::QuestionnaireCompleted,
             Event::PlanGenerated {
                 l1_mode: "four_accounts".into(),
                 plan_version: 2,
+                entry: crate::dto::plan::PlanEntry::Questionnaire,
             },
             Event::SnapshotSubmit {
                 is_overwrite: true,
@@ -274,9 +294,19 @@ mod tests {
                 Event::PlanGenerated {
                     l1_mode: "fifty_30_20".into(),
                     plan_version: 3,
+                    entry: crate::dto::plan::PlanEntry::Questionnaire,
                 },
                 "plan_generated",
-                json!({"l1_mode": "fifty_30_20", "plan_version": 3}),
+                json!({"l1_mode": "fifty_30_20", "plan_version": 3, "entry": "questionnaire"}),
+            ),
+            (
+                Event::PlanGenerated {
+                    l1_mode: "four_pots".into(),
+                    plan_version: 4,
+                    entry: crate::dto::plan::PlanEntry::ModeLib,
+                },
+                "plan_generated",
+                json!({"l1_mode": "four_pots", "plan_version": 4, "entry": "mode_lib"}),
             ),
             (
                 Event::SnapshotSubmit {
@@ -310,13 +340,14 @@ mod tests {
     fn 载荷键只有白名单里的那几个() {
         // 金额永不入埋点(arch §8):把「能出现的键」钉死在这几个上 ——
         // 将来有人给某个变体加字段,这条测试会逼他先回答「这是不是敏感数值」。
-        const ALLOWED: [&str; 6] = [
+        const ALLOWED: [&str; 7] = [
             "page_id",
             "step",
             "l1_mode",
             "is_overwrite",
             "is_special",
             "export_type",
+            "entry",
         ];
         for event in all_events() {
             let Some(obj) = event.payload().as_object().cloned() else {

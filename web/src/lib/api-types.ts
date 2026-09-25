@@ -445,6 +445,12 @@ export interface components {
                 l1_mode: string;
                 /** @description L1 模式展示名 */
                 l1_mode_name: string;
+                /**
+                 * @description 模式可信度(读取时解析,ADR-F-002;模式已下架 → null,前端不渲染提示条)
+                 */
+                l1_credibility?: components["schemas"]["Credibility"] | null;
+                /** @description 模式出处(读取时解析,ADR-F-002;disputed 方案页警示条文案用) */
+                l1_source?: string | null;
                 /** @description 投资桶的大类配置(快照回读) */
                 l2: components["schemas"]["L2Allocation"];
                 /** @description 提示(缺口 / 固定支出超额 / 短久期) */
@@ -585,9 +591,16 @@ export interface components {
         };
         /** @description 生成方案的请求。 */
         GeneratePlanRequest: {
-            /** @description 用户在步 6 选定的 L1 模式 id */
+            /** @description 用户选定的 L1 模式 id */
             l1_mode: string;
+            /** @description 生成入口;缺省按 questionnaire(老客户端兼容) */
+            entry?: components["schemas"]["PlanEntry"] | null;
         };
+        /**
+         * @description 生成入口(prd-f §9.5:区分问卷路径与模式库手动路径,仅用于埋点口径)。
+         * @enum {string}
+         */
+        PlanEntry: "questionnaire" | "mode_lib";
         /**
          * @description 理财目标(问卷第 5 题):本期**采集、入库、在方案页展示,但不参与任何计算**
          *     (为追踪期的「距离感进度条」与将来的达成概率预留)。
@@ -674,6 +687,15 @@ export interface components {
          * @description 一张模式卡。**全部字段来自 TOML 配置** —— 页面不硬编码任何模式信息,
          *     加模式只加一个配置文件。
          */
+        /** @description 模式桶概览的一行:P06 详情展开用,份额口径已服务端字符串化(前端零解读)。 */
+        BucketOverviewView: {
+            /** @description 展示名 */
+            name: string;
+            /** @description 用途一句话 */
+            purpose: string;
+            /** @description 月转入口径(如「每月收入的 30%」「按应急金节奏划入」) */
+            share_desc: string;
+        };
         ModeCardView: {
             /** @description 出处可信度 */
             credibility: components["schemas"]["Credibility"];
@@ -685,8 +707,12 @@ export interface components {
             is_recommended: boolean;
             /** @description 展示名 */
             name: string;
+            /** @description 出处说明(RULE-037;disputed 模式含辟谣表述) */
+            source?: string | null;
             /** @description 一句话理念 */
             tagline: string;
+            /** @description 桶概览(arch-f ADR-F-004:详情展开零额外请求,数据随列表一次返回) */
+            buckets: components["schemas"]["BucketOverviewView"][];
         };
         /** @description GET /api/v1/modes 的响应。 */
         ModesView: {
