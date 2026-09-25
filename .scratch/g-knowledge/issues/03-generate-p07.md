@@ -1,6 +1,6 @@
 # 03 · P07 生成与固化：T0 自查 → 生成 → T1 验收 → 固化
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > g-plan T3。前置：02 完成。规格：design-g.md 全文；customInstructions = `.scratch/g-knowledge/custom-instructions.md`（已落盘）。
@@ -17,3 +17,9 @@ Labels: ready-for-agent
 
 - T1·A 全中 + T1·B 自动项全过；苑问人眼项勾选（或按先例并入期末复核）
 - 快照与生成记录行落盘；sha256 记录一致；run id/耗时/四件套可回答「怎么来的」
+
+## Comments
+
+- 2026-09-25 · AI · T0 通过(四件套齐 @ 8f9612b,daemon 200,复用 `ww-redesign-github`)。**授权口径**:依苑问「文档通过,继续开发」指令与已批准 DoD(2 run 预算)执行,单 run 不批量;记录于此。
+- 2026-09-25 · AI · 一次过:run `d21612a8`(≈6.5 min,requestId `3bf85eb2`),迭代轮次 0。T1·A 契约 63 项逐值全中 + hex 超出 0;T1·B 自动项 17/17(四板块齐/徽章文字+色/「局限性」不弱化/「仅供理解」警示徽章/五态/极端数据核验区)。人眼项按先例并入期末复核。
+- 2026-09-25 · AI · 固化:`docs/design/g-knowledge/p07-knowledge-github.html`(831 行,sha256 前 16 位 `e7c5d6b2ce232113`)+ 生成记录补行;globals.css 原则零改动。
