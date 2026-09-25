@@ -5,6 +5,7 @@
 
 pub mod csv;
 pub mod engine;
+pub mod knowledge;
 pub mod l2;
 pub mod mode;
 pub mod profile;
@@ -13,6 +14,7 @@ pub mod tracking;
 pub use engine::{
     BucketAmount, EmergencyStatus, EngineError, Notice, PlanResult, Trace, TraceUnit, solve,
 };
+pub use knowledge::{KnowledgeArticle, KnowledgeError, KnowledgeKind, KnowledgeLibrary, Section};
 pub use l2::{L2Allocation, L2Error};
 pub use mode::{
     BucketSpec, Credibility, EmergencyFundRule, L2Class, L2Config, LibraryError, ModeConfig,

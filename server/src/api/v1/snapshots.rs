@@ -362,7 +362,8 @@ mod tests {
         ]);
         let config = crate::config::Config::from_env(vars).expect("测试配置应合法");
         let library = crate::domain::ModeLibrary::load_embedded().unwrap();
-        AppState::new(&config, library).expect("惰性连接池不应失败")
+        AppState::new(&config, library, crate::domain::KnowledgeLibrary::default())
+            .expect("惰性连接池不应失败")
     }
 
     fn app() -> axum::Router {

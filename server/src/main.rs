@@ -55,14 +55,25 @@ async fn main() {
         }
     };
 
+    // 3.1 知识库:构建期内嵌,启动期解析并校验(ADR-G-001);related_mode 校验依赖模式库,故在其后装载。
+    let knowledge = match domain::KnowledgeLibrary::load_embedded(&library) {
+        Ok(k) => k,
+        Err(e) => {
+            eprintln!("知识内容有误:{e}");
+            eprintln!("知识配置位于 server/config/knowledge/,修正后重新启动。");
+            std::process::exit(1);
+        }
+    };
+
     // 4. 数据库连接池(惰性:库不可达不阻塞启动,health 如实反映 db=error)
-    let app_state = state::AppState::new(&config, library).unwrap_or_else(|e| {
+    let app_state = state::AppState::new(&config, library, knowledge).unwrap_or_else(|e| {
         tracing::error!("连接参数解析失败(连接串不打印): {e:#}");
         std::process::exit(1);
     });
     tracing::info!(
-        "模式库已装载:{} 个 L1 模式",
-        app_state.library.modes().len()
+        "模式库已装载:{} 个 L1 模式;知识库已装载:{} 篇",
+        app_state.library.modes().len(),
+        app_state.knowledge.articles().len()
     );
 
     // 5. 迁移(空基线迁移,打通链路;失败仅告警不退出,health 会如实反映 db=error)

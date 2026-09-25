@@ -127,7 +127,8 @@ mod tests {
         ]);
         let config = Config::from_env(vars).expect("测试配置应合法");
         let library = crate::domain::ModeLibrary::load_embedded().unwrap();
-        AppState::new(&config, library).expect("惰性连接池不应失败")
+        AppState::new(&config, library, crate::domain::KnowledgeLibrary::default())
+            .expect("惰性连接池不应失败")
     }
 
     /// 受保护组的最小复现:一个受 `require_auth` 保护的业务端点。
