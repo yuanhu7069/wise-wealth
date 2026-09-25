@@ -1,6 +1,6 @@
 # 07 · 验收收尾与期收口
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > g-plan T7。前置：06 完成。DoD 以 prd-g.md 元信息块为准。
@@ -21,3 +21,10 @@ Labels: ready-for-agent
 - AC-1～14 全绿或挂账有据；check.sh 最终状态全绿
 - test-report-g 落盘；生成记录/快照/调整清单齐备（×2 页）
 - 苑问内容审读通过 + 人工走查通过 + DoD 验收动作完成，期收口
+
+## Comments
+
+- 2026-09-25 · AI · AC 全量走查收口（截图存 shots/，生产模式）：AC-1~14 中 12 项 ✅ 实机/单测；AC-10 验证缺口（低收入档案不可得，引擎金例 + 分支审读）；AC-8 沿 F 期同构说明。AC-4/12/13 实机触发全过。
+- 2026-09-25 · AI · 埋点 SQL：page_view p07 ×3+ / p08 ×2+；金额入载荷 0。restore-drill 12 项全一致。审计：rsa medium + js-yaml high 存量延续。check.sh 终态 5/5 全绿（156 测试）。
+- 2026-09-25 · AI · test-report-g.md 终稿落 docs/g/；prd-g → 已实现（待苑问三项）；g-plan 收口清单 6/7 勾。
+- 2026-09-25 · AI · **待苑问**：① 16 篇内容审读（事实性 + 合规 RULE-044）；② 人工走查；③ DoD 验收动作（对比全链路真实走一遍）。完成后 prd-g →「已完成」做期收口提交。
