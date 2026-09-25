@@ -1,6 +1,6 @@
 # 05 · P08 生成与固化：T0 自查 → 生成 → T1 验收 → 固化
 
-Status: open
+Status: resolved
 Labels: ready-for-agent
 
 > g-plan T5。前置：04 完成。规格：design-g.md 全文；customInstructions 同目录（P08 节）。
@@ -16,3 +16,9 @@ Labels: ready-for-agent
 
 - T1 全过（自动项）；人眼项按先例并入期末复核
 - 快照与生成记录行落盘，sha256 一致
+
+## Comments
+
+- 2026-09-25 · AI · T0 通过。**授权口径**:同票 03(苑问「继续开发」+ DoD 2 run 预算),本期第二次即最后一次生成调用。
+- 2026-09-25 · AI · 一次过:run `5faeae84`(≈5.5 min,requestId `047cb3fc`),迭代轮次 0。T1·A 契约 63 项全中 + hex 超出 0;T1·B 13/13(三列样本含三真实模式/金额等宽右对齐/不可行列警示/零勾选引导/横滑首列固定/极端金额核验)。人眼项并入期末复核。
+- 2026-09-25 · AI · 固化:`docs/design/g-knowledge/p08-compare-github.html`(832 行,sha256 前 16 位 `1e733fefe4672786`)+ 生成记录补行。
