@@ -117,6 +117,10 @@ pub struct ModeConfig {
     pub tagline: String,
     /// 出处可信度徽章
     pub credibility: Credibility,
+    /// 出处说明(RULE-037):出版物/机构/流传史;disputed 模式必须含辟谣表述。
+    /// 必备元数据 —— 装载期校验非空(ADR-F-001),缺失即启动失败。
+    #[serde(default)]
+    pub source: Option<String>,
     /// 适合人群标签
     #[serde(default)]
     pub fit_for: Vec<String>,
@@ -268,6 +272,16 @@ fn validate_mode(mode: &ModeConfig) -> Result<(), LibraryError> {
         reason,
     };
 
+    // RULE-037:出处是模式的必备元数据,缺失或空白即启动失败(fail-fast,同坏配置立场)。
+    // 模式没有出处就没有可信度评级可言;disputed 模式的辟谣也住在 source 里。
+    match mode.source.as_deref().map(str::trim) {
+        None => return Err(invalid("缺少出处(source)—— 每个模式必须声明出处".into())),
+        Some("") => {
+            return Err(invalid("出处(source)为空 —— 每个模式必须声明非空出处".into()))
+        }
+        _ => {}
+    }
+
     if mode.buckets.is_empty() {
         return Err(invalid("至少需要一个桶".into()));
     }
@@ -384,11 +398,99 @@ mod tests {
     use super::*;
 
     #[test]
-    fn 内嵌配置可装载且含两个模式() {
+    fn 内嵌配置可装载且含四个模式且出处齐备() {
         let lib = ModeLibrary::load_embedded().expect("内嵌配置必须可装载");
         let ids: Vec<&str> = lib.modes().iter().map(|m| m.id.as_str()).collect();
-        assert!(ids.contains(&"four_accounts"), "缺四账户模式: {ids:?}");
-        assert!(ids.contains(&"fifty_30_20"), "缺 50/30/20 模式: {ids:?}");
+        assert_eq!(
+            ids.len(),
+            4,
+            "F 期起为四个 L1 模式(Phase 1 目标 5 个,金字塔挂账 ADR-F-003): {ids:?}"
+        );
+        for expected in ["four_accounts", "fifty_30_20", "snp_quadrant", "four_pots"] {
+            assert!(ids.contains(&expected), "缺模式 {expected}: {ids:?}");
+        }
+        // RULE-037:出处必备 —— 装载校验兜底之外,这里显式锁一遍
+        for m in lib.modes() {
+            let src = m.source.as_deref().unwrap_or("").trim();
+            assert!(!src.is_empty(), "模式 {} 缺出处", m.id);
+        }
+    }
+
+    #[test]
+    fn 标准普尔象限的形状与语义角色正确() {
+        let lib = ModeLibrary::load_embedded().unwrap();
+        let m = lib.mode("snp_quadrant").unwrap();
+
+        assert_eq!(m.credibility, Credibility::Disputed, "标准普尔必须标存疑");
+        assert!(m.remainder_bucket().is_none(), "无余量桶(纯 pct 形状族)");
+        assert!(m.rule_bucket().is_none(), "无规则桶(忠实原典静态比例)");
+        assert_eq!(m.investable_bucket().map(|b| b.id.as_str()), Some("growth"));
+
+        let necessary: Vec<&str> = m
+            .buckets
+            .iter()
+            .filter(|b| b.is_necessary)
+            .map(|b| b.id.as_str())
+            .collect();
+        assert_eq!(necessary, vec!["spending"], "必要桶 = 要花的钱");
+
+        let src = m.source.as_deref().unwrap_or("");
+        assert!(src.contains("从未发布"), "disputed 出处必须含辟谣表述: {src}");
+
+        // 桶 id 不得与其他模式重名(追踪按同名桶比对偏离,跨模式重名会误比对)
+        let ids: Vec<&str> = m.buckets.iter().map(|b| b.id.as_str()).collect();
+        assert_eq!(ids, vec!["spending", "protection", "growth", "preserve"]);
+    }
+
+    #[test]
+    fn 四笔钱的形状与语义角色正确() {
+        let lib = ModeLibrary::load_embedded().unwrap();
+        let m = lib.mode("four_pots").unwrap();
+
+        assert_eq!(m.credibility, Credibility::Verified);
+        assert_eq!(m.rule_bucket().map(|b| b.id.as_str()), Some("safeguard"));
+        assert_eq!(m.remainder_bucket().map(|b| b.id.as_str()), Some("long_term"));
+        assert_eq!(m.investable_bucket().map(|b| b.id.as_str()), Some("long_term"));
+
+        let necessary: Vec<&str> = m
+            .buckets
+            .iter()
+            .filter(|b| b.is_necessary)
+            .map(|b| b.id.as_str())
+            .collect();
+        assert_eq!(necessary, vec!["liquid"], "必要桶 = 活钱");
+
+        let src = m.source.as_deref().unwrap_or("");
+        assert!(src.contains("且慢"), "出处应指明盈米且慢: {src}");
+
+        // 跨模式桶 id 零重叠(与 snp_quadrant 的 protection 错开)
+        let ids: Vec<&str> = m.buckets.iter().map(|b| b.id.as_str()).collect();
+        assert_eq!(ids, vec!["liquid", "safeguard", "stable", "long_term"]);
+    }
+
+    #[test]
+    fn 缺出处或空出处被拒绝() {
+        let no_source = r#"
+id = "anonymous"
+name = "无出处模式"
+credibility = "verified"
+buckets = [{ id = "a", name = "A", share = { type = "pct", basis_points = 10000 } }]
+[emergency_fund]
+stable = 3
+normal = 6
+volatile = 9
+freelance = 9
+"#;
+        let err = ModeLibrary::from_sources(&[("anonymous", no_source)], &[]).unwrap_err();
+        assert!(err.to_string().contains("缺少出处"), "实际: {err}");
+
+        let empty_source = no_source.replacen(
+            "credibility = \"verified\"",
+            "credibility = \"verified\"\nsource = \"   \"",
+            1,
+        );
+        let err = ModeLibrary::from_sources(&[("anonymous", &empty_source)], &[]).unwrap_err();
+        assert!(err.to_string().contains("为空"), "空白出处应被拒: {err}");
     }
 
     #[test]
@@ -439,6 +541,7 @@ mod tests {
 id = "two_remainders"
 name = "坏模式"
 credibility = "verified"
+source = "测试夹具"
 buckets = [
   { id = "a", name = "A", share = { type = "remainder" } },
   { id = "b", name = "B", share = { type = "remainder" } },
@@ -463,6 +566,7 @@ freelance = 9
 id = "rule_without_remainder"
 name = "坏模式"
 credibility = "verified"
+source = "测试夹具"
 buckets = [
   { id = "a", name = "A", share = { type = "pct", basis_points = 6000 }, is_necessary = true },
   { id = "b", name = "B", share = { type = "pct", basis_points = 4000 } },
@@ -531,6 +635,7 @@ freelance = 9
 id = "short_pct"
 name = "坏模式"
 credibility = "verified"
+source = "测试夹具"
 buckets = [
   { id = "a", name = "A", share = { type = "pct", basis_points = 5000 } },
 ]

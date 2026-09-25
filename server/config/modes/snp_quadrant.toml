@@ -1,0 +1,47 @@
+# 标准普尔象限 —— L1 分账模式(disputed:徽章与辟谣必须随模式呈现,prd-f RULE-033)
+#
+# 与 50/30/20 同形状族:无固定支出桶、无规则桶、无余量桶,四个比例桶恰好占满 100%。
+# 忠实原典的取舍(grilling 2026-09-25 拍板,Q6):静态 4321 比例、单投资桶、无让位语义;
+# 「保命的钱」不做规则桶 —— 按 pct 静态划入,保险保费计入日常开销。
+#
+# 桶 id 命名注意:刻意与四笔钱(safeguard)错开 —— 追踪模块按「同名桶」比对偏离,
+# 跨模式重名会造成跨模式误比对(票 01 口径决定)。
+id = "snp_quadrant"
+name = "标准普尔象限"
+tagline = "要花 10 · 保命 20 · 生钱 30 · 保本 40"
+credibility = "disputed"
+source = "网传「标准普尔家庭资产象限图」;标准普尔公司从未发布,系 2011 年前后国内保险业自创(总 PRD §7.1 考据)"
+fit_for = ["希望强制储蓄纪律的人"]
+
+[[buckets]]
+id = "spending"
+name = "要花的钱"
+purpose = "日常开销"
+share = { type = "pct", basis_points = 1000 }
+is_necessary = true
+
+[[buckets]]
+id = "protection"
+name = "保命的钱"
+purpose = "保障与保险"
+share = { type = "pct", basis_points = 2000 }
+
+[[buckets]]
+id = "growth"
+name = "生钱的钱"
+purpose = "投资增值,注重收益"
+share = { type = "pct", basis_points = 3000 }
+is_investable = true
+
+[[buckets]]
+id = "preserve"
+name = "保本的钱"
+purpose = "保本升值,恪守安全"
+share = { type = "pct", basis_points = 4000 }
+
+# 与既有两模式取同一套月数规则(金例可比)
+[emergency_fund]
+stable = 3
+normal = 6
+volatile = 9
+freelance = 9

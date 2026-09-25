@@ -513,6 +513,58 @@ mod tests {
     }
 
     #[test]
+    fn 标准普尔象限_同档案四桶按4321静态切分() {
+        let p = profile_a();
+        let m = lib();
+        let r = solve(&p, m.mode("snp_quadrant").unwrap(), &m).unwrap();
+
+        // 纯 pct 恰好占满:10% / 20% / 30% / 40% × ¥12,000
+        assert_eq!(amount(&r, "spending"), 120_000);
+        assert_eq!(amount(&r, "protection"), 240_000);
+        assert_eq!(amount(&r, "growth"), 360_000);
+        assert_eq!(amount(&r, "preserve"), 480_000);
+        assert_eq!(r.l2_bucket_id.as_deref(), Some("growth"), "投资桶 = 生钱的钱");
+        assert_eq!(r.l2.id, "sixty_forty", "L2 全局匹配,与 L1 无关");
+
+        // 必要 = 要花的钱 ¥1,200;目标 = 12 × 1,200 = 14,400 < 存款 24,000 → 达标
+        assert_eq!(r.emergency.necessary_monthly_cents, 120_000);
+        assert_eq!(r.emergency.target_cents, 1_440_000);
+        assert!(r.emergency.is_met);
+        assert_eq!(r.emergency.monthly_toward_emergency_cents, 0, "达标即停");
+        assert_eq!(r.emergency.coverage_tenths, 200, "约 20.0 个月");
+
+        // 无固定支出桶:固定支出 ¥4,500 > 必要桶 ¥1,200,与 50/30/20 同语义应提示
+        assert!(r.notices.contains(&Notice::FixedExceedsNecessary));
+    }
+
+    #[test]
+    fn 四笔钱_同档案四桶含应急规则与余量() {
+        let p = profile_a();
+        let m = lib();
+        let r = solve(&p, m.mode("four_pots").unwrap(), &m).unwrap();
+
+        // 活钱 = 固定支出;稳钱 = 20%;保障 = 应急节奏;长钱 = 余量
+        assert_eq!(amount(&r, "liquid"), 450_000);
+        assert_eq!(amount(&r, "stable"), 240_000, "20% × ¥12,000");
+        assert_eq!(
+            amount(&r, "safeguard"),
+            130_000,
+            "应急节奏:缺口 ¥30,000 ÷ 24 期 = ¥1,250/月,取整到百元 = ¥1,300"
+        );
+        assert_eq!(amount(&r, "long_term"), 380_000, "余量兜底");
+        assert_eq!(r.l2_bucket_id.as_deref(), Some("long_term"));
+
+        // 必要 = 活钱 ¥4,500;目标 = 12 × 4,500 = 54,000;缺口 30,000 ÷ 24 = 1,250
+        assert_eq!(r.emergency.necessary_monthly_cents, 450_000);
+        assert_eq!(r.emergency.target_cents, 5_400_000);
+        assert_eq!(r.emergency.gap_cents, 3_000_000);
+        assert!(!r.emergency.is_met);
+        assert_eq!(r.emergency.monthly_toward_emergency_cents, 130_000);
+        assert_eq!(r.emergency.months_to_fill, Some(23), "3,000,000 ÷ 130,000 = 23.08");
+        assert!(r.notices.is_empty(), "有固定支出桶,不应有 FixedExceedsNecessary");
+    }
+
+    #[test]
     fn 固定支出超过必要桶额度时给出提示() {
         let mut p = profile_a();
         p.expense_fixed_monthly_cents = 700_000; // ¥7,000 > 必要桶 ¥6,000

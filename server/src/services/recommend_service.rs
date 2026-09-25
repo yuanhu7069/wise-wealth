@@ -142,4 +142,24 @@ mod tests {
         let empty = ModeLibrary::from_sources(&[], &[]).unwrap();
         assert!(recommend(&profile(1_200_000, 450_000, 0), &empty).is_none());
     }
+
+    #[test]
+    fn 主推永不指向存疑模式_rule033() {
+        // RULE-033:disputed 模式(标准普尔象限)不进自动匹配 —— 薄厚两支档案都验证
+        let lib = lib();
+        for (desc, p) in [
+            ("存款薄", profile(1_200_000, 450_000, 0)),
+            ("存款厚", profile(1_200_000, 450_000, 99_000_000)),
+        ] {
+            let r = recommend(&p, &lib).unwrap();
+            assert_ne!(
+                r.recommended_id, "snp_quadrant",
+                "{desc}:主推不得指向存疑模式"
+            );
+        }
+        // 模式卡列表照常含存疑卡(浏览可达,仅不主推)
+        let cards = list_modes(&lib);
+        let snp = cards.iter().find(|c| c.id == "snp_quadrant").unwrap();
+        assert_eq!(snp.credibility, crate::domain::Credibility::Disputed);
+    }
 }

@@ -1,0 +1,49 @@
+# 四笔钱 —— L1 分账模式(按资金久期分流:活钱 / 保障 / 稳钱 / 长钱)
+#
+# 与四账户同形状族:固定支出桶 + 应急规则桶 + 比例桶 + 余量桶。
+# 口径决定(grilling 2026-09-25 拍板,Q5;票 01 落地核对):
+#   应急金按引擎规则桶语义归「保障」桶(「保命的钱」语义涵盖应急与保障);
+#   稳钱 20% 为配置值 —— 框架本身不定比例,配置即数据,可调;
+#   保险保费不入桶,可计入日常固定支出由活钱承载。
+#
+# 桶 id 命名注意:保障桶用 safeguard 而非 protection —— 刻意与标准普尔象限错开,
+# 追踪模块按「同名桶」比对偏离,跨模式重名会造成跨模式误比对(票 01 口径决定)。
+id = "four_pots"
+name = "四笔钱"
+tagline = "活钱 · 保障 · 稳钱 · 长钱"
+credibility = "verified"
+source = "盈米且慢「四笔钱」资金规划框架(国内产品化;按资金久期分流:活钱管理/保险保障/稳健理财/长期投资)"
+fit_for = ["有明确目标的储蓄者", "稳健型"]
+
+[[buckets]]
+id = "liquid"
+name = "活钱"
+purpose = "日常开销扣划(要花的钱)"
+share = { type = "fixed_expenses" }
+is_necessary = true
+
+[[buckets]]
+id = "safeguard"
+name = "保障"
+purpose = "应急金与保障储备(保命的钱;达标后停止转入)"
+share = { type = "rule", rule = "emergency_fund" }
+
+[[buckets]]
+id = "stable"
+name = "稳钱"
+purpose = "稳健理财,波动小(稳稳的钱)"
+share = { type = "pct", basis_points = 2000 }
+
+[[buckets]]
+id = "long_term"
+name = "长钱"
+purpose = "长期投资(长钱)"
+share = { type = "remainder" }
+is_investable = true
+
+# 与既有模式取同一套月数规则(金例可比)
+[emergency_fund]
+stable = 3
+normal = 6
+volatile = 9
+freelance = 9
