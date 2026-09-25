@@ -18,5 +18,15 @@ export type BucketOverview = components["schemas"]["BucketOverviewView"];
 /** 可信度 wire 枚举。 */
 export type Credibility = NonNullable<components["schemas"]["PlanView"]["l1_credibility"]>;
 
+/** 可信度徽章三态展示(文字+色双通道;与 knowledge/state 同族,勿内联进组件) */
+export const CREDIBILITY_BADGE: Record<
+  "verified" | "disputed" | "caution",
+  { label: string; cls: string }
+> = {
+  verified: { label: "已考证", cls: "bg-success-subtle text-success" },
+  disputed: { label: "存疑", cls: "bg-attention-subtle text-warning" },
+  caution: { label: "谨慎", cls: "bg-attention-subtle text-warning" },
+};
+
 /** 页面三态(与 tracking 同构):取数失败 / 防御空态 / 正常。 */
 export type ModesState = { kind: "error" } | { kind: "empty" } | { kind: "ready"; data: ModesData };

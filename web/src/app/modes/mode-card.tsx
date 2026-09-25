@@ -9,6 +9,7 @@
  * CTA 生成中禁重复点击(RULE-034:生成语义与问卷同路,entry=mode_lib 仅埋点口径)。
  * CTA 失败以卡内错误条呈现(ERR-F-01,调整清单 #1:产物为示意跳转,无失败态样本)。
  */
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -25,7 +26,17 @@ const CREDIBILITY_BADGE: Record<Credibility, { label: string; cls: string }> = {
   caution: { label: "谨慎", cls: "bg-attention-subtle text-warning" },
 };
 
-export function ModeCard({ card }: { card: ModeCardData }) {
+export function ModeCard({
+  card,
+  compareSelected = false,
+  onToggleCompare,
+}: {
+  card: ModeCardData;
+  /** 是否已被勾选进对比(G 期票 06);未传入时隐藏勾选入口 */
+  compareSelected?: boolean;
+  /** 勾选切换回调(由 ModesBrowser 注入;未传 = 不显示勾选) */
+  onToggleCompare?: (id: string) => void;
+}) {
   const router = useRouter();
   // 主推卡默认展开(产物语义:推荐卡收起态无展示必要;调整清单 #3)
   const [expanded, setExpanded] = useState(card.is_recommended);
@@ -104,6 +115,26 @@ export function ModeCard({ card }: { card: ModeCardData }) {
         </svg>
         {expanded ? "收起详情" : "展开详情"}
       </button>
+
+      {onToggleCompare ? (
+        <div className="mt-base-sm flex flex-wrap items-center gap-base-lg">
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-base-sm text-caption text-ink-secondary">
+            <input
+              type="checkbox"
+              checked={compareSelected}
+              onChange={() => onToggleCompare(card.id)}
+              className="size-4 accent-[var(--primary)]"
+            />
+            加入对比
+          </label>
+          <Link
+            href={`/knowledge?id=ki-${card.id}`}
+            className="inline-flex min-h-11 items-center text-caption font-semibold text-primary underline"
+          >
+            阅读完整解读
+          </Link>
+        </div>
+      ) : null}
 
       <div
         id={`mode-detail-${card.id}`}

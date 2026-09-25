@@ -15,7 +15,11 @@ import { requireSession, SESSION_COOKIE } from "@/lib/session";
 import { ModesView } from "./modes-view";
 import type { ModesData, ModesState } from "./state";
 
-export default async function ModesPage() {
+export default async function ModesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ modes?: string }>;
+}) {
   // RULE-001:受保护页面,未登录跳登录并在登录后回到本页
   await requireSession("/modes");
 
@@ -94,5 +98,15 @@ export default async function ModesPage() {
     );
   }
 
-  return <ModesView data={state.data} />;
+  // 勾选态回传(AC-14):对比页「返回模式库」链接带回 ?modes=,URL 承载零持久化
+  const params = await searchParams;
+  const initialSelected =
+    typeof params.modes === "string"
+      ? params.modes
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+  return <ModesView data={state.data} initialSelected={initialSelected} />;
 }

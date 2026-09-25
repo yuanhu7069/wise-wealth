@@ -1,5 +1,5 @@
 # 知识库 · 模式解读(RULE-039:局限性必须写)
-id = "ki-four-pots"
+id = "ki-four_pots"
 kind = "mode_interpretation"
 title = "四笔钱:按「这笔钱多久后要用」分流"
 related_mode = "four_pots"

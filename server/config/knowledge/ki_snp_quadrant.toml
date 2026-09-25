@@ -1,5 +1,5 @@
 # 知识库 · 模式解读(RULE-039:局限性必须写)
-id = "ki-snp-quadrant"
+id = "ki-snp_quadrant"
 kind = "mode_interpretation"
 title = "标准普尔象限:被讲了几万遍的「家庭资产配置图」"
 related_mode = "snp_quadrant"

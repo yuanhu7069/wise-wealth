@@ -211,6 +211,7 @@ fn build_preview_item(
                 l2_name: r.l2.name.clone(),
                 notices: r.notices,
                 emergency_met: r.emergency.is_met,
+                emergency_months_to_fill: r.emergency.months_to_fill,
             }),
             reason: None,
         },

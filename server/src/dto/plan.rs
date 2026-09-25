@@ -49,6 +49,9 @@ pub struct PreviewSolutionView {
     pub notices: Vec<Notice>,
     /// 应急金是否已达标
     pub emergency_met: bool,
+    /// 按当前节奏还差几个月(未达标时有值)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emergency_months_to_fill: Option<i32>,
 }
 
 /// 一个模式的试算条目(含渲染对比列所需的全部元数据 —— P08 单请求渲染,ADR-G-002)。

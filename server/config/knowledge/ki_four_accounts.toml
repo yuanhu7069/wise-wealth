@@ -1,5 +1,5 @@
 # 知识库 · 模式解读(RULE-039:局限性必须写)
-id = "ki-four-accounts"
+id = "ki-four_accounts"
 kind = "mode_interpretation"
 title = "四账户理财法:把工资切进四本存折"
 related_mode = "four_accounts"

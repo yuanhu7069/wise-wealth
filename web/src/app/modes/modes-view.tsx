@@ -8,10 +8,17 @@
  */
 import { SiteFooterShell } from "@/components/site-footer-shell";
 
-import { ModeCard } from "./mode-card";
+import { ModesBrowser } from "./modes-browser";
 import type { ModesData } from "./state";
 
-export function ModesView({ data }: { data: ModesData }) {
+export function ModesView({
+  data,
+  initialSelected = [],
+}: {
+  data: ModesData;
+  /** URL 回传的勾选态(AC-14:对比页返回后保持) */
+  initialSelected?: string[];
+}) {
   return (
     <>
       <main className="mx-auto w-full max-w-xl flex-1 px-base-lg py-base-xxl">
@@ -20,10 +27,8 @@ export function ModesView({ data }: { data: ModesData }) {
           <p className="text-caption text-ink-mute">每种分账方法都有出处与可信度评级</p>
         </header>
 
-        <div className="mt-base-lg grid gap-base-md sm:grid-cols-2">
-          {data.items.map((card) => (
-            <ModeCard key={card.id} card={card} />
-          ))}
+        <div className="mt-base-lg">
+          <ModesBrowser items={data.items} initialSelected={initialSelected} />
         </div>
       </main>
       {/* P06 页脚沿 RULE-020/031:一行简述 + 完整声明展开(产物同款) */}

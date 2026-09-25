@@ -632,6 +632,8 @@ export interface components {
             buckets: components["schemas"]["PreviewBucketView"][];
             /** @description 应急金是否已达标 */
             emergency_met: boolean;
+            /** @description 按当前节奏还差几个月(未达标时有值) */
+            emergency_months_to_fill?: number | null;
             /** @description 投资桶每月转入(分) */
             investable_monthly_cents: number;
             /** @description L2 大类配置名 */
