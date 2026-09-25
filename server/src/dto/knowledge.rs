@@ -21,6 +21,9 @@ pub struct KnowledgeListItemView {
     pub related_mode: Option<String>,
     /// 一句话导语
     pub summary: String,
+    /// 关联模式可信度(仅解读类有值,服务端从模式库富化;卡片徽章直接用)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credibility: Option<Credibility>,
 }
 
 /// 一节正文。
@@ -54,14 +57,16 @@ pub struct KnowledgeListView {
     pub items: Vec<KnowledgeListItemView>,
 }
 
-impl From<&KnowledgeArticle> for KnowledgeListItemView {
-    fn from(a: &KnowledgeArticle) -> Self {
+impl KnowledgeListItemView {
+    /// 元数据 + 关联模式可信度富化(解读类;service 装配时传模式库取值函数)。
+    pub fn of(a: &KnowledgeArticle, credibility_of: impl Fn(&str) -> Option<Credibility>) -> Self {
         Self {
             id: a.id.clone(),
             kind: a.kind,
             title: a.title.clone(),
             related_mode: a.related_mode.clone(),
             summary: a.summary.clone(),
+            credibility: a.related_mode.as_deref().and_then(credibility_of),
         }
     }
 }

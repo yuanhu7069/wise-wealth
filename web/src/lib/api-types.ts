@@ -777,6 +777,8 @@ export interface components {
         };
         /** @description 文章元数据(列表项;不含正文)。 */
         KnowledgeListItemView: {
+            /** @description 关联模式可信度(仅解读类有值,服务端从模式库富化;卡片徽章直接用) */
+            credibility?: components["schemas"]["Credibility"] | null;
             /** @description 全库唯一 id(深链 `/knowledge?id=`) */
             id: string;
             /** @description 板块 */

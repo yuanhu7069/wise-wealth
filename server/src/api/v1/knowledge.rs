@@ -30,7 +30,9 @@ pub async fn list_knowledge(
         .knowledge
         .articles()
         .iter()
-        .map(KnowledgeListItemView::from)
+        .map(|a| KnowledgeListItemView::of(a, |mode_id| {
+            state.library.mode(mode_id).map(|m| m.credibility)
+        }))
         .collect();
     Ok(ApiOk(KnowledgeListView { items }))
 }
