@@ -589,6 +589,65 @@ export interface components {
             /** @description 固定 true:请求合法且已交给埋点服务 */
             accepted: boolean;
         };
+        /** @description 试算响应里的一个桶:名称 + 按当前档案的每月转入。 */
+        PreviewBucketView: {
+            /** @description 每月转入(分) */
+            amount_monthly_cents: number;
+            /** @description 桶名 */
+            name: string;
+        };
+        /** @description 一个模式的试算条目(含渲染对比列所需的全部元数据 —— P08 单请求渲染,ADR-G-002)。 */
+        PreviewItemView: {
+            /** @description 桶结构(桶名 + 口径,share_desc 已服务端字符串化) */
+            buckets_meta: components["schemas"]["BucketOverviewView"][];
+            /** @description 可信度徽章 */
+            credibility: components["schemas"]["Credibility"];
+            /** @description 适合人群 */
+            fit_for: string[];
+            /** @description 模式 id */
+            mode_id: string;
+            /** @description 展示名 */
+            name: string;
+            /** @description 引擎错误说明(solution 为 null 时有值) */
+            reason?: string | null;
+            /** @description 试算结果;引擎报错时为 null 并以 reason 说明 */
+            solution?: components["schemas"]["PreviewSolutionView"] | null;
+            /** @description 出处(存疑列跳考据用) */
+            source?: string | null;
+            /** @description 一句话理念 */
+            tagline: string;
+        };
+        /** @description 试算请求(G 期 RULE-041/042):对指定模式以当前档案只读跑引擎。 */
+        PreviewRequest: {
+            /** @description 要对比的 L1 模式 id,1 到 3 个(超过即 422) */
+            mode_ids: string[];
+        };
+        /** @description POST /api/v1/plans/preview 的响应。 */
+        PreviewResponse: {
+            items: components["schemas"]["PreviewItemView"][];
+        };
+        /** @description 试算结果(同档案同引擎,与真实生成逐字段一致 —— AC-6 对账的契约)。 */
+        PreviewSolutionView: {
+            /** @description 各桶每月转入 */
+            buckets: components["schemas"]["PreviewBucketView"][];
+            /** @description 应急金是否已达标 */
+            emergency_met: boolean;
+            /** @description 投资桶每月转入(分) */
+            investable_monthly_cents: number;
+            /** @description L2 大类配置名 */
+            l2_name: string;
+            /** @description 引擎提示(如实透传;不可行模式靠它呈现原因,RULE-043) */
+            notices: components["schemas"]["Notice"][];
+            /** @description 必要月支出(分):应急目标的基数 */
+            necessary_monthly_cents: number;
+        };
+        /** @description 一节正文。 */
+        SectionView: {
+            /** @description 小标题 */
+            heading: string;
+            /** @description 段落列表 */
+            paragraphs: string[];
+        };
         /** @description 生成方案的请求。 */
         GeneratePlanRequest: {
             /** @description 用户选定的 L1 模式 id */
@@ -695,6 +754,39 @@ export interface components {
             purpose: string;
             /** @description 月转入口径(如「每月收入的 30%」「按应急金节奏划入」) */
             share_desc: string;
+        };
+        /** @description 文章全文(详情)。 */
+        KnowledgeArticleView: {
+            credibility?: components["schemas"]["Credibility"] | null;
+            id: string;
+            kind: components["schemas"]["KnowledgeKind"];
+            related_mode?: string | null;
+            summary: string;
+            sections: components["schemas"]["SectionView"][];
+            title: string;
+        };
+        /**
+         * @description 文章板块(总 PRD §4.5 四板块;「对比文章」不做,见 prd-g OUT-001)。
+         * @enum {string}
+         */
+        KnowledgeKind: "mode_interpretation" | "verification" | "encyclopedia" | "non_implementable";
+        /** @description GET /api/v1/knowledge 的响应。 */
+        KnowledgeListView: {
+            /** @description 全部文章(按配置目录顺序;前端按 kind 分组) */
+            items: components["schemas"]["KnowledgeListItemView"][];
+        };
+        /** @description 文章元数据(列表项;不含正文)。 */
+        KnowledgeListItemView: {
+            /** @description 全库唯一 id(深链 `/knowledge?id=`) */
+            id: string;
+            /** @description 板块 */
+            kind: components["schemas"]["KnowledgeKind"];
+            /** @description 关联的 L1 模式 id(仅解读类携带) */
+            related_mode?: string | null;
+            /** @description 一句话导语 */
+            summary: string;
+            /** @description 标题 */
+            title: string;
         };
         ModeCardView: {
             /** @description 出处可信度 */

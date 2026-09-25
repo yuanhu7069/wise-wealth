@@ -4,8 +4,11 @@
 use crate::api::v1::analytics::__path_record_event;
 use crate::api::v1::health::__path_health_handler;
 use crate::api::v1::modes::__path_list_modes;
+use crate::api::v1::knowledge::__path_get_knowledge;
+use crate::api::v1::knowledge::__path_list_knowledge;
 use crate::api::v1::plans::__path_active_plan;
 use crate::api::v1::plans::__path_generate_plan;
+use crate::api::v1::plans::__path_preview_plans;
 use crate::api::v1::profiles::__path_get_profile;
 use crate::api::v1::profiles::__path_save_step;
 use crate::api::v1::snapshots::__path_delete_snapshot;
@@ -14,8 +17,12 @@ use crate::api::v1::snapshots::__path_export_snapshots_csv;
 use crate::api::v1::snapshots::__path_list_snapshots;
 use crate::api::v1::snapshots::__path_upsert_snapshot;
 use crate::dto::analytics::{ClientEventRequest, EventAck};
-use crate::dto::mode::{L2ClassView, L2PreviewView, ModeCardView, ModesView};
-use crate::dto::plan::{BucketView, GeneratePlanRequest, PlanView};
+use crate::dto::knowledge::{KnowledgeArticleView, KnowledgeListItemView, KnowledgeListView, SectionView};
+use crate::dto::mode::{BucketOverviewView, L2ClassView, L2PreviewView, ModeCardView, ModesView};
+use crate::dto::plan::{
+    PreviewBucketView, PreviewItemView, PreviewRequest, PreviewResponse, PreviewSolutionView,
+    BucketView, GeneratePlanRequest, PlanView,
+};
 use crate::dto::profile::{ProfileView, StepRequest};
 use crate::dto::snapshot::{
     DeviationView, EmergencyGapView, LatestDeviationsView, SnapshotDeleted,
@@ -23,6 +30,7 @@ use crate::dto::snapshot::{
     UpsertSnapshotRequest,
 };
 use crate::domain::l2::L2Allocation;
+use crate::domain::knowledge::KnowledgeKind;
 use crate::domain::mode::{Credibility, L2Class};
 use crate::domain::profile::{DrawdownResponse, Goal, Horizon, IncomeStability};
 use crate::domain::{EmergencyStatus, Notice};
@@ -41,7 +49,10 @@ use utoipa::OpenApi;
         save_step,
         generate_plan,
         active_plan,
+        preview_plans,
         list_modes,
+        list_knowledge,
+        get_knowledge,
         list_snapshots,
         upsert_snapshot,
         delete_snapshot,
@@ -58,6 +69,17 @@ use utoipa::OpenApi;
             GeneratePlanRequest,
             PlanView,
             BucketView,
+            PreviewRequest,
+            PreviewResponse,
+            PreviewItemView,
+            PreviewSolutionView,
+            PreviewBucketView,
+            BucketOverviewView,
+            KnowledgeListView,
+            KnowledgeListItemView,
+            KnowledgeArticleView,
+            SectionView,
+            KnowledgeKind,
             ModesView,
             ModeCardView,
             L2PreviewView,

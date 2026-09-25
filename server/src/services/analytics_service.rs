@@ -39,6 +39,10 @@ pub enum PageId {
     P05,
     /// P06 模式库页(F 期)
     P06,
+    /// P07 知识库页(G 期)
+    P07,
+    /// P08 对比页(G 期)
+    P08,
 }
 
 impl PageId {
@@ -49,6 +53,8 @@ impl PageId {
             PageId::P04 => "p04",
             PageId::P05 => "p05",
             PageId::P06 => "p06",
+            PageId::P07 => "p07",
+            PageId::P08 => "p08",
         }
     }
 
@@ -61,6 +67,8 @@ impl PageId {
             "p04" => Some(PageId::P04),
             "p05" => Some(PageId::P05),
             "p06" => Some(PageId::P06),
+            "p07" => Some(PageId::P07),
+            "p08" => Some(PageId::P08),
             _ => None,
         }
     }

@@ -5,6 +5,7 @@ pub mod v1 {
     pub mod analytics;
     pub mod auth;
     pub mod health;
+    pub mod knowledge;
     pub mod modes;
     pub mod plans;
     pub mod profiles;
@@ -47,6 +48,12 @@ pub fn routes(state: AppState) -> Router {
         .route("/modes", get(crate::api::v1::modes::list_modes))
         .route("/plans", post(crate::api::v1::plans::generate_plan))
         .route("/plans/active", get(crate::api::v1::plans::active_plan))
+        .route("/plans/preview", post(crate::api::v1::plans::preview_plans))
+        .route("/knowledge", get(crate::api::v1::knowledge::list_knowledge))
+        .route(
+            "/knowledge/{id}",
+            get(crate::api::v1::knowledge::get_knowledge),
+        )
         .route(
             "/plans/active/export",
             get(crate::api::v1::snapshots::export_plan_csv),

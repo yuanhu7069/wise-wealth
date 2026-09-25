@@ -4,6 +4,7 @@
 
 pub mod analytics;
 pub mod auth;
+pub mod knowledge;
 pub mod mode;
 pub mod plan;
 pub mod profile;

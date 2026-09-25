@@ -7,7 +7,7 @@
 //! 内容与引擎严格分离(RULE-040):`non_implementable` 条目永远只是文章,
 //! 不会出现在模式列表、推荐与试算里。
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use super::mode::ModeLibrary;
@@ -17,7 +17,7 @@ use super::mode::ModeLibrary;
 include!(concat!(env!("OUT_DIR"), "/knowledge_sources.rs"));
 
 /// 文章板块(总 PRD §4.5 四板块;「对比文章」不做,见 prd-g OUT-001)。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum KnowledgeKind {
     /// 模式解读:每模式一篇,四节(局限性必写,RULE-039)

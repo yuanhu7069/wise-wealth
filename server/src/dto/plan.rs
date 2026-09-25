@@ -18,6 +18,71 @@ pub enum PlanEntry {
     ModeLib,
 }
 
+/// 试算请求(G 期 RULE-041/042):对指定模式以当前档案只读跑引擎。
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PreviewRequest {
+    /// 要对比的 L1 模式 id,1 到 3 个(超过即 422)
+    pub mode_ids: Vec<String>,
+}
+
+/// 试算响应里的一个桶:名称 + 按当前档案的每月转入。
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PreviewBucketView {
+    /// 桶名
+    pub name: String,
+    /// 每月转入(分)
+    pub amount_monthly_cents: i64,
+}
+
+/// 试算结果(同档案同引擎,与真实生成逐字段一致 —— AC-6 对账的契约)。
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PreviewSolutionView {
+    /// 各桶每月转入
+    pub buckets: Vec<PreviewBucketView>,
+    /// 必要月支出(分):应急目标的基数
+    pub necessary_monthly_cents: i64,
+    /// 投资桶每月转入(分)
+    pub investable_monthly_cents: i64,
+    /// L2 大类配置名
+    pub l2_name: String,
+    /// 引擎提示(如实透传;不可行模式靠它呈现原因,RULE-043)
+    pub notices: Vec<Notice>,
+    /// 应急金是否已达标
+    pub emergency_met: bool,
+}
+
+/// 一个模式的试算条目(含渲染对比列所需的全部元数据 —— P08 单请求渲染,ADR-G-002)。
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PreviewItemView {
+    /// 模式 id
+    pub mode_id: String,
+    /// 展示名
+    pub name: String,
+    /// 可信度徽章
+    pub credibility: Credibility,
+    /// 出处(存疑列跳考据用)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    /// 一句话理念
+    pub tagline: String,
+    /// 适合人群
+    pub fit_for: Vec<String>,
+    /// 桶结构(桶名 + 口径,share_desc 已服务端字符串化)
+    pub buckets_meta: Vec<crate::dto::mode::BucketOverviewView>,
+    /// 试算结果;引擎报错时为 null 并以 reason 说明
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub solution: Option<PreviewSolutionView>,
+    /// 引擎错误说明(solution 为 null 时有值)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// POST /api/v1/plans/preview 的响应。
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PreviewResponse {
+    pub items: Vec<PreviewItemView>,
+}
+
 /// 生成方案的请求。
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct GeneratePlanRequest {
