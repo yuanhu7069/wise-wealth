@@ -8,7 +8,7 @@
  * 无客户端状态:生成/重试发生在 P03 步 6,本页只渲染既有方案,故是纯 server 组件
  * (基线 §7.4「能服务端渲染就不上客户端」)。
  */
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, Library, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import { Disclaimer } from "@/components/disclaimer";
@@ -17,7 +17,43 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatCurrency, formatMonthsTenths } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 
-import { chartBgClass, NOTICE_COPY, type PlanView as Plan } from "./state";
+import { chartBgClass, CREDIBILITY_NOTICE, NOTICE_COPY, type PlanView as Plan } from "./state";
+
+/**
+ * 可信度提示条(RULE-035,F 期):disputed = 警示变体(attention 黄)、caution = 提示变体
+ * (primary 蓝的 info 款)、verified / 字段缺失(模式已下架)→ 不渲染。
+ * 文案唯一来源 = state.ts CREDIBILITY_NOTICE;评级读取时解析(ADR-F-002),
+ * 描述的是模式的当前知识状态,不随历史快照冻结。
+ */
+function CredibilityNotice({ plan }: { plan: Plan }) {
+  const c = plan.l1_credibility;
+  if (c !== "disputed" && c !== "caution") return null;
+  const copy = CREDIBILITY_NOTICE[c];
+  const warn = copy.variant === "warn";
+  return (
+    <div
+      role="status"
+      className={cn(
+        "flex items-start gap-base-md rounded-sm px-base-lg py-base-md",
+        warn ? "bg-attention-subtle" : "bg-primary-soft",
+      )}
+    >
+      <AlertTriangle
+        aria-hidden="true"
+        className={cn("mt-0.5 size-4 shrink-0", warn ? "text-warning" : "text-primary")}
+      />
+      <div className="flex flex-col gap-base-xs">
+        <p className={cn("text-body-md font-semibold", warn ? "text-warning" : "text-primary")}>
+          {copy.title}
+        </p>
+        <p className="text-caption text-ink-secondary">{copy.description}</p>
+        {plan.l1_source ? (
+          <p className="text-caption text-ink-mute">出处:{plan.l1_source}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 /**
  * 分区卡(产物 .plan-card):hairline 一像素边 + Canvas Subtle 头条 + 平面卡体。
@@ -282,6 +318,8 @@ export function PlanView({ plan }: { plan: Plan }) {
         </p>
       </header>
 
+      <CredibilityNotice plan={plan} />
+
       {plan.notices.length > 0 ? (
         <div className="flex flex-col gap-base-sm">
           {plan.notices.map((notice) => (
@@ -302,6 +340,11 @@ export function PlanView({ plan }: { plan: Plan }) {
       </Section>
 
       <div className="flex flex-wrap gap-base-md">
+        {/* 模式库入口(F 期 FEATURE-006):从这里能看见全部方法与它们的出处 */}
+        <Link href="/modes" className={buttonVariants({ variant: "ghost" })}>
+          <Library className="size-4" aria-hidden="true" />
+          查看全部模式
+        </Link>
         {/* 重新生成 = 回 P03 从步 1 走(restart=1;作答仍预填,只改变化的数字),再生成即版本 +1 */}
         <Link href="/questionnaire?restart=1" className={buttonVariants({ variant: "ghost" })}>
           <RefreshCw className="size-4" aria-hidden="true" />

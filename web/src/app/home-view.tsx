@@ -10,7 +10,7 @@
  * 摘要数字全部来自方案**快照**(`/api/v1/plans/active`),与 P04 同源 ——
  * 首页与方案页显示同一个金额,是「同一份方案」这件事最直接的证据。
  */
-import { AlertTriangle, Compass, PencilLine, RefreshCw } from "lucide-react";
+import { AlertTriangle, Compass, Library, PencilLine, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 import type { PlanView } from "@/app/plan/state";
@@ -80,6 +80,11 @@ function PlanSummary({ plan }: { plan: PlanView }) {
           <RefreshCw className="size-4" aria-hidden="true" />
           重新生成
         </Link>
+        {/* 模式库入口(F 期 FEATURE-006):浏览全部方法与出处,一步可达(AC-3) */}
+        <Link href="/modes" className={buttonVariants({ variant: "ghost", size: "lg" })}>
+          <Library className="size-4" aria-hidden="true" />
+          模式库
+        </Link>
       </div>
     </section>
   );
@@ -105,6 +110,10 @@ function EmptyGuide() {
       </p>
       <Link href="/questionnaire" className={cn(buttonVariants({ size: "lg" }), "mt-base-xl")}>
         开始问卷
+      </Link>
+      {/* 空态也保留浏览口:先看看有哪些方法,再决定答不答问卷 */}
+      <Link href="/modes" className="mt-base-md text-body-md text-primary underline">
+        先看看模式库
       </Link>
     </section>
   );

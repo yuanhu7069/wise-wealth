@@ -58,6 +58,9 @@ export type PlanNotice =
   | "fixed_exceeds_necessary"
   | "short_horizon_cash_only";
 
+/** 可信度 wire 枚举(RULE-035;读取时解析,模式已下架 → null) */
+export type Credibility = "verified" | "disputed" | "caution";
+
 export interface PlanView {
   id: string;
   version: number;
@@ -65,6 +68,10 @@ export interface PlanView {
   created_date: string;
   l1_mode: string;
   l1_mode_name: string;
+  /** 模式可信度(读取时解析,ADR-F-002;下架 → null,不渲染提示条) */
+  l1_credibility?: Credibility | null;
+  /** 模式出处(读取时解析;disputed 警示条文案组成) */
+  l1_source?: string | null;
   /** 投资桶的每月转入(整数分):首页摘要的「每月可投资」 */
   investable_monthly_cents: number;
   buckets: PlanBucket[];
@@ -91,6 +98,28 @@ export const NOTICE_COPY: Record<PlanNotice, { title: string; description: strin
   short_horizon_cash_only: {
     title: "这笔钱 1 年内要用",
     description: "方案不配置权益类资产,投资部分全部按现金类安排,优先保住本金与流动性。",
+  },
+};
+
+/**
+ * 可信度提示条文案与变体(RULE-035):disputed = 警示(warn)、caution = 提示(info)、
+ * verified = 不显示。评级描述模式的知识状态,文案是模式的属性而非单次生成的 ——
+ * 与出处一并由读取时解析下发。禁止在组件里内联这些句子(同 NOTICE_COPY 立场)。
+ */
+export const CREDIBILITY_NOTICE: Record<
+  Exclude<Credibility, "verified">,
+  { variant: "warn" | "info"; title: string; description: string }
+> = {
+  disputed: {
+    variant: "warn",
+    title: "本方案使用的分账模式可信度存疑",
+    description:
+      "这个模式被广泛流传,但它的出处不成立 —— 请把它当作一种参考思路,而不是经过验证的方法。",
+  },
+  caution: {
+    variant: "info",
+    title: "本方案使用的分账模式需谨慎看待",
+    description: "这个模式的来源真实,但存在应用边界,不一定适合所有人的情况。",
   },
 };
 
