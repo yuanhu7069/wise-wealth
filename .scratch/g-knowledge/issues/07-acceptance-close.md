@@ -28,3 +28,5 @@ Labels: ready-for-agent
 - 2026-09-25 · AI · 埋点 SQL：page_view p07 ×3+ / p08 ×2+；金额入载荷 0。restore-drill 12 项全一致。审计：rsa medium + js-yaml high 存量延续。check.sh 终态 5/5 全绿（156 测试）。
 - 2026-09-25 · AI · test-report-g.md 终稿落 docs/g/；prd-g → 已实现（待苑问三项）；g-plan 收口清单 6/7 勾。
 - 2026-09-25 · AI · **待苑问**：① 16 篇内容审读（事实性 + 合规 RULE-044）；② 人工走查；③ DoD 验收动作（对比全链路真实走一遍）。完成后 prd-g →「已完成」做期收口提交。
+- 2026-09-26 · 苑问 · 16 篇内容审读与页面走查完成:校验通过,收口(暂验收口径,后续有问题再开票)。
+- 2026-09-26 · AI · 期收口:prd-g →「已完成」;g-plan 收口清单全勾;本期闭。挂账移交:gen-types.sh TS7 修法(ADR-G-004 拍板项)/ js-yaml audit fix / dev hydration / AC-10 caution 缺口 / 金字塔 OUT-003 / CREDIBILITY_BADGE 双份抽取。
