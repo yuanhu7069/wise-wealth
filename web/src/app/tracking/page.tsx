@@ -10,6 +10,8 @@
  * 桶名(视图需要)来自同一次方案取数,不二次请求。
  */
 import { cookies } from "next/headers";
+import Link from "next/link";
+import { CalendarRange } from "lucide-react";
 
 import { SiteFooterShell } from "@/components/site-footer-shell";
 import { trackPageView } from "@/lib/analytics";
@@ -105,6 +107,20 @@ export default async function TrackingPage() {
         ) : (
           <TrackingView plan={{ buckets: planBuckets }} data={state.data} />
         )}
+        {/* 季度复盘入口(H 期 FEATURE-006,代码级增量):P09 是追踪的季度节拍,
+            从这里能回看坚持月数 / 各桶变化 / 缺口收敛 */}
+        <Link
+          href="/tracking/review"
+          className="mt-base-xl flex min-h-11 items-center justify-between gap-base-sm rounded-sm border border-hairline bg-canvas-card px-base-lg py-base-md hover:bg-canvas-soft"
+        >
+          <span className="flex flex-col">
+            <span className="text-body-md font-semibold text-ink">季度复盘</span>
+            <span className="text-caption text-ink-mute">
+              坚持月数 · 各桶变化 · 缺口收敛,每季度回一次头
+            </span>
+          </span>
+          <CalendarRange className="size-5 shrink-0 text-primary" aria-hidden="true" />
+        </Link>
       </main>
       {/* P05 页脚沿 RULE-020/031:一行简述 + 完整声明展开 */}
       <SiteFooterShell />
