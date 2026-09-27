@@ -1,6 +1,6 @@
 # 05 · 验收收尾：AC 全量 + 闸门断言 + 埋点 SQL + restore-drill + test-report-h + 期收口
 
-Status: ready-for-agent
+Status: in-progress
 Labels: ready-for-agent
 
 > h-plan T5。规格：prd-h DoD、§9.5；arch-h §10/§11；h-plan §2 验收顺序、§3 收口清单。
@@ -22,4 +22,5 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-27 · AI · 自动化部分完成:test-report-h.md 落盘(§1 门禁 5/5 + 169 用例、§2 新增 15 金例、§3 P09 闸门 T0/T1/T2、§4 闸门双向 curl 全链、§5 实机冒烟、§6 埋点 SQL——page_view p09 ×2 入库、§7 restore-drill 全绿 12 项、§9 挂账核对);prd-h → 已实现(暂验收);h-plan 收口清单 6/7。restore-drill:备份 `20260927_1800.dump`,副本恢复 + 抽验 12 项全一致。
+- 2026-09-27 · AI · **余下为苑问环节**(test-report-h §8):① 人眼项 P09 + P04 推理链区,亮/暗 × 375px 逐态;② T2 调整清单 7 项拍板(spec §4);③ DoD 验收动作(set-tier 置 plus 实机展开推理链;录 10 月真实快照看 Q4 复盘——须待 10 月)。完成 → prd-h 改「已完成」、本票 resolved、期收口提交。

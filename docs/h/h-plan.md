@@ -46,10 +46,10 @@
 
 ## 3. 期收口清单
 
-- [ ] test-report-h.md 产出（红线逐项 + AC 回链 + P09 闸门记录 + 审计；DoD 验收动作记录）
-- [ ] prd-h.md 状态 → 已完成；本计划与工单状态回填
-- [ ] `docs/design/h-plus/` 快照 ×1 + 生成记录行 ×1 齐备
-- [ ] `.env.example` 零新增核对；零迁移核对（连续第三期）
-- [ ] 引擎改动核对：engine.rs 仅让位 trace 追加（diff 审查记录入 test-report）；对账回归绿
-- [ ] 挂账核对：金字塔（OUT-007）/ gen-types.sh TS7（拍板项）/ TLS（RISK-E-1）/ 其余延续项
-- [ ] 期收口提交（苑问 DoD 验收动作 + 人工走查通过后）
+- [x] test-report-h.md 产出（红线逐项 ✅ + AC 回链 + P09 闸门记录 + 引擎审计 + 双态走查；人眼项与 DoD 验收动作记录待苑问）
+- [x] prd-h.md 状态 → 已实现（暂验收口径）；本计划与票 01-04 状态回填
+- [x] `docs/design/h-plus/` 快照 ×1 + 生成记录行 ×1 齐备
+- [x] `.env.example` 零新增核对；零迁移核对（连续第三期）
+- [x] 引擎改动核对：engine.rs 仅让位 trace 追加（diff 审查记录入 test-report §1）；对账回归绿
+- [x] 挂账核对：金字塔（OUT-007）/ gen-types.sh TS7（拍板项）/ TLS（RISK-E-1）/ 其余延续项
+- [ ] 期收口提交（待苑问：人眼项 + T2 拍板 + DoD 验收动作后）
