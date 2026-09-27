@@ -1,6 +1,6 @@
 # 03 · P09 生成与固化：T0 自查 → 生成 → T1 验收 → 固化
 
-Status: ready-for-agent
+Status: resolved
 Labels: ready-for-agent
 
 > h-plan T3。规格：design-h.md 全文（T0 四件套 / 生成预算 / T1 判据 / 固化要求）。
@@ -22,4 +22,4 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-27 · AI · 完成。T0 自查过(四件套齐;daemon 0.22.1 在线;载体 project `ww-redesign-github` 在);**苑问授权记录:2026-09-27 AskUserQuestion 明确授权「授权,开始生成」**。生成:run `cb16cde6-e8e7-4480-bbbe-c179069be356`(requestId `fb81b045-2ea3-49b5-9fb0-b1d05ae0ec02`),5.5 min,stable-prompt 缓存命中 88.7%,一次生成零对话式修改;run 报 entry_missing 系入口未登记老问题,产物实测在。T1·A:全文档 hex 超出 P01 冻结契约 **0 个**,color-mix 派生与契约一致。T1·B 自动项 **20/20**(五态齐备/极端数据核验区/自包含零外链/44px/reduced-motion/aria-live 切换器/负数红字/全页无完成度百分比/特殊月 pill/外推「不构成承诺」标注/免责声明)。固化:`docs/design/h-plus/p09-review-github.html`(778 行,sha256 前 16 位 `755681fc988af29b`)+ 生成记录补行;globals.css 零改动。产物自述一处布局决策:**三卡桌面横排该段容器放宽至 60rem**(36rem 装不下三列等宽金额,其余区块保持既定节奏)——生成内建决策非落地偏离,落地时按产物执行;人眼项交票 05。
