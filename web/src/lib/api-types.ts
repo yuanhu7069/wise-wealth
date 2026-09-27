@@ -242,6 +242,28 @@ export interface components {
              */
             target_cents?: number | null;
         };
+        /** @description 单桶的季内变化(带符号,负数是真实下跌;前端红跌绿涨口径由展示层定)。 */
+        BucketDeltaView: {
+            /** @description 桶 id */
+            bucket_id: string;
+            /**
+             * Format: int64
+             * @description 变化(分)= 末 − 初
+             */
+            delta_cents: number;
+            /**
+             * Format: int64
+             * @description 季末余额(分)
+             */
+            latest_cents: number;
+            /** @description 展示名(随季末快照所属方案版本冻结) */
+            name: string;
+            /**
+             * Format: int64
+             * @description 季初余额(分)
+             */
+            quarter_start_cents: number;
+        };
         /** @description 客户端上报一条埋点事件(仅页面触达与问卷开始;其余三类后端自己记)。 */
         ClientEventRequest: {
             /** @description 事件名:`page_view` / `questionnaire_start` */
@@ -281,6 +303,36 @@ export interface components {
          * @enum {string}
          */
         DrawdownResponse: "liquidate" | "reduce" | "hold" | "add";
+        /** @description 应急缺口收敛(线性外推是**参考**,不是承诺 —— RULE-050③)。 */
+        EmergencyConvergenceView: {
+            /**
+             * Format: int64
+             * @description 月均收敛(分);缺口扩大为负;少于 2 个有效点为 null
+             */
+            avg_monthly_convergence_cents?: number | null;
+            /**
+             * Format: int64
+             * @description 当前缺口(分)
+             */
+            current_gap_cents: number;
+            /** @description 是否达标 */
+            met: boolean;
+            /**
+             * Format: int64
+             * @description 按当前速度约还差几个月;已达标/均值非正时为 null
+             */
+            months_to_goal?: number | null;
+            /**
+             * Format: int64
+             * @description 季初缺口(分)
+             */
+            start_gap_cents: number;
+            /**
+             * Format: int64
+             * @description 应急目标(分)
+             */
+            target_cents: number;
+        };
         /** @description 距离感进度里的应急金结论(RULE-026;`gap_months_tenths` = 缺口月数 ×10,如 32 = 3.2)。 */
         EmergencyGapView: {
             /**
@@ -517,6 +569,19 @@ export interface components {
             };
             errorCode?: null | components["schemas"]["ErrorCode"];
             message?: string | null;
+            success: boolean;
+        };
+        /**
+         * @description 统一响应信封。
+         *
+         *     成功:`{ "success": true, "data": {...}, "errorCode": null, "message": null }`
+         *     失败:`{ "success": false, "data": null, "errorCode": "...", "message": "..." }`
+         */
+        Envelope_ReviewView: {
+            /** @description GET /tracking/review 响应。 */
+            data?: components["schemas"]["ReviewView"];
+            errorCode?: null | components["schemas"]["ErrorCode"];
+            message?: null | string;
             success: boolean;
         };
         /**
@@ -859,6 +924,13 @@ export interface components {
             /** @description 提示(缺口 / 固定支出超额 / 短久期) */
             notices: components["schemas"]["Notice"][];
             /**
+             * Format: uint
+             * @description 推理链条数(恒下发:free 态的「N 步推理」占位文案以此为源,RULE-045)
+             */
+            trace_count: number;
+            /** @description 推理链全量。**仅 plus 会话序列化**(ADR-H-001 服务侧闸门):free 响应体\n没有这个键,前端遮罩不算闸门。Option 只是序列化开关,非「可能没有」。 */
+            traces?: components["schemas"]["TraceView"][] | null;
+            /**
              * Format: int32
              * @description 版本号(重新生成会 +1)
              */
@@ -906,6 +978,31 @@ export interface components {
              * @description 步 5
              */
             savings_cents?: number | null;
+        };
+        /** @description GET /tracking/review 响应。 */
+        ReviewView: {
+            /** @description 各桶季内变化(同名桶才可比,RULE-028 立场) */
+            buckets: components["schemas"]["BucketDeltaView"][];
+            /** @description 是否可环比(本季非特殊快照 ≥ 2;false 时 buckets 为空、emergency 为 null) */
+            comparable: boolean;
+            /** @description 服务器当前季度(YYYY-QN):季度切换器的**唯一权威依据**(承评审发现 #4 立场) */
+            current_quarter: string;
+            /** @description 应急缺口收敛;不可环比或观察桶缺席时为 null */
+            emergency?: null | components["schemas"]["EmergencyConvergenceView"];
+            /**
+             * Format: int64
+             * @description 已坚持月数(全部快照累计;RULE-050①)
+             */
+            persisted_months: number;
+            /** @description 本次聚合的季度(YYYY-QN) */
+            quarter: string;
+            /**
+             * Format: int64
+             * @description 本季快照条数(含特殊月;0 = 空季,1 = 单点)
+             */
+            quarter_snapshot_count: number;
+            /** @description 本季「本月特殊」的月份(YYYY-MM,升序;计入坚持、不入环比) */
+            special_months: string[];
         };
         /** @description DELETE /snapshots/{month} 回执(成功也要有 data,基线 §6.1)。 */
         SnapshotDeleted: {
@@ -989,6 +1086,22 @@ export interface components {
              * @description 步号 1-6(1 久期 / 2 回撤反应 / 3 收入稳定性 / 4 保障与负债 / 5 财务数字 / 6 推荐)
              */
             step: number;
+        };
+        /** @description 推理链输出单位(域层 [`TraceUnit`] 的线格式;枚举而非字符串,单位语义不丢)。 */
+        TraceUnitView: "cents" | "months";
+        /** @description 推理链的一个节点(H 期 RULE-047:如实呈现,原样透传引擎冻结值)。 */
+        TraceView: {
+            /**
+             * Format: int64
+             * @description 输出值
+             */
+            output: number;
+            /** @description 一句话说明这条规则的输入与依据 */
+            rationale: string;
+            /** @description 规则标识(如 emergency_fund_months / safety_first_yield) */
+            rule_id: string;
+            /** @description 输出单位:cents / months */
+            unit: components["schemas"]["TraceUnitView"];
         };
         /** @description 追踪摘要(summary 段;P01 追踪卡与 P05 同源)。 */
         TrackingSummaryView: {

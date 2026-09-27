@@ -1,6 +1,6 @@
 # 02 · P04 方案页增量：「为什么」入口 + plus 链条 / free 占位双态
 
-Status: ready-for-agent
+Status: resolved
 Labels: ready-for-agent
 
 > h-plan T2。规格：arch-h.md §0 ADR-H-001/004、§1、§3；prd-h §4.2 AC-1～6、§8.3 双态矩阵。
@@ -23,4 +23,5 @@ Labels: ready-for-agent
 
 ## Comments
 
--
+- 2026-09-27 · AI · 完成。api-types 手工移植(以新二进制 `/api/v1/openapi.json` 实际输出为准):PlanView +trace_count/traces,新增 TraceView / TraceUnitView / ReviewView / BucketDeltaView / EmergencyConvergenceView / Envelope_ReviewView 六 schema;**沿用 G 期惯例只移植 components 段,paths/operations 段缺失属 gen-types 拍板项的既有欠账,不在本期扩大**。UI:`plan/trace-panel.tsx` 客户端岛(收展 aria-expanded + aria-controls;plus 链条节点 = 规则标签 + rationale → 输出值,连接线 border-l 画;free = blur 占位 + Plus 徽章 + N 步计数 + 通栏示例句,**无任何解锁动作**,OUT-001);文案进 state.ts TRACE_RULE_COPY / TRACE_COPY(唯一来源立场;未知 rule_id 兜底显示 id);挂载点 = 一、分配总览卡应急金区下方(链条解释的正是那几个数字)。
+- 2026-09-27 · AI · **Token 门禁拦一次**:首版连接线用了 left-[7px] / top-[11px] / w-px 裸 px,改 token 类(border-l + 圆点/轨道同心几何)后过。check.sh 全绿(biome 仅 1 条 warning = G 期 knowledge 页遗留,非本期文件)。闸门双向 curl 实测(真实 dev 库):free 无 traces 键 + trace_count=3 → set-tier plus → 全链下发(rationale 与方案冻结一致,含赡养上浮文案)→ 还原 free 无键;**tier 已还原 free,8081 冒烟服务已停**。375px / 亮暗人眼走查交苑问(票 05 统一)。

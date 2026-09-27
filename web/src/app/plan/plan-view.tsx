@@ -5,8 +5,8 @@
  * 全部数字来自后端方案**快照**(`/api/v1/plans/active`),页面不重算、不猜测 ——
  * 页面与引擎不一致过一次,用户就再也不会信任这张表。
  *
- * 无客户端状态:生成/重试发生在 P03 步 6,本页只渲染既有方案,故是纯 server 组件
- * (基线 §7.4「能服务端渲染就不上客户端」)。
+ * 无方案级客户端状态:生成/重试发生在 P03 步 6,本页只渲染既有方案,整体是纯 server 组件;
+ * 唯一的客户端岛是 H 期的推理链收展(trace-panel.tsx,数据已随方案下发,展开零请求)。
  */
 import { AlertTriangle, Library, RefreshCw } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import { formatCurrency, formatMonthsTenths } from "@/lib/format-currency";
 import { cn } from "@/lib/utils";
 
 import { chartBgClass, CREDIBILITY_NOTICE, NOTICE_COPY, type PlanView as Plan } from "./state";
+import { TracePanel } from "./trace-panel";
 
 /**
  * 可信度提示条(RULE-035,F 期):disputed = 警示变体(attention 黄)、caution = 提示变体
@@ -209,6 +210,9 @@ function OverviewSection({ plan }: { plan: Plan }) {
         </table>
       </div>
       <EmergencyPanel emergency={plan.emergency} />
+      {/* 推理链(H 期 FEATURE-004):解释的正是上方应急金区的几个数字,故挂同一卡内。
+          plus = 全链 / free = 占位,双态由 wire 是否带 traces 键决定(服务侧闸门 ADR-H-001) */}
+      <TracePanel traceCount={plan.trace_count} traces={plan.traces} />
     </PlanCard>
   );
 }

@@ -61,6 +61,18 @@ export type PlanNotice =
 /** 可信度 wire 枚举(RULE-035;读取时解析,模式已下架 → null) */
 export type Credibility = "verified" | "disputed" | "caution";
 
+/**
+ * 推理链节点(H 期 RULE-047):后端冻结值原样透传,前端不增删改、不编节点。
+ * 内容字段仅在 plus 会话下发(ADR-H-001 服务侧闸门);free 态只有 trace_count。
+ */
+export interface PlanTrace {
+  rule_id: string;
+  /** 整数分(单位 cents)或月数(单位 months) */
+  output: number;
+  unit: "cents" | "months";
+  rationale: string;
+}
+
 export interface PlanView {
   id: string;
   version: number;
@@ -78,6 +90,10 @@ export interface PlanView {
   l2: PlanL2;
   emergency: PlanEmergency;
   notices: PlanNotice[];
+  /** 推理链条数(恒下发;free 态占位文案的「N 步」以此为准,RULE-045) */
+  trace_count: number;
+  /** 推理链全量。仅 plus 会话存在这个键(free = 服务侧未下发,非前端隐藏) */
+  traces?: PlanTrace[];
 }
 
 /**
@@ -122,6 +138,28 @@ export const CREDIBILITY_NOTICE: Record<
     description: "这个模式的来源真实,但存在应用边界,不一定适合所有人的情况。",
   },
 };
+
+/**
+ * 推理链面板文案与规则标签(H 期)。唯一来源 = 本表,组件里禁止内联这些句子。
+ * 未知 rule_id 的兜底标签 = 原样显示 id(引擎新增规则而前端未跟上时,不显示成空白)。
+ */
+export const TRACE_RULE_COPY: Record<string, string> = {
+  emergency_fund_months: "应急月数",
+  emergency_fund_target: "应急目标",
+  emergency_fund_pacing: "每月补应急",
+  safety_first_yield: "让位",
+};
+
+export const TRACE_COPY = {
+  /** 收展入口(应急金状态区下方) */
+  entry: "为什么是这个数",
+  /** plus 态展开区的标题说明 */
+  plusHint: "每个数字怎么来的,一步一步摊开",
+  /** free 态占位:标题 / 示例句 / 结尾说明(规则名 = 通栏示例,不是你的数据) */
+  freeTitle: "Plus 可展开完整推理链",
+  freeExample: "示例:收入稳定性 = 波动大 → 应急月数取 9 个月",
+  freeStepsSuffix: "步推理",
+} as const;
 
 /**
  * 分段比例条的色块类名(基线 §6.3:分类色**按固定顺序取**,禁止随机生成)。

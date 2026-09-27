@@ -30,14 +30,14 @@ set +a
 
 db_url="${DATABASE_URL_DEV:?DATABASE_URL_DEV 未配置}"
 
-# 值经 psql 变量绑定(:'var')传入,不拼进 SQL 字面量
-psql "$db_url" -v ON_ERROR_STOP=1 \
-  -v username="$username" -v tier="$tier" \
-  -c "UPDATE users SET tier = :'tier'::text WHERE username = :'username';"
+# 值经 psql 变量绑定(:'var',stdin 路径才做替换;-c 不做 —— 踩过语法错误)传入,不拼 SQL 字面量
+psql "$db_url" -v ON_ERROR_STOP=1 -v u="$username" -v t="$tier" <<'SQL'
+UPDATE users SET tier = :'t'::text WHERE username = :'u';
+SQL
 
 # UPDATE 0 行也退 0(psql 通病):存在性显式确认,账号写错不能静默「成功」
-exists=$(psql "$db_url" -t -A -v username="$username" \
-  -c "SELECT count(*) FROM users WHERE username = :'username';")
+exists=$(printf "SELECT count(*) FROM users WHERE username = :'u';\n" \
+  | psql "$db_url" -t -A -v u="$username")
 if [ "$exists" = "0" ]; then
   echo "✗ 账号不存在:$username" >&2
   exit 1
