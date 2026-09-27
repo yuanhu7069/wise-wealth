@@ -29,6 +29,7 @@
 ```bash
 cp .env.example .env    # 填 DATABASE_URL_DEV / DATABASE_URL_PROD、JWT_SECRET、SEED_USERNAME / SEED_PASSWORD
 scripts/seed-user.sh    # 首次登录前跑一次:把 .env 里那对账号写进数据库
+scripts/set-tier.sh <username> plus   # 开通 Plus(推理链;H 期,实时生效)
 scripts/start.sh        # 后端 :8080 + 前端 :3000
 ```
 

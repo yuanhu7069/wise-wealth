@@ -6,14 +6,15 @@ use uuid::Uuid;
 
 use crate::api::middleware::CurrentUser;
 use crate::api::v1::profiles::to_domain_profile;
-use crate::domain::engine::{EmergencyStatus, Notice};
+use crate::domain::Tier;
+use crate::domain::engine::{EmergencyStatus, Notice, Trace};
 use crate::domain::l2::L2Allocation;
 use crate::domain::profile::Profile;
 use crate::domain::{ModeConfig, ModeLibrary};
 use crate::dto::mode::BucketOverviewView;
 use crate::dto::plan::{
     BucketView, GeneratePlanRequest, PlanEntry, PlanView, PreviewBucketView, PreviewItemView,
-    PreviewRequest, PreviewSolutionView, PreviewResponse,
+    PreviewRequest, PreviewResponse, PreviewSolutionView, TraceView,
 };
 use crate::error::{ApiOk, AppError};
 use crate::repos;
@@ -36,10 +37,14 @@ impl From<PlanError> for AppError {
 }
 
 /// 方案行 + 桶 → 视图。快照字段反序列化成强类型(前端类型由 OpenAPI 生成)。
+///
+/// `traces` 是随方案冻结的推理链:条数恒下发,内容**仅 plus 会话**装配
+/// (ADR-H-001 服务侧闸门 —— free 分支根本不把链条放响应体,而非前端遮罩)。
 fn to_view(
     state: &AppState,
     plan: &PlanRecord,
     buckets: Vec<BucketRow>,
+    tier: Tier,
 ) -> Result<PlanView, AppError> {
     let l2: L2Allocation = serde_json::from_value(plan.l2_allocation.clone())
         .map_err(|e| AppError::Internal(anyhow::anyhow!("L2 快照损坏: {e}")))?;
@@ -47,6 +52,15 @@ fn to_view(
         .map_err(|e| AppError::Internal(anyhow::anyhow!("应急金快照损坏: {e}")))?;
     let notices: Vec<Notice> = serde_json::from_value(plan.notices.clone())
         .map_err(|e| AppError::Internal(anyhow::anyhow!("提示快照损坏: {e}")))?;
+    let parsed_traces: Vec<Trace> = serde_json::from_value(plan.traces.clone())
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("推理链快照损坏: {e}")))?;
+    let trace_count = parsed_traces.len();
+    let traces = if tier.is_plus() {
+        Some(parsed_traces.into_iter().map(TraceView::from).collect())
+    } else {
+        // RULE-045:free 响应无内容可偷。这里的 None 是「不给」,不是「没有」。
+        None
+    };
 
     let l1_mode_name = state
         .library
@@ -82,6 +96,8 @@ fn to_view(
         l2,
         emergency,
         notices,
+        trace_count,
+        traces,
     })
 }
 
@@ -137,7 +153,9 @@ pub async fn generate_plan(
     )
     .await;
 
-    let view = to_view(&state, &generated.plan, generated.buckets)?;
+    // 分层实时读取(RULE-046):生成响应与读取响应同一闸门口径
+    let tier = repos::users::tier_of(&state.pool, user_id).await?;
+    let view = to_view(&state, &generated.plan, generated.buckets, tier)?;
     Ok(ApiOk(view))
 }
 
@@ -163,8 +181,10 @@ pub async fn active_plan(
         .await?
         .ok_or_else(|| AppError::NotFound("还没有生成过方案".into()))?;
     let buckets = repos::plans::buckets_of(&state.pool, plan.id).await?;
+    // 分层实时读取(ADR-H-001/RULE-046):置 plus 后无需重新生成,下一个请求即得全链
+    let tier = repos::users::tier_of(&state.pool, user_id).await?;
 
-    Ok(ApiOk(to_view(&state, &plan, buckets)?))
+    Ok(ApiOk(to_view(&state, &plan, buckets, tier)?))
 }
 
 /// 试算条目装配(纯函数,可对账单测):同档案同引擎,输出与真实生成逐字段同源(ADR-G-002)。
@@ -335,5 +355,60 @@ mod tests {
         assert!(item.source.as_deref().unwrap_or("").contains("从未发布"));
         assert_eq!(item.buckets_meta.len(), 4);
         assert!(item.buckets_meta.iter().all(|b| !b.share_desc.is_empty()));
+    }
+
+    // ── H 期:推理链闸门(ADR-H-001/RULE-045;to_view 纯函数,AppState 只用模式库)──
+
+    fn plan_record_with_traces(traces: &[crate::domain::Trace]) -> PlanRecord {
+        PlanRecord {
+            id: uuid::Uuid::now_v7(),
+            l1_mode: "four_accounts".into(),
+            l2_mode: "sixty_forty".into(),
+            version: 1,
+            is_active: true,
+            investable_monthly_cents: 80_000,
+            created_date: "2026-09-27".into(),
+            profile_snapshot: serde_json::Value::Null,
+            l2_allocation: serde_json::json!({
+                "id": "sixty_forty", "name": "60/40",
+                "classes": [{"name": "权益类", "basis_points": 6000}, {"name": "债券类", "basis_points": 4000}],
+                "note": null,
+                "reason": "久期 5-10 年,回撤反应 = 不动 → 60/40"
+            }),
+            emergency: serde_json::json!({
+                "months": 9, "necessary_monthly_cents": 1_080_000, "target_cents": 9_720_000,
+                "gap_cents": 7_320_000, "monthly_toward_emergency_cents": 310_000,
+                "months_to_fill": 31, "coverage_tenths": 22, "surplus_cents": 0, "is_met": false
+            }),
+            notices: serde_json::json!([]),
+            traces: serde_json::to_value(traces).unwrap(),
+        }
+    }
+
+    #[tokio::test]
+    async fn 闸门双向_free_响应无_traces_键_plus_全量() {
+        let state = crate::api::tests_support::state();
+        let trace = crate::domain::Trace {
+            rule_id: "emergency_fund_months".into(),
+            output: 9,
+            unit: crate::domain::TraceUnit::Months,
+            rationale: "收入稳定性=波动大 → 9 个月".into(),
+        };
+        let plan = plan_record_with_traces(std::slice::from_ref(&trace));
+
+        for (tier, expect_key) in [(Tier::Free, false), (Tier::Plus, true)] {
+            let view = to_view(&state, &plan, vec![], tier).expect("视图装配不应失败");
+            assert_eq!(view.trace_count, 1, "{tier:?}:条数恒下发");
+            let json = serde_json::to_value(&view).expect("序列化不应失败");
+            assert_eq!(
+                json.get("traces").is_some(),
+                expect_key,
+                "{tier:?}:traces 键{}存在",
+                if expect_key { "必须" } else { "不得" }
+            );
+            if expect_key {
+                assert_eq!(json["traces"][0]["rule_id"], "emergency_fund_months");
+            }
+        }
     }
 }

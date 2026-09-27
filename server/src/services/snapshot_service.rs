@@ -41,6 +41,9 @@ pub enum SnapshotError {
     /// 方案快照 JSON 损坏(应急金状态反序列化失败;属程序缺陷而非用户可修)
     #[error("方案快照数据损坏: {0}")]
     CorruptedSnapshot(String),
+    /// 季度参数非法(H 期:格式应为 YYYY-QN,年份 2026-2100)
+    #[error("季度格式应为 YYYY-QN:{0}")]
+    InvalidQuarter(String),
     /// 落库失败
     #[error(transparent)]
     Db(#[from] sqlx::Error),
@@ -306,6 +309,115 @@ pub async fn export_csv_rows(
         vec!["月份", "方案版本", "桶ID", "桶名", "余额(元)", "本月特殊"],
         lines,
     ))
+}
+
+// ── 季度复盘(H 期 RULE-049/050,ADR-H-003)──
+
+/// 季度参数缺省时的「当前季度」(服务器时钟权威,同 `current_month` 立场)。
+pub fn current_quarter() -> String {
+    use chrono::Datelike;
+    let now = chrono::Local::now();
+    let q = (now.month() - 1) / 3 + 1;
+    format!("{}-Q{}", now.year(), q)
+}
+
+/// 季度参数解析:缺省 → 当前季;格式 `YYYY-QN`,年份 2026..=2100(首份可看报告 =
+/// 2026 Q4,更早的季度直接给空集而非报错;手滑的远古/未来年份按非法拒绝)。
+pub fn resolve_quarter(param: Option<&str>) -> Result<String, SnapshotError> {
+    let Some(raw) = param else {
+        return Ok(current_quarter());
+    };
+    let bytes = raw.as_bytes();
+    let ok_shape = bytes.len() == 7
+        && bytes[4] == b'-'
+        && bytes[5] == b'Q'
+        && raw[..4].chars().all(|c| c.is_ascii_digit())
+        && raw[6..].chars().all(|c| c.is_ascii_digit());
+    if !ok_shape {
+        return Err(SnapshotError::InvalidQuarter(raw.to_string()));
+    }
+    let year: i32 = raw[..4].parse().map_err(|_| SnapshotError::InvalidQuarter(raw.to_string()))?;
+    let q: u32 = raw[6..].parse().map_err(|_| SnapshotError::InvalidQuarter(raw.to_string()))?;
+    if !(2026..=2100).contains(&year) || !(1..=4).contains(&q) {
+        return Err(SnapshotError::InvalidQuarter(raw.to_string()));
+    }
+    Ok(raw.to_string())
+}
+
+/// 季度 → 自然月区间 `[start_ym, end_ym_exclusive)`(repo 查询的半开区间形态)。
+fn quarter_month_range(quarter: &str) -> (String, String) {
+    let year: i32 = quarter[..4].parse().expect("resolve_quarter 已校验过形状");
+    let q: u32 = quarter[6..].parse().expect("resolve_quarter 已校验过形状");
+    let start_month = 3 * (q - 1) + 1;
+    let (end_year, end_month) = if q == 4 {
+        (year + 1, 1)
+    } else {
+        (year, 3 * q + 1)
+    };
+    (
+        format!("{year}-{start_month:02}"),
+        format!("{end_year}-{end_month:02}"),
+    )
+}
+
+/// 复盘聚合的完整产物:域结论 + 桶名映射(名称随季末快照所属方案版本冻结)。
+#[derive(Debug, Clone)]
+pub struct QuarterReviewData {
+    /// 域层聚合结论
+    pub review: tracking::QuarterReview,
+    /// 桶 id → 展示名(取季末非特殊快照所属方案版本的 `plan_buckets`;缺名回落桶 id)
+    pub names: BTreeMap<String, String>,
+}
+
+/// 季度复盘聚合(RULE-049/050):读本季快照与方案口径,把数据摆到域函数面前 ——
+/// 口径在 [`crate::domain::tracking::quarter_review`],与 E 期追踪摘要同源
+/// (应急目标/必要月支出取**季末非特殊快照所属方案版本**的冻结值)。
+pub async fn quarter_review(
+    pool: &PgPool,
+    library: &ModeLibrary,
+    user_id: Uuid,
+    quarter_param: Option<&str>,
+) -> Result<QuarterReviewData, SnapshotError> {
+    let quarter = resolve_quarter(quarter_param)?;
+    let (start_ym, end_ym) = quarter_month_range(&quarter);
+
+    let persisted = repos::snapshots::count(pool, user_id).await?;
+    let rows = repos::snapshots::list_range_asc(pool, user_id, &start_ym, &end_ym).await?;
+    let points: Vec<SnapshotPoint> = rows
+        .iter()
+        .map(point_from_row)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // 应急输入:季末非特殊快照所属方案版本的冻结口径(与 E 期 summary 同源)
+    let last_normal = rows.iter().rev().find(|r| !r.special_month);
+    let mut emergency_ref = None;
+    if let Some(row) = last_normal
+        && let Ok((status, l1_mode)) = emergency_status_of(pool, row.plan_id).await
+        && let Some(bucket_id) = emergency_bucket_id(library, &l1_mode)
+    {
+        emergency_ref = Some(crate::domain::tracking::EmergencyRef {
+            target_cents: status.target_cents,
+            necessary_monthly_cents: status.necessary_monthly_cents,
+            bucket_id,
+        });
+    }
+
+    let review = crate::domain::tracking::quarter_review(
+        &quarter,
+        persisted as usize,
+        &points,
+        emergency_ref,
+    );
+
+    // 桶名:随季末非特殊快照所属方案版本(同 E 期 CSV 的按版本取名立场)
+    let mut names = BTreeMap::new();
+    if let Some(row) = last_normal {
+        for b in repos::plans::buckets_of(pool, row.plan_id).await? {
+            names.insert(b.bucket_id, b.name);
+        }
+    }
+
+    Ok(QuarterReviewData { review, names })
 }
 
 #[cfg(test)]

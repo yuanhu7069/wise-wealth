@@ -9,6 +9,7 @@ pub mod knowledge;
 pub mod l2;
 pub mod mode;
 pub mod profile;
+pub mod tier;
 pub mod tracking;
 
 pub use engine::{
@@ -21,4 +22,8 @@ pub use mode::{
     ModeLibrary, RuleKind, ShareType,
 };
 pub use profile::{DrawdownResponse, Goal, Horizon, IncomeStability, Profile};
-pub use tracking::{Deviation, Direction, SnapshotPoint, deviations};
+pub use tier::Tier;
+pub use tracking::{
+    BucketDelta, Deviation, Direction, EmergencyRef, QuarterReview, SnapshotPoint, deviations,
+    quarter_review,
+};

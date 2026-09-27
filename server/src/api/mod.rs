@@ -10,6 +10,7 @@ pub mod v1 {
     pub mod plans;
     pub mod profiles;
     pub mod snapshots;
+    pub mod tracking;
 }
 
 use axum::response::IntoResponse;
@@ -72,6 +73,10 @@ pub fn routes(state: AppState) -> Router {
                 .delete(crate::api::v1::snapshots::delete_snapshot),
         )
         .route(
+            "/tracking/review",
+            get(crate::api::v1::tracking::quarter_review),
+        )
+        .route(
             "/analytics/events",
             post(crate::api::v1::analytics::record_event),
         )
@@ -109,17 +114,12 @@ async fn openapi_json_handler() -> axum::response::Response {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::api::middleware::{CurrentUser, SESSION_COOKIE, require_auth};
-    use crate::config::{AppEnv, Config};
+pub(crate) mod tests_support {
+    use crate::config::Config;
     use crate::state::AppState;
-    use axum::body::Body;
-    use axum::http::{Request, StatusCode, header};
-    use axum::routing::get;
-    use axum::Router;
-    use tower::ServiceExt;
 
-    fn test_state() -> AppState {
+    /// 跨 handler 测试复用的 AppState(惰性池 + 内嵌模式库;不触库)。
+    pub(crate) fn state() -> AppState {
         let vars = std::collections::HashMap::from([
             ("APP_ENV".to_string(), "dev".to_string()),
             ("APP_PORT".to_string(), "8080".to_string()),
@@ -136,6 +136,23 @@ mod tests {
         let library = crate::domain::ModeLibrary::load_embedded().unwrap();
         AppState::new(&config, library, crate::domain::KnowledgeLibrary::default())
             .expect("惰性连接池不应失败")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tests_support;
+    use crate::api::middleware::{CurrentUser, SESSION_COOKIE, require_auth};
+    use crate::config::{AppEnv, Config};
+    use crate::state::AppState;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode, header};
+    use axum::routing::get;
+    use axum::Router;
+    use tower::ServiceExt;
+
+    fn test_state() -> AppState {
+        tests_support::state()
     }
 
     /// 受保护组的最小复现:一个受 `require_auth` 保护的业务端点。

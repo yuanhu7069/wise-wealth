@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::domain::Credibility;
-use crate::domain::engine::{EmergencyStatus, Notice};
+use crate::domain::engine::{EmergencyStatus, Notice, Trace, TraceUnit};
 use crate::domain::l2::L2Allocation;
 
 /// 生成入口(prd-f §9.5:区分问卷路径与模式库手动路径,仅用于埋点口径)。
@@ -111,6 +111,43 @@ pub struct BucketView {
     pub target_cents: Option<i64>,
 }
 
+/// 推理链的一个节点(H 期 RULE-047:如实呈现,原样透传引擎冻结值)。
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct TraceView {
+    /// 规则标识(如 emergency_fund_months / safety_first_yield)
+    pub rule_id: String,
+    /// 输出值
+    pub output: i64,
+    /// 输出单位:cents / months
+    pub unit: TraceUnitView,
+    /// 一句话说明这条规则的输入与依据
+    pub rationale: String,
+}
+
+/// 推理链输出单位(域层 [`TraceUnit`] 的线格式;枚举而非字符串,单位语义不丢)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TraceUnitView {
+    /// 金额,单位分
+    Cents,
+    /// 月数
+    Months,
+}
+
+impl From<Trace> for TraceView {
+    fn from(t: Trace) -> Self {
+        TraceView {
+            rule_id: t.rule_id,
+            output: t.output,
+            unit: match t.unit {
+                TraceUnit::Cents => TraceUnitView::Cents,
+                TraceUnit::Months => TraceUnitView::Months,
+            },
+            rationale: t.rationale,
+        }
+    }
+}
+
 /// 一份方案(五段式方案页的全部数据)。
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PlanView {
@@ -140,6 +177,12 @@ pub struct PlanView {
     pub emergency: EmergencyStatus,
     /// 提示(缺口 / 固定支出超额 / 短久期)
     pub notices: Vec<Notice>,
+    /// 推理链条数(恒下发:free 态的「N 步推理」占位文案以此为源,RULE-045)
+    pub trace_count: usize,
+    /// 推理链全量。**仅 plus 会话序列化**(ADR-H-001 服务侧闸门):free 响应体
+    /// 没有这个键,前端遮罩不算闸门。Option 只是序列化开关,非「可能没有」。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub traces: Option<Vec<TraceView>>,
 }
 
 #[cfg(test)]

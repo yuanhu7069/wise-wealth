@@ -16,6 +16,7 @@ use crate::api::v1::snapshots::__path_export_plan_csv;
 use crate::api::v1::snapshots::__path_export_snapshots_csv;
 use crate::api::v1::snapshots::__path_list_snapshots;
 use crate::api::v1::snapshots::__path_upsert_snapshot;
+use crate::api::v1::tracking::__path_quarter_review;
 use crate::dto::analytics::{ClientEventRequest, EventAck};
 use crate::dto::knowledge::{KnowledgeArticleView, KnowledgeListItemView, KnowledgeListView, SectionView};
 use crate::dto::mode::{BucketOverviewView, L2ClassView, L2PreviewView, ModeCardView, ModesView};
@@ -25,9 +26,9 @@ use crate::dto::plan::{
 };
 use crate::dto::profile::{ProfileView, StepRequest};
 use crate::dto::snapshot::{
-    DeviationView, EmergencyGapView, LatestDeviationsView, SnapshotDeleted,
-    SnapshotMutationResponse, SnapshotView, SnapshotsResponse, TrackingSummaryView,
-    UpsertSnapshotRequest,
+    BucketDeltaView, DeviationView, EmergencyConvergenceView, EmergencyGapView,
+    LatestDeviationsView, ReviewView, SnapshotDeleted, SnapshotMutationResponse, SnapshotView,
+    SnapshotsResponse, TrackingSummaryView, UpsertSnapshotRequest,
 };
 use crate::domain::l2::L2Allocation;
 use crate::domain::knowledge::KnowledgeKind;
@@ -57,7 +58,8 @@ use utoipa::OpenApi;
         upsert_snapshot,
         delete_snapshot,
         export_snapshots_csv,
-        export_plan_csv
+        export_plan_csv,
+        quarter_review
     ),
     components(
         schemas(
@@ -101,7 +103,10 @@ use utoipa::OpenApi;
             LatestDeviationsView,
             DeviationView,
             TrackingSummaryView,
-            EmergencyGapView
+            EmergencyGapView,
+            ReviewView,
+            BucketDeltaView,
+            EmergencyConvergenceView
         )
     )
 )]

@@ -194,6 +194,61 @@ pub struct SnapshotDeleted {
     pub deleted: bool,
 }
 
+// ── 季度复盘(H 期 RULE-049/050;P09 单请求渲染)──
+
+/// 单桶的季内变化(带符号,负数是真实下跌;前端红跌绿涨口径由展示层定)。
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct BucketDeltaView {
+    /// 桶 id
+    pub bucket_id: String,
+    /// 展示名(随季末快照所属方案版本冻结)
+    pub name: String,
+    /// 季初余额(分)
+    pub quarter_start_cents: i64,
+    /// 季末余额(分)
+    pub latest_cents: i64,
+    /// 变化(分)= 末 − 初
+    pub delta_cents: i64,
+}
+
+/// 应急缺口收敛(线性外推是**参考**,不是承诺 —— RULE-050③)。
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct EmergencyConvergenceView {
+    /// 应急目标(分)
+    pub target_cents: i64,
+    /// 季初缺口(分)
+    pub start_gap_cents: i64,
+    /// 当前缺口(分)
+    pub current_gap_cents: i64,
+    /// 月均收敛(分);缺口扩大为负;少于 2 个有效点为 null
+    pub avg_monthly_convergence_cents: Option<i64>,
+    /// 按当前速度约还差几个月;已达标/均值非正时为 null
+    pub months_to_goal: Option<i64>,
+    /// 是否达标
+    pub met: bool,
+}
+
+/// GET /tracking/review 响应。
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ReviewView {
+    /// 本次聚合的季度(YYYY-QN)
+    pub quarter: String,
+    /// 已坚持月数(全部快照累计;RULE-050①)
+    pub persisted_months: i64,
+    /// 本季快照条数(含特殊月;0 = 空季,1 = 单点)
+    pub quarter_snapshot_count: i64,
+    /// 是否可环比(本季非特殊快照 ≥ 2;false 时 buckets 为空、emergency 为 null)
+    pub comparable: bool,
+    /// 各桶季内变化(同名桶才可比,RULE-028 立场)
+    pub buckets: Vec<BucketDeltaView>,
+    /// 应急缺口收敛;不可环比或观察桶缺席时为 null
+    pub emergency: Option<EmergencyConvergenceView>,
+    /// 本季「本月特殊」的月份(YYYY-MM,升序;计入坚持、不入环比)
+    pub special_months: Vec<String>,
+    /// 服务器当前季度(YYYY-QN):季度切换器的**唯一权威依据**(承评审发现 #4 立场)
+    pub current_quarter: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

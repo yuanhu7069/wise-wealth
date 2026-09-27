@@ -1,6 +1,6 @@
 # 01 · 域与服务层：engine 让位 trace + tier 闸门 + tracking::review + review 端点
 
-Status: ready-for-agent
+Status: resolved
 Labels: ready-for-agent
 
 > h-plan T1。规格：arch-h.md §0 ADR-H-001/002/003、§2、§4、§5、§10；RULE-045～052 口径以 prd-h.md §6 为准。
@@ -25,3 +25,7 @@ Labels: ready-for-agent
 ## Comments
 
 -
+## Comments
+
+- 2026-09-27 · AI · 完成。① engine.rs:仅让位分支追加 `yielded` 标记 + `safety_first_yield` trace(三段 rationale:收入不足 / 缩减规则桶至 N 分 / 无规则桶仅归零;output = 投资桶让位后金额)——diff 审计确认金额路径零改动;**发现:50/30/20 无余量桶,该模式本就不会归零让位,天然不产出第四节点**(与既有 notice 行为一致,非缺陷)。② tier:`domain/tier.rs`(parse 未知值降级 Free)+ `users::tier_of`(每请求现读,RULE-046 实时)+ `PlanView.trace_count`(恒下发)/`traces`(仅 plus 序列化,free 无键);`to_view` 增 tier 参数,生成/读取两端点同口径。③ 复盘:`tracking::quarter_review` 纯函数(端点=本季最早/最新**非特殊**快照;同名桶才可比;月均按环比步数摊,<2 个有效点不给;缺口扩大如实负值、不外推)+ `snapshots::list_range_asc` + service 编排(应急口径复用 E 期 `emergency_status_of`/`emergency_bucket_id`,零新口径)+ `GET /api/v1/tracking/review`(缺省当前季,422/200空集;**不读 tier**,RULE-051)+ `PageId::P09`。④ `scripts/set-tier.sh`:psql 变量绑定(`:'var'`)防注入;UPDATE 0 行也退 0 的坑用显式存在性查询兜住;README 快速开始补一行。⑤ sqlx 离线缓存 +2 条(随代码入库)。
+- 2026-09-27 · AI · DoD:cargo test **169 全绿**(+15 金例:让位 4 节点/恒 3 节点/闸门双向/复盘 8 例/tier 解析);既有金例零改动全过;preview 对账单测绿;clippy -D warnings 零警告;启动冒烟(8081):health ok、openapi 含 tracking/review、无 Cookie → 401;零迁移(0007 止)、`.env.example` 零新增。附带重构:`api::tests_support::state()` 从 mod tests 提出复用(纯测试夹具搬家)。

@@ -196,11 +196,14 @@ pub fn solve(
     // ── 3) RULE-014 safety_first:投资桶先归零 → 缩减规则桶 → 仍不足则记缺口
     let mut transfer = if rule_idx.is_some() { nominal_transfer } else { 0 };
     let mut insufficient = false;
+    // 让位是否实际发生(H 期 ADR-H-002:发生时追加推理链节点,金额语义零改动)
+    let mut yielded = false;
     if let Some(ri) = remainder_idx {
         let raw = profile.inflow_cents - mandatory_cents - transfer;
         if raw >= 0 {
             amounts[ri] = raw;
         } else {
+            yielded = true;
             transfer = transfer.min((profile.inflow_cents - mandatory_cents).max(0));
             let after = profile.inflow_cents - mandatory_cents - transfer;
             if after < 0 {
@@ -275,7 +278,7 @@ pub fn solve(
     } else {
         String::new()
     };
-    let traces = vec![
+    let mut traces = vec![
         Trace {
             rule_id: "emergency_fund_months".into(),
             output: i64::from(months),
@@ -303,6 +306,23 @@ pub fn solve(
             ),
         },
     ];
+    // H 期 ADR-H-002:让位链补节点(RULE-047 如实呈现)。只在让位发生时追加,
+    // 不占位 —— 链条其余三节与既有输出保持逐字节不变。
+    if yielded {
+        let yield_note = if insufficient {
+            "收入不足以覆盖必要桶,投资桶归零并给出缺口提示".to_string()
+        } else if rule_idx.is_some() {
+            format!("资源不足,投资桶归零,规则桶月转入缩减至 {transfer} 分")
+        } else {
+            "资源不足,投资桶归零".to_string()
+        };
+        traces.push(Trace {
+            rule_id: "safety_first_yield".into(),
+            output: investable_idx.map(|i| amounts[i]).unwrap_or(0),
+            unit: TraceUnit::Cents,
+            rationale: format!("safety_first(应急 > 保障 > 投资):{yield_note}"),
+        });
+    }
 
     Ok(PlanResult {
         mode_id: mode.id.clone(),
@@ -489,6 +509,48 @@ mod tests {
             r.buckets.iter().all(|b| b.amount_monthly_cents >= 0),
             "任何桶都不得出现负数"
         );
+    }
+
+    // ── H 期:推理链金例(ADR-H-002;RULE-047 如实呈现)──
+
+    #[test]
+    fn 让位发生时推理链含第四节点且输出为零() {
+        // 与金例 C 同档案:让位链走完
+        let mut p = profile_a();
+        p.inflow_cents = 800_000;
+        p.expense_fixed_monthly_cents = 700_000;
+        p.savings_cents = 500_000;
+        let m = lib();
+        let r = solve(&p, m.mode("four_accounts").unwrap(), &m).unwrap();
+
+        assert_eq!(r.traces.len(), 4, "三规则 + 让位节点");
+        let y = &r.traces[3];
+        assert_eq!(y.rule_id, "safety_first_yield");
+        assert_eq!(y.output, 0, "投资桶让位后为 0");
+        assert_eq!(y.unit, TraceUnit::Cents);
+        assert!(y.rationale.contains("safety_first"), "依据要点名让位规则");
+        assert!(y.rationale.contains("投资桶归零"));
+    }
+
+    #[test]
+    fn 让位未发生时推理链恒为三节点() {
+        // 金例 A(资源充足)+ 金例 B(达标)两条路径都不应有让位节点
+        let m = lib();
+        for (name, p) in [
+            ("金例A", profile_a()),
+            ("金例B", {
+                let mut p = profile_a();
+                p.savings_cents = 15_000_000;
+                p
+            }),
+        ] {
+            let r = solve(&p, m.mode("four_accounts").unwrap(), &m).unwrap();
+            assert_eq!(r.traces.len(), 3, "{name}:无让位则无第四节点");
+            assert!(
+                !r.traces.iter().any(|t| t.rule_id == "safety_first_yield"),
+                "{name}:让位节点不得占位"
+            );
+        }
     }
 
     #[test]

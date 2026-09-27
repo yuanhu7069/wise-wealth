@@ -31,7 +31,8 @@ impl From<SnapshotError> for AppError {
             SnapshotError::NoActivePlan
             | SnapshotError::BucketSetMismatch(_)
             | SnapshotError::MonthNotAllowed { .. }
-            | SnapshotError::NotLatestMonth => AppError::Validation(e.to_string()),
+            | SnapshotError::NotLatestMonth
+            | SnapshotError::InvalidQuarter(_) => AppError::Validation(e.to_string()),
             SnapshotError::CorruptedSnapshot(_) => {
                 AppError::Internal(anyhow::anyhow!("{e}"))
             }

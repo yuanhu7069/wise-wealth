@@ -229,6 +229,45 @@ pub async fn list_desc(
         .collect())
 }
 
+/// 某自然月区间内的快照,**按月升序**(H 期季度复盘,ADR-H-003)。
+///
+/// `start_ym` 含端点、`end_ym_exclusive` 不含(如 Q4 = ["2026-10", "2027-01"])。
+/// 聚合的口径(特殊月剔除等)在域层,这里只负责把本季的行按时间摆好。
+pub async fn list_range_asc(
+    pool: &PgPool,
+    user_id: Uuid,
+    start_ym: &str,
+    end_ym_exclusive: &str,
+) -> Result<Vec<SnapshotRow>, sqlx::Error> {
+    let rows = sqlx::query!(
+        r#"
+        SELECT s.id, to_char(s.month, 'YYYY-MM') AS "month!", s.plan_id, s.balances,
+               s.special_month AS "special_month!", p.version AS "plan_version!"
+        FROM snapshots s JOIN plans p ON p.id = s.plan_id
+        WHERE s.user_id = $1
+          AND s.month >= to_date($2 || '-01', 'YYYY-MM-DD')
+          AND s.month <  to_date($3 || '-01', 'YYYY-MM-DD')
+        ORDER BY s.month ASC
+        "#,
+        user_id,
+        start_ym,
+        end_ym_exclusive
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|r| SnapshotRow {
+            id: r.id,
+            month: r.month,
+            plan_id: r.plan_id,
+            plan_version: r.plan_version,
+            balances: r.balances,
+            special_month: r.special_month,
+        })
+        .collect())
+}
+
 /// 删除某月快照(仅当月可删的边界在 service;这里只管删,返回影响行数)。
 pub async fn delete_month(
     pool: &PgPool,

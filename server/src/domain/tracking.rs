@@ -142,6 +142,148 @@ pub fn persisted_months(snapshotted_months: &[&str]) -> usize {
     snapshotted_months.iter().collect::<std::collections::BTreeSet<_>>().len()
 }
 
+// ── 季度复盘(H 期 RULE-049/050;ADR-H-003)──
+
+/// 单桶的季内变化(RULE-050②)。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BucketDelta {
+    /// 桶 id(与快照 balances 键一致)
+    pub bucket_id: String,
+    /// 季初余额(分)= 本季**最早一条非特殊**快照的该桶余额
+    pub start_cents: i64,
+    /// 季末余额(分)= 本季**最新一条非特殊**快照的该桶余额
+    pub latest_cents: i64,
+    /// 变化(分)= 末 − 初;负数是真实下跌,交前端带符号呈现
+    pub delta_cents: i64,
+}
+
+/// 应急缺口收敛(RULE-050③)。口径复用 [`emergency_gap`]:缺口 = 目标 − 观察桶余额。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EmergencyConvergence {
+    /// 应急目标(分,季末快照所属方案版本的冻结值)
+    pub target_cents: i64,
+    /// 季初缺口(分)
+    pub start_gap_cents: i64,
+    /// 当前缺口(分)
+    pub current_gap_cents: i64,
+    /// 月均收敛(分)= (季初缺口 − 当前缺口) ÷ 参与环比步数;缺口扩大为负值,
+    /// 如实给负数。少于 2 个有效点时为 None(无从摊均值)。
+    pub avg_monthly_convergence_cents: Option<i64>,
+    /// 按当前速度约还差几个月(线性外推,RULE-050③:「参考」而非承诺);
+    /// 已达标 / 均值非正 / 无均值时为 None。
+    pub months_to_goal: Option<i64>,
+    /// 是否达标(CONTEXT「达标」)
+    pub met: bool,
+}
+
+/// 复盘的应急输入:由 service 从**季末非特殊快照所属方案版本**投影
+/// (目标与必要月支出随方案冻结;观察桶口径与 E 期 `summary` 同源)。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EmergencyRef {
+    pub target_cents: i64,
+    pub necessary_monthly_cents: i64,
+    /// 余额观察桶 id(有规则桶用规则桶,无则投资桶 —— snapshot_service 同款选择)
+    pub bucket_id: String,
+}
+
+/// 季度复盘结论(RULE-049/050;纯数据,名称与文案由视图层给)。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QuarterReview {
+    /// 季度标识(YYYY-QN,原样回带)
+    pub quarter: String,
+    /// 已坚持月数:全部快照自然月累计(RULE-050①,非季内、非连续)
+    pub persisted_months: usize,
+    /// 本季快照条数(含特殊月;0 = 空季,1 = 单点)
+    pub quarter_snapshot_count: usize,
+    /// 是否可环比(本季非特殊快照 ≥ 2;RULE-050③:特殊月不入环比)
+    pub comparable: bool,
+    /// 各桶季内变化;不可环比时为空(不编零变化)
+    pub buckets: Vec<BucketDelta>,
+    /// 应急缺口收敛;不可环比 / 观察桶缺席时不给(不编假结论,E 期同款立场)
+    pub emergency: Option<EmergencyConvergence>,
+    /// 本季「本月特殊」的月份(YYYY-MM,升序)
+    pub special_months: Vec<String>,
+}
+
+/// 季度复盘聚合(RULE-049/050)。
+///
+/// - `points` 是**本季**快照、按月升序(含特殊月;范围由 service 圈定,域层不认识时钟);
+/// - 特殊月:计入 `special_months` 与快照计数,**不入环比序列** —— 端点取
+///   「本季最早/最新的非特殊快照」(RULE-024 的复盘延伸);
+/// - 桶只列**两端都有**的同名桶(RULE-028 立场:季内换模式后自动失去可比性);
+/// - 月均收敛的舍入与引擎同族(半量上取整);参与步数 = 非特殊快照条数 − 1。
+pub fn quarter_review(
+    quarter: &str,
+    persisted_months: usize,
+    points: &[SnapshotPoint],
+    emergency: Option<EmergencyRef>,
+) -> QuarterReview {
+    let special_months: Vec<String> = points
+        .iter()
+        .filter(|p| p.special_month)
+        .map(|p| p.month.clone())
+        .collect();
+    let normal: Vec<&SnapshotPoint> = points.iter().filter(|p| !p.special_month).collect();
+    let comparable = normal.len() >= 2;
+
+    let mut buckets = Vec::new();
+    let mut emergency_out = None;
+    if comparable {
+        let (first, last) = (normal[0], normal[normal.len() - 1]);
+        // 同名桶才可比;顺序随季末快照的键序(域层 BTreeMap 字典序,展示排序归视图层)
+        for (bucket_id, latest_cents) in &last.balances {
+            if let Some(start_cents) = first.balances.get(bucket_id) {
+                buckets.push(BucketDelta {
+                    bucket_id: bucket_id.clone(),
+                    start_cents: *start_cents,
+                    latest_cents: *latest_cents,
+                    delta_cents: latest_cents - start_cents,
+                });
+            }
+        }
+
+        if let Some(e) = emergency
+            && let (Some(&s), Some(&l)) = (
+                first.balances.get(&e.bucket_id),
+                last.balances.get(&e.bucket_id),
+            )
+        {
+            let start_gap = emergency_gap(e.target_cents, s, e.necessary_monthly_cents);
+            let current_gap = emergency_gap(e.target_cents, l, e.necessary_monthly_cents);
+            let steps = (normal.len() - 1) as i64;
+            let diff = start_gap.gap_cents - current_gap.gap_cents;
+            let avg = if diff >= 0 {
+                (diff + steps / 2) / steps
+            } else {
+                -((-diff + steps / 2) / steps)
+            };
+            let months_to_goal = if current_gap.gap_cents > 0 && avg > 0 {
+                Some((current_gap.gap_cents + avg / 2) / avg)
+            } else {
+                None
+            };
+            emergency_out = Some(EmergencyConvergence {
+                target_cents: e.target_cents,
+                start_gap_cents: start_gap.gap_cents,
+                current_gap_cents: current_gap.gap_cents,
+                avg_monthly_convergence_cents: Some(avg),
+                months_to_goal,
+                met: current_gap.met,
+            });
+        }
+    }
+
+    QuarterReview {
+        quarter: quarter.to_string(),
+        persisted_months,
+        quarter_snapshot_count: points.len(),
+        comparable,
+        buckets,
+        emergency: emergency_out,
+        special_months,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -381,5 +523,165 @@ mod tests {
     fn 重复月份按集合语义去重() {
         // 数据层 UNIQUE(user_id, month) 已保证不重;这里的去重是对域函数自身的语义兜底
         assert_eq!(persisted_months(&["2026-01", "2026-01", "2026-02"]), 2);
+    }
+
+    // ── 季度复盘金例(H 期 RULE-049/050;arch-h §10)──
+
+    /// 快照便捷构造(升序传入)。
+    fn qsnap(month: &str, special: bool, balances: &[(&str, i64)]) -> SnapshotPoint {
+        SnapshotPoint {
+            month: month.to_string(),
+            balances: balances
+                .iter()
+                .map(|(id, c)| (id.to_string(), *c))
+                .collect(),
+            special_month: special,
+        }
+    }
+
+    const EMERGENCY: Option<EmergencyRef> = None;
+
+    fn emergency_ref() -> Option<EmergencyRef> {
+        Some(EmergencyRef {
+            target_cents: 73_800_000,
+            necessary_monthly_cents: 8_200_000,
+            bucket_id: "reserve".into(),
+        })
+    }
+
+    fn delta_of<'a>(r: &'a QuarterReview, id: &str) -> &'a BucketDelta {
+        r.buckets.iter().find(|b| b.bucket_id == id).unwrap()
+    }
+
+    #[test]
+    fn 正常季度三卡数值金例() {
+        // prd-h §7.1:备用桶 31,000 → 36,000 → 42,200(元);目标 73,800 元
+        let points = vec![
+            qsnap("2026-10", false, &[("salary", 4_500_000), ("reserve", 31_000_000)]),
+            qsnap("2026-11", false, &[("salary", 4_500_000), ("reserve", 36_000_000)]),
+            qsnap("2026-12", false, &[("salary", 4_500_000), ("reserve", 42_200_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 5, &points, emergency_ref());
+
+        assert_eq!(r.quarter_snapshot_count, 3);
+        assert!(r.comparable);
+        assert!(r.special_months.is_empty());
+        assert_eq!(delta_of(&r, "reserve").delta_cents, 11_200_000);
+        assert_eq!(delta_of(&r, "reserve").start_cents, 31_000_000);
+        assert_eq!(delta_of(&r, "reserve").latest_cents, 42_200_000);
+
+        let e = r.emergency.expect("应急收敛应有结论");
+        assert_eq!(e.start_gap_cents, 42_800_000, "73,800 − 31,000");
+        assert_eq!(e.current_gap_cents, 31_600_000, "73,800 − 42,200");
+        assert_eq!(
+            e.avg_monthly_convergence_cents,
+            Some(5_600_000),
+            "(42.8M − 31.6M) ÷ 2 步"
+        );
+        assert_eq!(e.months_to_goal, Some(6), "31.6M ÷ 5.6M ≈ 5.64 → 6");
+        assert!(!e.met);
+        // persisted_months 是全局累计(RULE-050①),域层只回传
+        assert_eq!(r.persisted_months, 5);
+    }
+
+    #[test]
+    fn 特殊月计坚持与列表但不入环比() {
+        // 10 月特殊:端点必须是 11 月与 12 月(RULE-050③);10 月的 99,000 不得进任何差值
+        let points = vec![
+            qsnap("2026-10", true, &[("reserve", 99_000_000)]),
+            qsnap("2026-11", false, &[("reserve", 36_000_000)]),
+            qsnap("2026-12", false, &[("reserve", 42_200_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 3, &points, emergency_ref());
+
+        assert_eq!(r.special_months, vec!["2026-10".to_string()]);
+        assert_eq!(r.quarter_snapshot_count, 3, "特殊月计入快照数");
+        assert_eq!(delta_of(&r, "reserve").start_cents, 36_000_000, "端点跳过特殊月");
+
+        let e = r.emergency.expect("仍有 2 个非特殊点");
+        assert_eq!(e.start_gap_cents, 37_800_000, "以 11 月为季初");
+        assert_eq!(e.avg_monthly_convergence_cents, Some(6_200_000), "步数 = 1");
+    }
+
+    #[test]
+    fn 全部为特殊月时不可环比() {
+        let points = vec![
+            qsnap("2026-10", true, &[("reserve", 1_000_000)]),
+            qsnap("2026-11", true, &[("reserve", 2_000_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 2, &points, emergency_ref());
+        assert!(r.special_months.len() == 2);
+        assert!(!r.comparable);
+        assert!(r.buckets.is_empty());
+        assert!(r.emergency.is_none());
+    }
+
+    #[test]
+    fn 单点与空季都不可环比但可区分() {
+        let single = quarter_review(
+            "2026-Q3",
+            1,
+            &[qsnap("2026-09", false, &[("reserve", 3_000_000)])],
+            emergency_ref(),
+        );
+        assert_eq!(single.quarter_snapshot_count, 1);
+        assert!(!single.comparable);
+        assert!(single.buckets.is_empty());
+        assert!(single.emergency.is_none(), "单点不摊均值");
+
+        let empty = quarter_review("2026-Q3", 1, &[], emergency_ref());
+        assert_eq!(empty.quarter_snapshot_count, 0);
+        assert!(!empty.comparable);
+        assert!(empty.buckets.is_empty() && empty.emergency.is_none());
+    }
+
+    #[test]
+    fn 缺口扩大时月均如实为负且不外推月数() {
+        let points = vec![
+            qsnap("2026-10", false, &[("reserve", 50_000_000)]),
+            qsnap("2026-12", false, &[("reserve", 40_000_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 2, &points, emergency_ref());
+        let e = r.emergency.expect("有结论");
+        assert_eq!(
+            e.avg_monthly_convergence_cents,
+            Some(-10_000_000),
+            "两条快照 = 1 个环比步;缺口一步扩大 1,000 万 → 月均 −1,000 万"
+        );
+        assert_eq!(e.months_to_goal, None, "倒退时不给「还差几个月」");
+    }
+
+    #[test]
+    fn 季内达标则达标态且无外推() {
+        let points = vec![
+            qsnap("2026-10", false, &[("reserve", 70_000_000)]),
+            qsnap("2026-12", false, &[("reserve", 73_800_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 2, &points, emergency_ref());
+        let e = r.emergency.expect("有结论");
+        assert!(e.met);
+        assert_eq!(e.current_gap_cents, 0);
+        assert_eq!(e.months_to_goal, None);
+    }
+
+    #[test]
+    fn 季内换桶结构后只列同名桶() {
+        let points = vec![
+            qsnap("2026-10", false, &[("reserve", 30_000_000), ("invest", 5_000_000)]),
+            qsnap("2026-12", false, &[("reserve", 36_000_000), ("savings", 8_000_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 2, &points, EMERGENCY);
+        assert_eq!(r.buckets.len(), 1, "reserve 同名可比;invest/savings 各只出现一端");
+        assert_eq!(r.buckets[0].bucket_id, "reserve");
+    }
+
+    #[test]
+    fn 观察桶缺席时不编应急结论() {
+        let points = vec![
+            qsnap("2026-10", false, &[("spend", 1_000_000)]),
+            qsnap("2026-12", false, &[("spend", 1_200_000)]),
+        ];
+        let r = quarter_review("2026-Q4", 2, &points, emergency_ref());
+        assert!(r.emergency.is_none(), "两端都没有 reserve,不给假结论");
     }
 }
